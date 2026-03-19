@@ -3,245 +3,251 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JTC MOTORS | LIVE SYSTEM V2.1</title>
+    <title>JTCMotors | Oficiālā Mājaslapa & Vadība</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
-
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
-        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; margin: 0; }
-        .sidebar { width: 260px; background: #000; height: 100vh; position: fixed; padding: 30px 20px; color: #fff; z-index: 100; transition: 0.3s; }
-        .main-content { margin-left: 260px; padding: 40px; transition: 0.3s; }
-        .nav-link { padding: 12px 15px; border-radius: 12px; cursor: pointer; font-weight: 700; display: flex; align-items: center; margin-bottom: 8px; opacity: 0.5; transition: 0.2s; }
-        .nav-link.active { background: #d4af37; color: #000; opacity: 1; }
-        .jtc-card { background: #fff; border-radius: 20px; padding: 25px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); border: 1px solid #e2e8f0; margin-bottom: 25px; }
-        .jtc-input { width: 100%; padding: 12px; border: 2px solid #f1f5f9; border-radius: 12px; font-weight: 600; margin-bottom: 10px; transition: 0.2s; }
-        .jtc-input:focus { border-color: #d4af37; outline: none; background: #fff; }
-        .btn-jtc { background: #000; color: #fff; padding: 14px; border-radius: 12px; font-weight: 800; text-transform: uppercase; width: 100%; cursor: pointer; transition: 0.2s; border: none; }
-        .btn-jtc:hover { background: #d4af37; color: #000; }
-        .status-badge { padding: 6px 14px; border-radius: 20px; font-size: 10px; font-weight: 800; text-transform: uppercase; cursor: pointer; }
-        .st-saņemts { background: #f1f5f9; color: #475569; }
-        .st-procesā { background: #fef9c3; color: #854d0e; }
-        .st-gatavs { background: #dcfce7; color: #166534; }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; animation: fadeIn 0.3s; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-        @media (max-width: 768px) { .sidebar { width: 80px; padding: 20px 10px; } .sidebar span, .sidebar h2, .sidebar p { display: none; } .main-content { margin-left: 80px; padding: 15px; } }
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;700;900&display=swap');
+        :root { --gold: #d4af37; --bg-dark: #050505; }
+        body { font-family: 'Montserrat', sans-serif; background-color: var(--bg-dark); color: #ffffff; overflow-x: hidden; }
+        .hero-section { position: relative; height: 100vh; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        .hero-image-bg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: url('1000065317.png'); background-size: cover; background-position: center; opacity: 0.4; z-index: 1; }
+        .hero-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle, rgba(0,0,0,0) 0%, rgba(5,5,5,1) 85%); z-index: 2; }
+        .hero-content { position: relative; z-index: 3; text-align: center; }
+        .gold-gradient-text { background: linear-gradient(to bottom, #f9e1a9 0%, #d4af37 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .gold-btn { border: 1px solid var(--gold); color: var(--gold); padding: 12px 35px; text-transform: uppercase; letter-spacing: 3px; font-size: 12px; font-weight: 700; transition: 0.4s; cursor: pointer; display: inline-block; }
+        .gold-btn:hover { background: var(--gold); color: #000; box-shadow: 0 0 20px rgba(212, 175, 55, 0.4); }
+        .service-card { background: #0a0a0a; border: 1px solid rgba(255,255,255,0.05); transition: 0.3s; }
+        .service-card:hover { border-color: var(--gold); transform: translateY(-10px); }
+        nav { transition: 0.3s; }
+        .nav-scrolled { background: rgba(0,0,0,0.95); padding: 10px 0; border-bottom: 1px solid var(--gold); }
+        #cart-panel { position: fixed; top: 0; right: -450px; width: 400px; height: 100%; background: #080808; z-index: 3000; transition: 0.4s; padding: 40px; border-left: 1px solid var(--gold); overflow-y: auto; }
+        #cart-panel.active { right: 0; }
+        #admin-panel { display: none; position: fixed; inset: 0; background: #050505; z-index: 4000; overflow-y: auto; padding: 40px; }
+        input, select { background: #111 !important; border: 1px solid #222 !important; color: #fff !important; padding: 12px; width: 100%; margin-bottom: 10px; }
+        table { width: 100%; text-align: left; }
+        th { color: var(--gold); text-transform: uppercase; font-size: 10px; padding: 15px; border-bottom: 1px solid #222; }
+        td { padding: 15px; border-bottom: 1px solid #111; font-size: 13px; }
+        .barcode-svg { background: white; padding: 5px; border-radius: 2px; max-width: 100px; }
+        .status-badge { padding: 4px 10px; border-radius: 4px; font-size: 10px; text-transform: uppercase; font-weight: 700; }
+        .status-saņemts { background-color: #333; color: #aaa; }
+        .status-procesā { background-color: #d4af37; color: #000; }
+        .status-gatavs { background-color: #2e7d32; color: #fff; }
     </style>
 </head>
 <body>
 
-<div id="login-screen" class="fixed inset-0 bg-black flex items-center justify-center z-[9999]">
-    <div class="bg-white p-10 rounded-[30px] w-96 text-center shadow-2xl border-t-8 border-[#d4af37]">
-        <h1 class="text-3xl font-black mb-1 italic italic">JTC <span class="text-[#d4af37]">LIVE</span></h1>
-        <p class="text-gray-400 text-[10px] uppercase tracking-widest mb-8 font-bold">Autorizācija</p>
-        <input id="user-name" type="text" placeholder="Lietotājs" class="jtc-input text-center bg-gray-50">
-        <input id="pass" type="password" placeholder="Parole" class="jtc-input text-center bg-gray-50 mb-6">
-        <button onclick="login()" class="btn-jtc">Ieiet</button>
+    <nav id="navbar" class="fixed w-full z-50 py-6 px-10 flex justify-between items-center">
+        <div class="text-2xl font-black tracking-tighter"><span class="gold-gradient-text">JTC</span>MOTORS</div>
+        <div class="hidden md:flex space-x-12 text-[10px] tracking-[0.3em] uppercase font-bold">
+            <a href="#sakums">Sākums</a><a href="#serviss">Serviss</a><a href="#veikals">Veikals</a><a href="#kontakti">Kontakti</a>
+            <button onclick="checkAdminStatus()"><i class="fas fa-lock opacity-50"></i></button>
+        </div>
+        <div class="flex items-center space-x-6">
+            <button onclick="toggleCart()" class="relative"><i class="fas fa-shopping-bag"></i><span id="cart-badge" class="absolute -top-2 -right-2 bg-[#d4af37] text-black text-[9px] px-1.5 rounded-full font-bold">0</span></button>
+            <a href="tel:+37126999309" class="text-xs border-b border-white pb-1">+37126999309</a>
+        </div>
+    </nav>
+
+    <section id="sakums" class="hero-section">
+        <div class="hero-image-bg"></div><div class="hero-overlay"></div>
+        <div class="hero-content px-4">
+            <h4 class="gold-gradient-text uppercase tracking-[0.5em] text-sm mb-4 font-bold">Auto Serviss & Rezerves Daļas</h4>
+            <h1 class="text-6xl md:text-9xl font-black mb-8 tracking-tighter uppercase">JTCMOTORS</h1>
+            <div class="flex flex-col md:flex-row gap-6 justify-center mt-10">
+                <a href="#serviss" class="gold-btn">Pakalpojumi</a><a href="#veikals" class="gold-btn bg-[#d4af37] !text-black">Veikals</a>
+            </div>
+        </div>
+    </section>
+
+    <section id="serviss" class="py-32 px-6 max-w-7xl mx-auto">
+        <h2 class="text-5xl font-black uppercase mb-12 italic">Serviss<span class="gold-gradient-text">.</span></h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="service-card p-12"><h3 class="font-bold mb-4 uppercase">Dzinēja remonts</h3><p class="text-sm text-gray-500">Sarežģītu mezglu diagnostika un kapitālais remonts.</p></div>
+            <div class="service-card p-12 border-t-2 !border-t-[#d4af37]"><h3 class="font-bold mb-4 uppercase text-[#d4af37]">Ritošā daļa</h3><p class="text-sm text-gray-400">Piekares pārbaude un sagatavošana TA.</p></div>
+            <div class="service-card p-12"><h3 class="font-bold mb-4 uppercase">Elektronika</h3><p class="text-sm text-gray-500">Vadības bloku programmēšana un čiptūnings.</p></div>
+        </div>
+    </section>
+
+    <section id="veikals" class="py-32 bg-[#080808]">
+        <div class="max-w-7xl mx-auto px-6">
+            <h2 class="text-5xl font-black uppercase italic mb-16">Veikals</h2>
+            <div id="product-grid" class="grid grid-cols-2 lg:grid-cols-4 gap-8"></div>
+        </div>
+    </section>
+
+    <section id="kontakti" class="py-32 bg-black">
+        <div class="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
+            <div><h2 class="text-5xl font-black uppercase mb-8 italic">Kontakti<span class="gold-gradient-text">.</span></h2><p class="font-bold">Rīga, Latvija | +371 26 999 309 | info@jtcmotors.lv</p></div>
+            <div class="h-[300px] bg-[#0a0a0a] border border-white/5 italic flex items-center justify-center text-gray-700">Karte ielādējas...</div>
+        </div>
+    </section>
+
+    <div id="cart-panel">
+        <div class="flex justify-between items-center mb-10"><h2 class="text-xl font-black gold-gradient-text italic uppercase">Grozs</h2><button onclick="toggleCart()"><i class="fas fa-times"></i></button></div>
+        <div id="cart-items" class="space-y-4 mb-10"></div>
+        <div id="cart-footer" class="border-t border-white/10 pt-6"><div class="flex justify-between mb-8"><span>KOPĀ:</span><span id="cart-total" class="font-bold gold-gradient-text text-xl">0.00 €</span></div><button onclick="alert('Pasūtījums nosūtīts!')" class="gold-btn w-full !bg-[#d4af37] !text-black">Noformēt</button></div>
     </div>
-</div>
 
-<div id="app" class="hidden">
-    <div class="sidebar shadow-2xl">
-        <div class="mb-12 px-2">
-            <h2 class="text-2xl font-black italic text-[#d4af37]">JTC MOTORS</h2>
-            <p class="text-[9px] uppercase tracking-[0.3em] opacity-40">Live Database</p>
+    <div id="admin-panel">
+        <div class="flex justify-between items-center mb-10 border-b border-white/10 pb-6">
+            <h2 class="text-2xl font-black gold-gradient-text uppercase italic">JTC Vadība</h2>
+            <div class="flex gap-4">
+                <button onclick="toggleAdminTab('stock')" class="gold-btn !py-2 !px-4 !text-[9px]">Noliktava</button>
+                <button onclick="toggleAdminTab('repairs')" class="gold-btn !py-2 !px-4 !text-[9px]">Serviss</button>
+                <button onclick="logoutAdmin()" class="gold-btn !py-2 !px-4 !text-[9px] !border-red-900 !text-red-500">Iziet</button>
+            </div>
         </div>
-        <nav>
-            <div onclick="showTab('stk')" id="btn-stk" class="nav-link active"><i class="fas fa-boxes w-6"></i> <span>Noliktava</span></div>
-            <div onclick="showTab('rep')" id="btn-rep" class="nav-link"><i class="fas fa-clipboard-list w-6"></i> <span>Serviss</span></div>
-            <div onclick="showTab('cli')" id="btn-cli" class="nav-link"><i class="fas fa-users w-6"></i> <span>Klienti</span></div>
-        </nav>
-        <div class="absolute bottom-10 left-8 right-8 text-center">
-            <p id="current-user-display" class="text-xs font-bold text-[#d4af37] mb-2"></p>
-            <button onclick="logout()" class="text-[10px] uppercase font-black text-red-500 hover:text-white transition">Iziet</button>
+        <div id="admin-stock">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
+                <div class="p-8 border border-white/5 bg-black h-fit"><input id="adm-n" placeholder="Prece"><input id="adm-p" type="number" placeholder="Cena €"><input id="adm-q" type="number" placeholder="Skaits"><button onclick="saveProduct()" class="gold-btn w-full mt-4 !bg-[#d4af37] !text-black">Pievienot</button></div>
+                <div class="lg:col-span-2 overflow-x-auto"><table><thead><tr><th>Prece</th><th>Cena</th><th>Skaits</th><th>EAN</th><th>Darbība</th></tr></thead><tbody id="stock-list"></tbody></table></div>
+            </div>
+        </div>
+        <div id="admin-repairs" style="display:none;">
+            <div class="p-8 border border-white/5 bg-black mb-10"><div class="grid grid-cols-1 md:grid-cols-4 gap-4"><input id="rep-nr" placeholder="Auto Nr."><input id="rep-cl" placeholder="Klients"><select id="rep-st"><option>Saņemts</option><option>Procesā</option><option>Gatavs</option></select><button onclick="addRepair()" class="gold-btn !py-2">Pievienot</button></div></div>
+            <div class="overflow-x-auto"><table><thead><tr><th>Numurs</th><th>Klients</th><th>Statuss</th><th>Mainīt</th><th>Dzēst</th></tr></thead><tbody id="repairs-list"></tbody></table></div>
+        </div>
+    </div>
+
+    <div id="login-modal" class="fixed inset-0 bg-black/95 z-[5000] hidden items-center justify-center">
+        <div class="p-10 border border-white/10 bg-black w-80 text-center">
+            <h3 class="gold-gradient-text font-black mb-8 italic">ADMIN LOGIN</h3>
+            <input id="u" placeholder="Lietotājs"><input id="p" type="password" placeholder="Parole">
+            <button onclick="login()" class="gold-btn w-full mt-4">Ieiet</button>
         </div>
     </div>
 
-    <div class="main-content">
-        <header class="flex justify-between items-center mb-10">
-            <h1 id="tab-title" class="text-4xl font-black italic uppercase">Noliktava</h1>
-            <div class="relative w-64">
-                <i class="fas fa-search absolute left-4 top-4 text-gray-400"></i>
-                <input type="text" id="global-search" oninput="initLive()" placeholder="Meklēt..." class="jtc-input !mb-0 !pl-12 bg-white shadow-sm border-none">
-            </div>
-        </header>
+    <script>
+        // FIREBASE KONFIGURĀCIJA (Savieno ar tavu mākoni)
+        const firebaseConfig = {
+            apiKey: "AIzaSyBK20atH4pmEORbuHLCTAXaSCPUBfz9190",
+            authDomain: "jtc-motors.firebaseapp.com",
+            databaseURL: "https://jtc-motors-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "jtc-motors"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
 
-        <div id="stk" class="tab-content active">
-            <div class="jtc-card grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div class="md:col-span-2"><input id="n" class="jtc-input" placeholder="Prece"></div>
-                <input id="p" type="number" class="jtc-input" placeholder="Cena €">
-                <input id="q" type="number" class="jtc-input" value="1">
-                <input id="sh" class="jtc-input" placeholder="Plaukts">
-                <input id="ean" class="jtc-input bg-gray-50" readonly>
-                <button onclick="addStk()" class="btn-jtc md:col-span-2">Pievienot</button>
-            </div>
-            <div class="bg-white rounded-[25px] shadow-sm border border-gray-100 overflow-hidden">
-                <table class="w-full text-left"><thead class="bg-gray-50 border-b border-gray-100"><tr class="text-[10px] text-gray-400 uppercase font-black"><th class="p-6">Prece</th><th>Plaukts</th><th>Cena/Skaits</th><th>EAN</th><th class="text-right p-6">Dzēst</th></tr></thead><tbody id="list-stk" class="divide-y divide-gray-50"></tbody></table>
-            </div>
-        </div>
+        let cart = [];
 
-        <div id="rep" class="tab-content">
-            <div class="jtc-card grid grid-cols-1 md:grid-cols-4 gap-4">
-                <input id="r-nr" class="jtc-input" placeholder="Auto Nr.">
-                <input id="r-cl" class="jtc-input" placeholder="Klients">
-                <input id="r-jb" class="jtc-input" placeholder="Darbs">
-                <button onclick="addRep()" class="btn-jtc">Pievienot</button>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="list-rep"></div>
-        </div>
-
-        <div id="cli" class="tab-content">
-            <div class="jtc-card grid grid-cols-1 md:grid-cols-3 gap-4">
-                <input id="c-nm" class="jtc-input" placeholder="Vārds">
-                <input id="c-ph" class="jtc-input" placeholder="Telefons">
-                <button onclick="addCli()" class="btn-jtc">Pievienot</button>
-            </div>
-            <div class="bg-white rounded-[25px] overflow-hidden border border-gray-100 shadow-sm"><table class="w-full text-left"><thead class="bg-gray-50 border-b border-gray-100"><tr class="text-[10px] text-gray-400 uppercase font-black"><th class="p-6">Klients</th><th>Telefons</th><th class="text-right p-6">Dzēst</th></tr></thead><tbody id="list-cli" class="divide-y divide-gray-50"></tbody></table></div>
-        </div>
-    </div>
-</div>
-
-<script>
-    const firebaseConfig = {
-        apiKey: "AIzaSyBK20atH4pmEORbuHLCTAXaSCPUBfz9190",
-        authDomain: "jtc-motors.firebaseapp.com",
-        databaseURL: "https://jtc-motors-default-rtdb.europe-west1.firebasedatabase.app",
-        projectId: "jtc-motors",
-        storageBucket: "jtc-motors.firebasestorage.app",
-        messagingSenderId: "188249204836",
-        appId: "1:188249204836:web:d32fe0d71a9dc2c0e71771"
-    };
-
-    firebase.initializeApp(firebaseConfig);
-    const database = firebase.database();
-
-    const users = { "Ivars": "JTC-Ivars-2024", "Andris": "JTC-Andris-99", "Juris": "JTC-Juris-88", "Janis": "JTC-Janis-77", "Gints": "JTC-Gints-66" };
-
-    // AUTO-LOGIN CHECK
-    window.onload = () => {
-        const loggedInUser = localStorage.getItem("jtc_logged_in");
-        if(loggedInUser) {
-            setupApp(loggedInUser);
-        }
-    };
-
-    function login() {
-        const u = document.getElementById('user-name').value;
-        const p = document.getElementById('pass').value;
-        if (users[u] && users[u] === p) {
-            localStorage.setItem("jtc_logged_in", u);
-            setupApp(u);
-        } else { alert("Dati nepareizi!"); }
-    }
-
-    function logout() {
-        localStorage.removeItem("jtc_logged_in");
-        location.reload();
-    }
-
-    function setupApp(user) {
-        document.getElementById('login-screen').classList.add('hidden');
-        document.getElementById('app').classList.remove('hidden');
-        document.getElementById('current-user-display').innerText = "Sveiks, " + user;
-        genEAN();
-        initLive();
-        checkAndSeed(); // Pievieno 20 preces, ja tukšs
-    }
-
-    function showTab(t) {
-        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-        document.querySelectorAll('.nav-link').forEach(b => b.classList.remove('active'));
-        document.getElementById(t).classList.add('active');
-        document.getElementById('btn-'+t).classList.add('active');
-        const titles = {'stk': 'Noliktava', 'rep': 'Servisa Rinda', 'cli': 'Klientu Bāze'};
-        document.getElementById('tab-title').innerText = titles[t];
-    }
-
-    function genEAN() { document.getElementById('ean').value = "JTC" + Math.floor(100000 + Math.random() * 899999); }
-
-    function addStk() {
-        const n=document.getElementById('n').value, p=document.getElementById('p').value, q=document.getElementById('q').value, sh=document.getElementById('sh').value, ean=document.getElementById('ean').value;
-        if(n && p) { database.ref('stock').push().set({n, p, q, sh, ean}); document.getElementById('n').value=''; genEAN(); }
-    }
-
-    function addRep() {
-        const nr=document.getElementById('r-nr').value.toUpperCase(), cl=document.getElementById('r-cl').value, jb=document.getElementById('r-jb').value;
-        if(nr) { database.ref('repairs').push().set({nr, cl, jb, st: 'Saņemts', date: new Date().toLocaleDateString('lv-LV')}); document.getElementById('r-nr').value=''; }
-    }
-
-    function addCli() {
-        const nm=document.getElementById('c-nm').value, ph=document.getElementById('c-ph').value;
-        if(nm) { database.ref('clients').push().set({nm, ph}); document.getElementById('c-nm').value=''; }
-    }
-
-    function cycleStatus(id, current) {
-        const states = ['Saņemts', 'Procesā', 'Gatavs'];
-        let next = states[(states.indexOf(current) + 1) % states.length];
-        database.ref('repairs/'+id).update({st: next});
-    }
-
-    function remove(path) { if(confirm("Dzēst?")) database.ref(path).remove(); }
-
-    function initLive() {
-        const search = document.getElementById('global-search').value.toLowerCase();
-        database.ref('stock').on('value', s => {
-            let h = ''; const data = s.val();
-            if(data) Object.keys(data).forEach(id => { 
-                const i = data[id]; 
-                if(i.n.toLowerCase().includes(search) || i.ean.toLowerCase().includes(search)) {
-                    h += `<tr class="hover:bg-gray-50"><td class="p-6 font-bold">${i.n}</td><td><span class="bg-black text-white px-2 py-1 rounded text-[10px] font-bold">${i.sh||'-'}</span></td><td class="font-bold">${i.p}€ (${i.q}gb)</td><td><svg id="b-${id}" class="h-8"></svg></td><td class="text-right p-6"><button onclick="remove('stock/${id}')" class="text-red-300"><i class="fas fa-trash"></i></button></td></tr>`;
-                }
-            });
-            document.getElementById('list-stk').innerHTML = h;
-            if(data) Object.keys(data).forEach(id => { if(document.getElementById(`b-${id}`)) JsBarcode(`#b-${id}`, data[id].ean, {displayValue:false, height:20, width:1}); });
-        });
-
-        database.ref('repairs').on('value', s => {
-            let h = ''; const data = s.val();
-            if(data) Object.keys(data).forEach(id => { 
-                const r = data[id]; 
-                if(r.nr.toLowerCase().includes(search) || r.cl.toLowerCase().includes(search)) {
-                    h += `<div class="jtc-card !mb-0 border-t-4 ${r.st === 'Gatavs' ? 'border-green-500' : (r.st === 'Procesā' ? 'border-yellow-400' : 'border-gray-200')}"><div class="flex justify-between items-start mb-4"><h3 class="text-2xl font-black italic tracking-tighter">${r.nr}</h3><span onclick="cycleStatus('${id}', '${r.st}')" class="status-badge st-${r.st.toLowerCase().replace(/ā/g, 'a')}">${r.st}</span></div><p class="text-[10px] font-bold text-gray-400 uppercase mb-1 font-bold italic">Klients: ${r.cl}</p><div class="bg-gray-50 p-3 rounded-xl text-xs font-semibold border border-gray-100">${r.jb}</div><div class="mt-4 flex justify-between items-center"><span class="text-[9px] text-gray-300 font-bold italic uppercase">${r.date}</span><button onclick="remove('repairs/${id}')" class="text-[9px] font-black text-red-400 uppercase">Gatavs/Izdots</button></div></div>`;
-                }
-            });
-            document.getElementById('list-rep').innerHTML = h;
-        });
-
-        database.ref('clients').on('value', s => {
-            let h = ''; const data = s.val();
-            if(data) Object.keys(data).forEach(id => { 
-                const c = data[id];
-                if(c.nm.toLowerCase().includes(search)) {
-                    h += `<tr class="hover:bg-gray-50"><td class="p-6 font-bold uppercase italic">${c.nm}</td><td class="font-bold text-blue-600">${c.ph}</td><td class="text-right p-6"><a href="tel:${c.ph}" class="mr-4 text-green-500"><i class="fas fa-phone"></i></a><button onclick="remove('clients/${id}')" class="text-red-200"><i class="fas fa-times"></i></button></td></tr>`;
-                }
-            });
-            document.getElementById('list-cli').innerHTML = h;
-        });
-    }
-
-    function checkAndSeed() {
-        database.ref('stock').once('value', s => {
-            if(!s.exists()) {
-                const preces = [
-                    {n:"Eļļa Castrol 5W-30 5L", p:45, q:10, sh:"A-1"}, {n:"Filtrs MANN HU711/51", p:12, q:20, sh:"A-2"},
-                    {n:"Bremžu kluči Brembo (Priekša)", p:55, q:4, sh:"B-1"}, {n:"Bremžu diski TRW (Pāris)", p:85, q:2, sh:"B-5"},
-                    {n:"Zobsiksnas komplekts Gates", p:120, q:3, sh:"C-1"}, {n:"Ūdenssūknis SKF", p:40, q:5, sh:"C-2"},
-                    {n:"Aizdedzes svece NGK Laser", p:15, q:24, sh:"D-1"}, {n:"Akumulators VARTA 74Ah", p:95, q:6, sh:"E-1"},
-                    {n:"Logu slotiņas Bosch AeroTwin", p:28, q:12, sh:"F-1"}, {n:"Antifrīzs G12 Sārts 5L", p:14, q:15, sh:"G-1"},
-                    {n:"Ritošās daļas svira (Lemforder)", p:65, q:2, sh:"B-8"}, {n:"Amortizators Sachs (Aizmugure)", p:48, q:4, sh:"B-10"},
-                    {n:"Gaisa filtrs Filtron", p:10, q:15, sh:"A-5"}, {n:"Degvielas filtrs Bosch", p:25, q:8, sh:"A-6"},
-                    {n:"Salona filtrs (Ogles)", p:18, q:10, sh:"A-7"}, {n:"Spuldze H7 Osram NightBreaker", p:22, q:20, sh:"D-5"},
-                    {n:"Bremžu šķidrums DOT4 1L", p:9, q:12, sh:"G-3"}, {n:"Vārstu vāka blīve (Elring)", p:15, q:5, sh:"C-5"},
-                    {n:"Gultnis FAG (Priekšējais)", p:50, q:4, sh:"B-12"}, {n:"Lambda zonde Bosch", p:75, q:2, sh:"D-10"}
-                ];
-                preces.forEach(p => database.ref('stock').push().set({...p, ean: "JTC"+Math.floor(100000+Math.random()*899999)}));
+        // AUTO-LOGIN & DATU IELĀDE
+        window.onload = () => {
+            initLive();
+            if(localStorage.getItem("jtc_admin") === "true") {
+                document.getElementById('admin-panel').style.display='block';
             }
-        });
-    }
-</script>
+        };
+
+        function checkAdminStatus() {
+            if(localStorage.getItem("jtc_admin") === "true") {
+                document.getElementById('admin-panel').style.display='block';
+            } else {
+                document.getElementById('login-modal').style.display='flex';
+            }
+        }
+
+        function login() {
+            if(document.getElementById('u').value === 'admin' && document.getElementById('p').value === 'JTC-Ivars-2024') {
+                localStorage.setItem("jtc_admin", "true");
+                location.reload();
+            } else { alert("Nepareizi!"); }
+        }
+
+        function logoutAdmin() {
+            localStorage.removeItem("jtc_admin");
+            location.reload();
+        }
+
+        // REĀLLAIKA DATI (No Firebase)
+        function initLive() {
+            database.ref('stock').on('value', s => {
+                const data = s.val();
+                renderStock(data);
+                renderVeikals(data);
+            });
+            database.ref('repairs').on('value', s => renderRepairs(s.val()));
+        }
+
+        function saveProduct() {
+            let n = document.getElementById('adm-n').value, p = document.getElementById('adm-p').value, q = document.getElementById('adm-q').value;
+            if(n && p) {
+                database.ref('stock').push({n, p, q, e: "20"+Math.floor(Math.random()*100000000000)});
+                document.getElementById('adm-n').value = '';
+            }
+        }
+
+        function renderStock(data) {
+            let h = '';
+            if(data) Object.keys(data).forEach((id, idx) => {
+                const i = data[id];
+                h += `<tr><td class="font-bold">${i.n}</td><td>${i.p} €</td><td>${i.q}</td><td><svg id="b${idx}" class="barcode-svg"></svg></td>
+                <td><button onclick="printL('${id}')" class="text-blue-400 mr-4"><i class="fas fa-print"></i></button>
+                <button onclick="database.ref('stock/${id}').remove()" class="text-red-900"><i class="fas fa-trash"></i></button></td></tr>`;
+            });
+            document.getElementById('stock-list').innerHTML = h;
+            if(data) Object.keys(data).forEach((id, idx) => JsBarcode(`#b${idx}`, data[id].e, {format:"EAN13", width:1, height:20, displayValue:false}));
+        }
+
+        function renderVeikals(data) {
+            let h = '';
+            if(data) Object.keys(data).forEach(id => {
+                const i = data[id];
+                h += `<div class="service-card p-6 text-center"><h4 class="font-bold uppercase text-[11px] mb-4">${i.n}</h4><p class="gold-gradient-text font-black text-2xl mb-6">${i.p} €</p><button onclick="addToCart('${i.n}', ${i.p})" class="gold-btn !py-2 !text-[9px]">Grozā</button></div>`;
+            });
+            document.getElementById('product-grid').innerHTML = h;
+        }
+
+        function addRepair() {
+            let nr = document.getElementById('rep-nr').value.toUpperCase(), cl = document.getElementById('rep-cl').value, st = document.getElementById('rep-st').value;
+            if(nr) database.ref('repairs').push({nr, cl, st});
+        }
+
+        function renderRepairs(data) {
+            let h = '';
+            if(data) Object.keys(data).forEach(id => {
+                const r = data[id];
+                h += `<tr><td class="font-bold">${r.nr}</td><td>${r.cl}</td><td><span class="status-badge status-${r.st.toLowerCase()}">${r.st}</span></td>
+                <td><button onclick="cycleStatus('${id}', '${r.st}')" class="text-[10px] underline">Mainīt</button></td>
+                <td><button onclick="database.ref('repairs/${id}').remove()" class="text-red-900"><i class="fas fa-trash"></i></button></td></tr>`;
+            });
+            document.getElementById('repairs-list').innerHTML = h;
+        }
+
+        function cycleStatus(id, current) {
+            const states = ["Saņemts", "Procesā", "Gatavs"];
+            let next = states[(states.indexOf(current) + 1) % states.length];
+            database.ref('repairs/'+id).update({st: next});
+        }
+
+        function printL(id) {
+            database.ref('stock/'+id).once('value', s => {
+                const item = s.val();
+                let w = window.open('', '', 'width=400,height=400');
+                w.document.write(`<html><head><script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"><\/script></head><body style="text-align:center;font-family:sans-serif;padding:20px;"><h2>${item.n}</h2><div style="font-size:24px;font-weight:bold;">${item.p} €</div><svg id="barcode"></svg><script>window.onload=function(){JsBarcode("#barcode","${item.e}",{format:"EAN13",displayValue:true});setTimeout(()=>{window.print();window.close();},500);}<\/script></body></html>`);
+                w.document.close();
+            });
+        }
+
+        function addToCart(n, p) { cart.push({n, p}); updateCart(); }
+        function updateCart() {
+            document.getElementById('cart-badge').innerText = cart.length;
+            document.getElementById('cart-items').innerHTML = cart.map(i => `<div class="flex justify-between text-xs"><span>${i.n}</span><b>${i.p} €</b></div>`).join('');
+            document.getElementById('cart-total').innerText = cart.reduce((s,i)=>s+parseFloat(i.p),0).toFixed(2) + " €";
+        }
+        function toggleCart() { document.getElementById('cart-panel').classList.toggle('active'); }
+        function toggleAdminTab(t) {
+            document.getElementById('admin-stock').style.display = t==='stock'?'block':'none';
+            document.getElementById('admin-repairs').style.display = t==='repairs'?'block':'none';
+        }
+
+        window.onscroll = () => {
+            if (window.pageYOffset > 100) document.getElementById('navbar').classList.add("nav-scrolled");
+            else document.getElementById('navbar').classList.remove("nav-scrolled");
+        };
+    </script>
 </body>
 </html>
