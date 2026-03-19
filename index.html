@@ -19,11 +19,10 @@
         .main-content { margin-left: 260px; padding: 30px; min-height: 100vh; }
         .card { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); margin-bottom: 20px; }
         input, select, textarea { border: 1px solid #e2e8f0; padding: 12px; border-radius: 8px; width: 100%; margin-bottom: 10px; font-size: 14px; background: #f8fafc; }
-        .btn-jtc { background: #fbbf24; color: #000; font-weight: 800; padding: 12px; border-radius: 8px; width: 100%; transition: 0.2s; text-transform: uppercase; cursor: pointer; border: none; }
+        .btn-jt { background: #fbbf24; color: #000; font-weight: 800; padding: 12px; border-radius: 8px; width: 100%; transition: 0.2s; text-transform: uppercase; cursor: pointer; border: none; }
         #login-screen { position: fixed; inset: 0; background: #0f172a; z-index: 9999; display: flex; align-items: center; justify-content: center; }
         .img-preview { width: 45px; height: 45px; object-fit: cover; border-radius: 6px; cursor: pointer; }
         
-        /* LABOTS: Iziesanas pogas stils */
         .logout-btn { 
             padding: 14px 25px; 
             border-top: 1px solid #1e293b; 
@@ -40,14 +39,14 @@
 
     <div id="login-screen">
         <div class="bg-white p-10 rounded-3xl w-96 shadow-2xl text-center">
-            <h1 class="text-4xl font-black italic mb-2">JTC <span class="text-yellow-500">MOTORS</span></h1>
+            <h1 class="text-4xl font-black italic mb-2">JT <span class="text-yellow-500">MOTORS</span></h1>
             <input id="login-pass" type="password" placeholder="Kods..." class="text-center text-xl mt-4">
-            <button onclick="checkLogin()" class="btn-jtc mt-4">PIESLĒGTIES</button>
+            <button onclick="checkLogin()" class="btn-jt mt-4">PIESLĒGTIES</button>
         </div>
     </div>
 
     <div id="app-sidebar" class="sidebar" style="display:none;">
-        <div class="p-8 text-2xl font-black italic border-b border-slate-800 text-center text-yellow-500">JTC PRO</div>
+        <div class="p-8 text-2xl font-black italic border-b border-slate-800 text-center text-yellow-500">JT MOTORS PRO</div>
         <nav class="mt-6">
             <div onclick="showSection('stock')" id="n-stock" class="nav-link active"><i class="fas fa-boxes mr-3"></i> Noliktava</div>
             <div onclick="showSection('repairs')" id="n-repairs" class="nav-link"><i class="fas fa-tools mr-3"></i> Serviss</div>
@@ -73,7 +72,7 @@
                 <div class="card h-fit">
                     <h4 class="font-bold text-xs uppercase text-gray-400 mb-4">Jauna prece</h4>
                     <input id="st-n" placeholder="Nosaukums"><input id="st-p" type="number" placeholder="Cena (€)"><input id="st-q" type="number" placeholder="Skaits"><input id="st-e" placeholder="EAN">
-                    <button onclick="addStock()" class="btn-jtc">Saglabāt</button>
+                    <button onclick="addStock()" class="btn-jt">Saglabāt</button>
                 </div>
                 <div class="lg:col-span-2 card overflow-x-auto">
                     <table class="w-full text-left">
@@ -85,16 +84,16 @@
         </div>
 
         <div id="sec-repairs" class="section" style="display:none;">
-            <div class="card"><div class="grid grid-cols-1 md:grid-cols-4 gap-4"><input id="rep-nr" placeholder="Auto Nr."><input id="rep-cl" placeholder="Klients"><input id="rep-price" type="number" placeholder="Cena (€)"><select id="rep-part-select"></select><textarea id="rep-task" class="md:col-span-4" placeholder="Darba apraksts..."></textarea><button onclick="addRepair()" class="btn-jtc md:col-span-4">Pievienot rindā</button></div></div>
+            <div class="card"><div class="grid grid-cols-1 md:grid-cols-4 gap-4"><input id="rep-nr" placeholder="Auto Nr."><input id="rep-cl" placeholder="Klients"><input id="rep-price" type="number" placeholder="Cena (€)"><select id="rep-part-select"></select><textarea id="rep-task" class="md:col-span-4" placeholder="Darba apraksts..."></textarea><button onclick="addRepair()" class="btn-jt md:col-span-4">Pievienot rindā</button></div></div>
             <div id="repair-list" class="grid grid-cols-1 gap-4"></div>
         </div>
 
         <div id="sec-calendar" class="section" style="display:none;">
-            <div class="card"><div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6"><input id="cal-date" type="date"><input id="cal-info" placeholder="Auto/Darbs"><input id="cal-id" type="hidden"><button id="cal-btn" onclick="addCalendar()" class="btn-jtc">Rezervēt</button></div><div id="calendar-items" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div></div>
+            <div class="card"><div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6"><input id="cal-date" type="date"><input id="cal-info" placeholder="Auto/Darbs"><input id="cal-id" type="hidden"><button id="cal-btn" onclick="addCalendar()" class="btn-jt">Rezervēt</button></div><div id="calendar-items" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div></div>
         </div>
 
         <div id="sec-clients" class="section" style="display:none;">
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8"><div class="card h-fit"><input id="c-name" placeholder="Vārds"><input id="c-phone" placeholder="Telefons"><input id="c-auto" placeholder="Auto"><button onclick="addClient()" class="btn-jtc">Pievienot</button></div><div class="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4" id="client-grid"></div></div>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8"><div class="card h-fit"><input id="c-name" placeholder="Vārds"><input id="c-phone" placeholder="Telefons"><input id="c-auto" placeholder="Auto"><button onclick="addClient()" class="btn-jt">Pievienot</button></div><div class="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4" id="client-grid"></div></div>
         </div>
 
         <div id="sec-history" class="section" style="display:none;">
@@ -120,7 +119,7 @@
         let currentRole = "";
 
         window.onload = function() {
-            const savedRole = sessionStorage.getItem('jtc_role');
+            const savedRole = sessionStorage.getItem('jt_motors_role');
             if(savedRole) {
                 currentRole = savedRole;
                 initApp();
@@ -128,33 +127,30 @@
         };
 
         function checkLogin() {
-    const pass = document.getElementById('login-pass').value.trim();
-    
-    // Galvenais administrators
-    if(pass === "JTC-ADMIN-2026") { 
-        loginSuccess("admin"); 
-    }
-    // Jaunais lietotājs IVARS ar pilnām tiesībām
-    else if(pass === "globus@2026") { 
-        loginSuccess("admin"); 
-    }
-    // Meistars ar ierobežotām tiesībām
-    else if(pass === "JTC-MEISTARS") { 
-        loginSuccess("meistars"); 
-    }
-    else { 
-        alert("Nepareizs kods!"); 
-    }
+            const pass = document.getElementById('login-pass').value.trim();
+            
+            if(pass === "JTC-ADMIN-2026") { 
+                loginSuccess("admin"); 
+            }
+            else if(pass === "globus@2026") { 
+                loginSuccess("admin"); 
+            }
+            else if(pass === "JTC-MEISTARS") { 
+                loginSuccess("meistars"); 
+            }
+            else { 
+                alert("Nepareizs kods!"); 
+            }
         }
 
         function loginSuccess(role) {
             currentRole = role;
-            sessionStorage.setItem('jtc_role', role);
+            sessionStorage.setItem('jt_motors_role', role);
             initApp();
         }
 
         function logout() {
-            sessionStorage.removeItem('jtc_role');
+            sessionStorage.removeItem('jt_motors_role');
             location.reload();
         }
 
@@ -234,7 +230,7 @@
         function editCalendar(id, date, info) { document.getElementById('cal-date').value = date; document.getElementById('cal-info').value = info; document.getElementById('cal-id').value = id; document.getElementById('cal-btn').innerText = "SAGLABĀT"; }
         function loadClients() { db.ref('clients').on('value', s => { let h = '', data = s.val(); if(data) Object.keys(data).forEach(id => { let c = data[id]; h += `<div class="bg-white border p-4 rounded-xl text-center border-t-4 border-yellow-500"><div class="font-bold">${c.name}</div><div class="text-xs text-gray-400 mb-2">${c.auto}</div><a href="tel:${c.phone}" class="bg-green-500 text-white block py-2 rounded font-bold text-xs">ZVANĪT</a></div>`; }); document.getElementById('client-grid').innerHTML = h; }); }
         function addClient() { let n=document.getElementById('c-name').value, p=document.getElementById('c-phone').value, a=document.getElementById('c-auto').value; if(n) db.ref('clients').push({name:n, phone:p, auto:a}); }
-        function downloadInvoice(nr, cl, pr, task) { const { jsPDF } = window.jspdf; const doc = new jsPDF(); doc.text(`JTC MOTORS - ${nr}`, 20, 20); doc.text(`Klients: ${cl}`, 20, 30); doc.text(`Summa: ${pr} EUR`, 20, 40); doc.save(`Rekins_${nr}.pdf`); }
+        function downloadInvoice(nr, cl, pr, task) { const { jsPDF } = window.jspdf; const doc = new jsPDF(); doc.text(`JTMotors - ${nr}`, 20, 20); doc.text(`Klients: ${cl}`, 20, 30); doc.text(`Summa: ${pr} EUR`, 20, 40); doc.save(`Rekins_${nr}.pdf`); }
         function clearHistory() { if(confirm("Dzēst visu vēsturi?")) db.ref('history').remove(); }
         function showSection(s) { document.querySelectorAll('.section').forEach(x => x.style.display = 'none'); document.querySelectorAll('.nav-link').forEach(x => x.classList.remove('active')); document.getElementById('sec-'+s).style.display = 'block'; document.getElementById('n-'+s).classList.add('active'); }
     </script>
