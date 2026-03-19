@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>JT MOTORS | ENTERPRISE v7.8</title>
+    <title>JT MOTORS | ENTERPRISE v7.8.1</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
@@ -42,7 +42,7 @@
         th { text-align: left; padding: 12px 16px; background: #f8fafc; font-size: 10px; text-transform: uppercase; color: #64748b; font-weight: 900; border-bottom: 2px solid #e2e8f0; }
     </style>
 </head>
-<body onload="checkAutoLogin()">
+<body>
 
     <div class="header-logo-bar" style="display:none;" id="app-header">
         <div class="logo-text">JT <span>MOTORS</span></div>
@@ -137,7 +137,17 @@
         firebase.initializeApp(firebaseConfig); const db = firebase.database();
         let html5QrCode = null, allStockData = {}, currentUser = "";
 
-        function checkAutoLogin() { const saved = localStorage.getItem('jt_motors_pass_v2'); if(saved) { document.getElementById('login-pass').value = saved; checkLogin(); } else { document.getElementById('login-pass').focus(); } }
+        // TŪLĪTĒJA PĀRBAUDE PIE REFRESH
+        (function checkAutoLogin() { 
+            const saved = localStorage.getItem('jt_motors_pass_v2'); 
+            if(saved) { 
+                window.addEventListener('DOMContentLoaded', () => {
+                    document.getElementById('login-pass').value = saved; 
+                    checkLogin(); 
+                });
+            } 
+        })();
+
         function checkLogin() {
             const p = document.getElementById('login-pass').value;
             if(p === "globus@2026") { currentUser="Admin"; document.getElementById('nav-history').style.display='flex'; document.getElementById('nav-logs').style.display='flex'; document.getElementById('clear-logs-btn').style.display='block'; }
@@ -188,13 +198,13 @@
         function loadCalendar() { db.ref('calendar').on('value', s => { let h = ''; s.forEach(c => { let cal = c.val(); h += `<div class="card border-l-8 border-yellow-500"><div class="flex justify-between"><span class="text-[10px] font-black bg-slate-100 px-2 py-1 rounded">${cal.date}</span><i onclick="safeDelete('calendar/${c.key}','Pierakstu','${cal.nr}')" class="fas fa-trash-alt text-red-400"></i></div><h3 class="font-black mt-1">${cal.nr}</h3><p class="text-xs uppercase opacity-60">${cal.model}</p><p class="text-sm mt-2 italic">${cal.task}</p></div>`; }); document.getElementById('calendar-items').innerHTML = h; }); }
         function loadClients() { db.ref('clients').on('value', s => { let h=''; let count=0; s.forEach(c=>{ count++; let cl=c.val(); h+=`<div class="card text-center relative border-t-4 border-slate-700 shadow-md"><i onclick="safeDelete('clients/${c.key}','Klientu','${cl.name}')" class="fas fa-trash-alt text-red-400 absolute top-2 right-2"></i><div class="font-black text-lg">${cl.name}</div><div class="text-[10px] opacity-50 uppercase">${cl.auto}</div><a href="tel:${cl.phone}" class="bg-slate-800 text-white block py-3 mt-4 rounded-xl text-xs font-black uppercase">Zvanīt</a></div>`; }); document.getElementById('client-grid').innerHTML=h; document.getElementById('stat-clients').innerText=count; }); }
         function addClient() { let n=document.getElementById('c-name').value; if(n) { db.ref('clients').push({name:n, phone:document.getElementById('c-phone').value, auto:document.getElementById('c-auto').value}); logAction(`Pievienoja klientu: ${n}`); } }
-        
+
         function loadHistory() { 
             db.ref('history').on('value', s => { 
                 let h = '', total = 0; 
                 s.forEach(c => { 
                     let r=c.val(); total+=parseFloat(r.price); 
-                    h = `<tr class="border-b"><td class="p-4"><div class="font-black">${r.nr}</div><div class="text-[10px] opacity-50">${r.date}</div></td><td class="p-4 text-xs">${r.cl}</td><td class="p-4 font-black text-green-600">${r.price}€</td><td class="p-4 text-right flex gap-3 justify-end"><i onclick="printInvoice('${c.key}')" class="fas fa-print text-blue-500 cursor-pointer"></i><i onclick="safeDelete('history/${c.key}','Vēsturi','${r.nr}')" class="fas fa-trash-alt text-red-500 cursor-pointer"></i></td></tr>` + h; 
+                    h = `<tr class="border-b"><td class="p-4"><div class="font-black">${r.nr}</div><div class="text-[10px] opacity-50">${r.date}</div></td><td class="p-4 text-xs">${r.cl}</td><td class="p-4 font-black text-green-600">${r.price}€</td><td class="p-4 text-right flex gap-3 justify-end"><i onclick="printInvoice('${c.key}')" class="fas fa-print text-blue-500 cursor-pointer p-2"></i><i onclick="safeDelete('history/${c.key}','Vēsturi','${r.nr}')" class="fas fa-trash-alt text-red-500 cursor-pointer p-2"></i></td></tr>` + h; 
                 }); 
                 document.getElementById('history-table').innerHTML = h; document.getElementById('stat-money').innerText = total.toFixed(2) + "€"; 
             }); 
