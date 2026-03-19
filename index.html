@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JTC MOTORS | ENTERPRISE v3.3</title>
+    <title>JTC MOTORS | ENTERPRISE v3.4</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -22,8 +22,18 @@
         .btn-jtc { background: #fbbf24; color: #000; font-weight: 800; padding: 12px; border-radius: 8px; width: 100%; transition: 0.2s; text-transform: uppercase; cursor: pointer; border: none; }
         #login-screen { position: fixed; inset: 0; background: #0f172a; z-index: 9999; display: flex; align-items: center; justify-content: center; }
         .img-preview { width: 45px; height: 45px; object-fit: cover; border-radius: 6px; cursor: pointer; }
-        .logout-btn { margin-top: auto; padding: 20px; border-top: 1px solid #1e293b; color: #94a3b8; font-weight: bold; cursor: pointer; transition: 0.3s; }
-        .logout-btn:hover { color: white; background: #1e293b; }
+        
+        /* LABOTS: Iziesanas pogas stils */
+        .logout-btn { 
+            padding: 14px 25px; 
+            border-top: 1px solid #1e293b; 
+            color: #f87171; 
+            font-weight: bold; 
+            cursor: pointer; 
+            transition: 0.3s;
+            margin-top: 10px;
+        }
+        .logout-btn:hover { background: #450a0a; color: white; }
     </style>
 </head>
 <body>
@@ -38,16 +48,17 @@
 
     <div id="app-sidebar" class="sidebar" style="display:none;">
         <div class="p-8 text-2xl font-black italic border-b border-slate-800 text-center text-yellow-500">JTC PRO</div>
-        <nav class="mt-6 flex-grow">
+        <nav class="mt-6">
             <div onclick="showSection('stock')" id="n-stock" class="nav-link active"><i class="fas fa-boxes mr-3"></i> Noliktava</div>
             <div onclick="showSection('repairs')" id="n-repairs" class="nav-link"><i class="fas fa-tools mr-3"></i> Serviss</div>
             <div onclick="showSection('calendar')" id="n-calendar" class="nav-link"><i class="fas fa-calendar-alt mr-3"></i> Pieraksti</div>
             <div onclick="showSection('clients')" id="n-clients" class="nav-link"><i class="fas fa-users mr-3"></i> Klienti</div>
             <div id="nav-fin" onclick="showSection('history')" class="nav-link"><i class="fas fa-file-invoice-dollar mr-3"></i> Finanses</div>
+            
+            <div class="logout-btn flex items-center" onclick="logout()">
+                <i class="fas fa-sign-out-alt mr-3"></i> IZIET
+            </div>
         </nav>
-        <div class="logout-btn flex items-center" onclick="logout()">
-            <i class="fas fa-sign-out-alt mr-3"></i> IZIET
-        </div>
     </div>
 
     <div id="app-content" class="main-content" style="display:none;">
@@ -106,8 +117,8 @@
         };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
+        let currentRole = "";
 
-        // Pārbauda sesiju pie ielādes
         window.onload = function() {
             const savedRole = sessionStorage.getItem('jtc_role');
             if(savedRole) {
@@ -148,7 +159,6 @@
 
         function loadData() { loadStock(); loadRepairs(); loadCalendar(); loadClients(); loadHistory(); }
 
-        // --- CORE FUNCTIONS ---
         function loadStock() {
             db.ref('stock').on('value', s => {
                 let h = '', opt = '<option value="">-- Bez detaļas --</option>', data = s.val(), total = 0;
