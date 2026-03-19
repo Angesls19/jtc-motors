@@ -122,7 +122,7 @@
     </div>
 
     <script>
-        // FIREBASE KONFIGURĀCIJA (Savieno ar tavu mākoni)
+        // FIREBASE KONFIGURĀCIJA
         const firebaseConfig = {
             apiKey: "AIzaSyBK20atH4pmEORbuHLCTAXaSCPUBfz9190",
             authDomain: "jtc-motors.firebaseapp.com",
@@ -134,7 +134,15 @@
 
         let cart = [];
 
-        // AUTO-LOGIN & DATU IELĀDE
+        // LIETOTĀJU SARAKSTS (5 Personas)
+        const users = {
+            "admin": "JTC-Ivars-2024",
+            "serviss": "JTC-Serviss-2024",
+            "noliktava": "JTC-Krasts-2024",
+            "birojs": "JTC-Birojs-2024",
+            "meistars": "JTC-Darbs-2024"
+        };
+
         window.onload = () => {
             initLive();
             if(localStorage.getItem("jtc_admin") === "true") {
@@ -151,14 +159,22 @@
         }
 
         function login() {
-            if(document.getElementById('u').value === 'admin' && document.getElementById('p').value === 'JTC-Ivars-2024') {
+            const enteredUser = document.getElementById('u').value;
+            const enteredPass = document.getElementById('p').value;
+
+            // Pārbauda vai lietotājs eksistē un vai parole sakrīt
+            if(users[enteredUser] && users[enteredUser] === enteredPass) {
                 localStorage.setItem("jtc_admin", "true");
+                localStorage.setItem("jtc_user_name", enteredUser); // Saglabā kurš iegājis
                 location.reload();
-            } else { alert("Nepareizi!"); }
+            } else { 
+                alert("Nepareizs lietotājvārds vai parole!"); 
+            }
         }
 
         function logoutAdmin() {
             localStorage.removeItem("jtc_admin");
+            localStorage.removeItem("jtc_user_name");
             location.reload();
         }
 
