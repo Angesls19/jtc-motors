@@ -3,242 +3,75 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JTC MOTORS | ADMIN SYSTEM</title>
+    <title>JTC MOTORS | LIVE</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
-        body { font-family: 'Inter', sans-serif; background: #f8fafc; color: #1e293b; margin: 0; }
-        .sidebar { width: 260px; background: #000; height: 100vh; position: fixed; padding: 30px 20px; color: #fff; z-index: 100; }
-        .main { margin-left: 260px; padding: 40px; min-height: 100vh; }
-        .card { background: #fff; padding: 25px; border: 2px solid #e2e8f0; border-radius: 12px; margin-bottom: 25px; }
-        .input-label { font-weight: 700; font-size: 11px; text-transform: uppercase; color: #64748b; margin-bottom: 4px; display: block; }
-        .jtc-field { border: 2px solid #cbd5e1 !important; padding: 12px; width: 100%; background: #fff !important; color: #000 !important; font-size: 15px; font-weight: 600; margin-bottom: 12px; border-radius: 8px; }
-        .btn-black { background: #000; color: #fff; padding: 12px 24px; font-weight: 800; border-radius: 8px; text-transform: uppercase; width: 100%; cursor: pointer; border: none; }
-        .nav-link { padding: 14px 20px; margin-bottom: 8px; border-radius: 8px; font-weight: 700; cursor: pointer; display: flex; align-items: center; }
-        .nav-link.active { background: #fff; color: #000; }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
-        table { width: 100%; border-collapse: separate; border-spacing: 0 8px; }
-        th { color: #64748b; font-size: 11px; text-transform: uppercase; padding: 10px 20px; text-align: left; }
-        td { background: #fff; padding: 15px 20px; border-top: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; font-weight: 700; color: #000; }
-        td:first-child { border-left: 1px solid #e2e8f0; border-radius: 10px 0 0 10px; }
-        td:last-child { border-right: 1px solid #e2e8f0; border-radius: 0 10px 10px 0; }
-        #scanner-container { width: 100%; height: 250px; border: 3px solid #000; border-radius: 12px; background: #000; overflow: hidden; display: none; margin-bottom: 15px; }
-        #scanner-container video { width: 100%; height: 100%; object-fit: cover; }
-        @media print { body * { visibility: hidden; } #print-area, #print-area * { visibility: visible; } #print-area { position: fixed; left: 0; top: 0; width: 100%; text-align: center; } }
+        body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; margin: 0; }
+        .sidebar { width: 260px; background: #000; height: 100vh; position: fixed; padding: 30px 20px; color: #fff; z-index: 50; }
+        .main-content { margin-left: 260px; padding: 40px; }
+        .admin-card { background: #ffffff; border-radius: 16px; padding: 25px; border: 1px solid #e2e8f0; margin-bottom: 25px; }
+        .jtc-input { width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 10px; font-weight: 600; margin-bottom: 12px; }
+        .btn-jtc { background: #000; color: #fff; padding: 14px; border-radius: 10px; font-weight: 800; text-transform: uppercase; width: 100%; cursor: pointer; }
+        .jtc-table td { background: #fff; padding: 15px 20px; border-bottom: 1px solid #f1f5f9; font-weight: 700; color: #000; }
+        @media (max-width: 768px) { .sidebar { width: 70px; } .sidebar span, .sidebar h2 { display: none; } .main-content { margin-left: 70px; padding: 20px; } }
     </style>
 </head>
-<body onload="initSystem()">
+<body>
 
-<div id="login-screen" class="fixed inset-0 bg-black flex items-center justify-center z-[10001]">
-    <div class="bg-white p-10 rounded-2xl w-80 text-center border-4 border-[#d4af37]">
-        <h1 class="text-3xl font-black mb-6 italic">JTC <span class="text-[#d4af37]">ADMIN</span></h1>
-        <input id="pass-input" type="password" placeholder="Parole" class="jtc-field text-center">
-        <button onclick="checkLogin()" class="btn-black text-[#d4af37]">Ieeit</button>
+<div id="login-screen" class="fixed inset-0 bg-black flex items-center justify-center z-[9999]">
+    <div class="bg-white p-10 rounded-3xl w-80 text-center border-t-8 border-[#d4af37]">
+        <h1 class="text-3xl font-black mb-8 italic">JTC <span class="text-[#d4af37]">LIVE</span></h1>
+        <input id="user-name" type="text" placeholder="Lietotājs" class="jtc-input text-center">
+        <input id="pass" type="password" placeholder="Parole" class="jtc-input text-center mb-6">
+        <button onclick="login()" class="btn-jtc">Ieeit</button>
     </div>
 </div>
 
-<div id="admin-panel" style="display:none;">
+<div id="app" class="hidden">
     <div class="sidebar">
-        <h2 class="text-2xl font-black mb-10 italic text-[#d4af37]">JTC MOTORS</h2>
-        <div onclick="openTab('stk')" class="nav-link active" id="btn-stk"><i class="fas fa-boxes mr-3"></i> Noliktava</div>
-        <div onclick="openTab('rep')" class="nav-link" id="btn-rep"><i class="fas fa-tools mr-3"></i> Serviss</div>
-        <div onclick="openTab('cli')" class="nav-link" id="btn-cli"><i class="fas fa-users mr-3"></i> Klienti</div>
-        <div onclick="openTab('sys')" class="nav-link" id="btn-sys"><i class="fas fa-sync mr-3"></i> Dati (Import)</div>
-    </div>
-
-    <div class="main">
-        <div id="stk" class="tab-content active">
-            <h2 class="text-3xl font-black mb-8 italic">Noliktavas Uzskaite</h2>
-            <div class="card grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div>
-                    <label class="input-label">Prece</label><input id="in-n" class="jtc-field">
-                    <div class="grid grid-cols-3 gap-3">
-                        <div><label class="input-label">Cena €</label><input id="in-p" class="jtc-field"></div>
-                        <div><label class="input-label">Skaits</label><input id="in-q" class="jtc-field" value="1"></div>
-                        <div><label class="input-label">Plaukts</label><input id="in-sh" class="jtc-field" placeholder="A1"></div>
-                    </div>
-                    <label class="input-label">EAN</label>
-                    <div class="flex gap-2 mb-4">
-                        <input id="in-ean" class="jtc-field bg-slate-50 !mb-0" readonly>
-                        <button onclick="toggleScanner()" class="bg-[#d4af37] px-4 rounded-lg border-2 border-black"><i class="fas fa-camera text-black"></i></button>
-                    </div>
-                    <button onclick="addItem()" class="btn-black">Pievienot preču sarakstam</button>
-                </div>
-                <div id="scanner-container"></div>
-            </div>
-            <table><thead><tr><th>Prece</th><th>Plaukts</th><th>Cena</th><th>Skaits</th><th>EAN</th><th class="text-right">Darbība</th></tr></thead><tbody id="stk-body"></tbody></table>
-        </div>
-
-        <div id="rep" class="tab-content">
-            <h2 class="text-3xl font-black mb-8 italic">Servisa Rinda</h2>
-            <div class="card grid grid-cols-3 gap-4">
-                <input id="r-nr" class="jtc-field" placeholder="Auto Nr.">
-                <input id="r-cl" class="jtc-field" placeholder="Klients">
-                <input id="r-jb" class="jtc-field" placeholder="Darbs">
-                <button onclick="addRep()" class="btn-black col-span-3">Pievienot rindu</button>
-            </div>
-            <table class="w-full"><thead><tr><th>Auto</th><th>Klients</th><th>Darbs</th><th class="text-right">Dzēst</th></tr></thead><tbody id="rep-body"></tbody></table>
-        </div>
-
-        <div id="cli" class="tab-content">
-            <h2 class="text-3xl font-black mb-8 italic">Klientu Bāze</h2>
-            <div class="card grid grid-cols-2 gap-4">
-                <input id="c-nm" class="jtc-field" placeholder="Vārds / Uzņēmums">
-                <input id="c-ph" class="jtc-field" placeholder="Telefons">
-                <button onclick="addCli()" class="btn-black col-span-2">Saglabāt</button>
-            </div>
-            <table class="w-full"><thead><tr><th>Vārds</th><th>Telefons</th><th class="text-right">Dzēst</th></tr></thead><tbody id="cli-body"></tbody></table>
-        </div>
-
-        <div id="sys" class="tab-content">
-            <h2 class="text-3xl font-black mb-8 italic text-blue-600">Datu Sinhronizācija</h2>
-            <div class="card text-center">
-                <p class="mb-6 text-gray-500 font-bold uppercase text-xs">Pārcel datus starp telefonu un datoru</p>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <button onclick="exportData()" class="btn-black bg-green-700">1. Eksportēt datus (Backup)</button>
-                    <div>
-                        <input type="file" id="importFile" class="hidden" onchange="importData(event)">
-                        <button onclick="document.getElementById('importFile').click()" class="btn-black bg-blue-700">2. Importēt failu</button>
-                    </div>
-                </div>
-                <button onclick="clearAllData()" class="mt-20 text-red-500 font-bold uppercase text-[10px] opacity-30">Nodzēst visu atmiņu</button>
-            </div>
+        <h2 class="text-2xl font-black italic mb-12 text-[#d4af37]">JTC</h2>
+        <nav class="space-y-4">
+            <div class="p-4 bg-white text-black rounded-xl font-bold"><i class="fas fa-sync-alt mr-3 text-blue-500"></i> <span>Kopējā Noliktava</span></div>
+        </nav>
+        <div class="absolute bottom-10 left-8 text-xs font-bold text-gray-400 uppercase tracking-widest">
+            Lietotājs: <br><span id="current-user" class="text-white text-base italic"></span>
         </div>
     </div>
-</div>
 
-<div id="print-area"></div>
+    <div class="main-content">
+        <header class="flex justify-between items-center mb-8">
+            <h1 class="text-3xl font-black italic">Noliktava <span class="text-gray-400">Cloud</span></h1>
+            <button onclick="location.reload()" class="text-xs font-bold text-red-500 uppercase">Iziet</button>
+        </header>
 
-<script>
-let stock = [], repairs = [], clients = [];
+        <div class="admin-card grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="space-y-2">
+                <input id="n" class="jtc-input" placeholder="Preces nosaukums">
+                <div class="grid grid-cols-3 gap-2">
+                    <input id="p" class="jtc-input" placeholder="Cena €">
+                    <input id="q" class="jtc-input" value="1" placeholder="Skaits">
+                    <input id="sh" class="jtc-input" placeholder="Plaukts">
+                </div>
+                <input id="ean" class="jtc-input bg-gray-50 mb-4" readonly>
+                <button onclick="addToFirebase()" class="btn-jtc">Pievienot visiem</button>
+            </div>
+            <div class="bg-blue-50 rounded-2xl flex flex-col items-center justify-center p-6 border-2 border-dashed border-blue-200">
+                <i class="fas fa-cloud-upload-alt text-blue-400 text-3xl mb-2"></i>
+                <p class="text-blue-800 font-bold text-[10px] uppercase text-center tracking-tighter">Sinhronizācija aktīva: Visi lietotāji redz datus uzreiz.</p>
+            </div>
+        </div>
 
-function initSystem() {
-    stock = JSON.parse(localStorage.getItem('JTC_STK')) || [];
-    repairs = JSON.parse(localStorage.getItem('JTC_REP')) || [];
-    clients = JSON.parse(localStorage.getItem('JTC_CLI')) || [];
-    render();
-}
-
-function checkLogin() {
-    if(document.getElementById('pass-input').value === 'admin') {
-        document.getElementById('login-screen').style.display='none';
-        document.getElementById('admin-panel').style.display='block';
-        genEAN();
-    }
-}
-
-function genEAN() { document.getElementById('in-ean').value = "JTC" + Math.floor(100000 + Math.random() * 900000); }
-
-function render() {
-    // Noliktavas zīmēšana
-    document.getElementById('stk-body').innerHTML = stock.map((i, idx) => `
-        <tr><td>${i.n}</td><td class="text-blue-600">${i.sh || '-'}</td><td>${i.p}€</td><td>${i.q}</td>
-        <td><svg id="bc-${idx}" style="height:30px; width:100px;"></svg></td>
-        <td class="text-right">
-            <button onclick="printOnlyEan(${idx})" class="text-blue-500 mr-4"><i class="fas fa-print"></i></button>
-            <button onclick="stock.splice(${idx},1);render()" class="text-red-400"><i class="fas fa-trash"></i></button>
-        </td></tr>`).join('');
-    stock.forEach((i, idx) => JsBarcode(`#bc-${idx}`, i.ean, { format: "CODE128", width: 1, height: 25, displayValue: false }));
-    
-    // Servisa zīmēšana
-    document.getElementById('rep-body').innerHTML = repairs.map((r, idx) => `<tr><td>${r.nr}</td><td>${r.cl}</td><td>${r.jb}</td><td class="text-right"><button onclick="repairs.splice(${idx},1);render()" class="text-red-400">X</button></td></tr>`).join('');
-    
-    // Klientu zīmēšana
-    document.getElementById('cli-body').innerHTML = clients.map((c, idx) => `<tr><td>${c.nm}</td><td>${c.ph}</td><td class="text-right"><button onclick="clients.splice(${idx},1);render()" class="text-red-400">X</button></td></tr>`).join('');
-
-    localStorage.setItem('JTC_STK', JSON.stringify(stock));
-    localStorage.setItem('JTC_REP', JSON.stringify(repairs));
-    localStorage.setItem('JTC_CLI', JSON.stringify(clients));
-}
-
-function addItem() {
-    const n=document.getElementById('in-n').value, p=document.getElementById('in-p').value, q=document.getElementById('in-q').value, sh=document.getElementById('in-sh').value, ean=document.getElementById('in-ean').value;
-    if(n && p) { stock.unshift({n, p, q, sh, ean}); render(); genEAN(); document.getElementById('in-n').value=''; document.getElementById('in-p').value=''; }
-}
-
-function addRep() {
-    const nr=document.getElementById('r-nr').value;
-    if(nr) { repairs.unshift({nr:nr.toUpperCase(), cl:document.getElementById('r-cl').value, jb:document.getElementById('r-jb').value}); render(); document.getElementById('r-nr').value=''; }
-}
-
-function addCli() {
-    const nm=document.getElementById('c-nm').value;
-    if(nm) { clients.unshift({nm, ph:document.getElementById('c-ph').value}); render(); document.getElementById('c-nm').value=''; }
-}
-
-function printOnlyEan(idx) {
-    const i = stock[idx];
-    document.getElementById('print-area').innerHTML = `<div style="width:40mm;padding:5px;text-align:center;color:black;"><div style="font-size:10px;font-weight:700;">${i.n}</div><svg id="pbc"></svg><div style="font-size:8px;">${i.ean}</div></div>`;
-    JsBarcode("#pbc", i.ean, { format: "CODE128", width: 1.2, height: 35, displayValue: false });
-    window.print();
-}
-
-function toggleScanner() {
-    const con = document.getElementById('scanner-container');
-    if(con.style.display === 'block') { Quagga.stop(); con.style.display = 'none'; }
-    else {
-        con.style.display = 'block';
-        Quagga.init({ inputStream: { name: "Live", type: "LiveStream", target: con, constraints: { facingMode: "environment" } }, decoder: { readers: ["code_128_reader", "ean_reader"] } }, (err) => { if(!err) Quagga.start(); });
-        Quagga.onDetected((d) => { document.getElementById('in-ean').value = d.codeResult.code; toggleScanner(); });
-    }
-}
-
-function openTab(t) {
-    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-    document.querySelectorAll('.nav-link').forEach(b => b.classList.remove('active'));
-    document.getElementById(t).classList.add('active');
-    document.getElementById('btn-'+t).classList.add('active');
-}
-
-// --- JAUNĀS DATU FUNKCIJAS ---
-
-function exportData() {
-    const data = { stock, repairs, clients };
-    const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `JTC_Noliktava_Backup.json`;
-    a.click();
-}
-
-function importData(event) {
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        try {
-            const data = JSON.parse(e.target.result);
-            // Saglabājam ienākošos datus atmiņā
-            localStorage.setItem('JTC_STK', JSON.stringify(data.stock || []));
-            localStorage.setItem('JTC_REP', JSON.stringify(data.repairs || []));
-            localStorage.setItem('JTC_CLI', JSON.stringify(data.clients || []));
-            
-            alert("Dati ielādēti! Sistēma tūlīt atjaunosies.");
-            location.reload(); // Pārlādē lapu, lai uzreiz parādītu jaunos datus
-        } catch(err) {
-            alert("Kļūda failā! Pārliecinies, ka tas ir pareizais JTC fails.");
-        }
-    };
-    reader.readAsText(event.target.files[0]);
-}
-
-function clearAllData() {
-    if(confirm("BĪSTAMI! Tas nodzēsīs VISU. Turpināt?")) { localStorage.clear(); location.reload(); }
-}
-</script>
-</body>
-</html>
+        <table class="w-full">
             <thead>
-                <tr>
-                    <th>Prece</th>
-                    <th>Atrašanās vieta</th>
-                    <th>Cena</th>
-                    <th>Daudzums</th>
-                    <th>Svītrkods</th>
-                    <th class="text-right">Darbība</th>
+                <tr class="text-[10px] text-gray-400 uppercase font-black">
+                    <th class="text-left px-5 pb-2">Prece</th><th class="text-left px-5 pb-2">Plaukts</th><th class="text-left px-5 pb-2">Detaļas</th><th class="text-left px-5 pb-2">EAN</th><th class="text-right px-5 pb-2">Darbība</th>
                 </tr>
             </thead>
             <tbody id="list"></tbody>
@@ -247,179 +80,79 @@ function clearAllData() {
 </div>
 
 <script>
-    let stock = JSON.parse(localStorage.getItem('JTC_STK')) || [];
+    // --- TAVA KONFIGURĀCIJA ---
+    const firebaseConfig = {
+        apiKey: "AIzaSyBK20atH4pmEORbuHLCTAXaSCPUBfz9190",
+        authDomain: "jtc-motors.firebaseapp.com",
+        databaseURL: "https://jtc-motors-default-rtdb.europe-west1.firebasedatabase.app",
+        projectId: "jtc-motors",
+        storageBucket: "jtc-motors.firebasestorage.app",
+        messagingSenderId: "188249204836",
+        appId: "1:188249204836:web:d32fe0d71a9dc2c0e71771"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    const users = {
+        "Andris": "jtc1", 
+        "Juris": "jtc2", 
+        "Janis": "jtc3", 
+        "Gints": "jtc4", 
+        "Ivars": "admin123"
+    };
 
     function login() {
-        if(document.getElementById('pass').value === 'admin') {
+        const u = document.getElementById('user-name').value;
+        const p = document.getElementById('pass').value;
+        if (users[u] && users[u] === p) {
             document.getElementById('login-screen').remove();
             document.getElementById('app').classList.remove('hidden');
-            gen();
-            render();
+            document.getElementById('current-user').innerText = u;
+            genEAN();
+            loadFromFirebase();
+        } else {
+            alert("Nepareizs lietotājs vai parole!");
         }
     }
 
-    function gen() { document.getElementById('ean').value = "JTC" + Math.floor(100000 + Math.random() * 899999); }
+    function genEAN() { document.getElementById('ean').value = "JTC" + Math.floor(100000 + Math.random() * 899999); }
 
-    function render() {
-        const list = document.getElementById('list');
-        list.innerHTML = stock.map((i, idx) => `
-            <tr>
-                <td class="text-lg">${i.n}</td>
-                <td><span class="shelf-badge font-black">${i.sh || '-'}</span></td>
-                <td class="text-green-600">${i.p} €</td>
-                <td>${i.q} gab.</td>
-                <td><svg id="b-${idx}" class="h-8 w-32"></svg></td>
-                <td class="text-right">
-                    <button class="text-blue-500 mr-4 text-xl"><i class="fas fa-print"></i></button>
-                    <button onclick="del(${idx})" class="text-red-300 hover:text-red-600"><i class="fas fa-trash"></i></button>
-                </td>
-            </tr>
-        `).join('');
-        
-        stock.forEach((i, idx) => {
-            JsBarcode(`#b-${idx}`, i.ean, { format: "CODE128", displayValue: false, height: 30, width: 1.5 });
-        });
-        localStorage.setItem('JTC_STK', JSON.stringify(stock));
-    }
-
-    function add() {
+    function addToFirebase() {
         const n=document.getElementById('n').value, p=document.getElementById('p').value, q=document.getElementById('q').value, sh=document.getElementById('sh').value, ean=document.getElementById('ean').value;
         if(n && p) {
-            stock.unshift({n, p, q, sh, ean});
-            render(); gen();
-            document.getElementById('n').value=''; document.getElementById('p').value='';
+            db.ref('stock').push().set({ n, p, q, sh, ean });
+            document.getElementById('n').value=''; document.getElementById('p').value=''; genEAN();
+        } else {
+            alert("Aizpildi nosaukumu un cenu!");
         }
     }
 
-    function del(idx) { if(confirm("Dzēst?")) { stock.splice(idx,1); render(); } }
-</script>
-
-</body>
-</html>
-                <button onclick="addCli()" class="btn-black col-span-2">Saglabāt</button>
-            </div>
-            <table class="w-full"><thead><tr><th>Vārds</th><th>Telefons</th><th>X</th></tr></thead><tbody id="cli-body"></tbody></table>
-        </div>
-
-        <div id="sys" class="tab-content">
-            <h2 class="text-3xl font-black mb-8 italic">Datu Sinhronizācija</h2>
-            <div class="card text-center">
-                <p class="mb-6 text-gray-500">Izmanto šo, lai pārceltu datus no telefona uz datoru.</p>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <button onclick="exportData()" class="btn-black bg-green-600">1. Lejupielādēt datus (Backup)</button>
-                    <div class="relative">
-                        <input type="file" id="importFile" class="hidden" onchange="importData(event)">
-                        <button onclick="document.getElementById('importFile').click()" class="btn-black bg-blue-600">2. Augšupielādēt failu</button>
-                    </div>
-                </div>
-                <button onclick="clearAllData()" class="mt-20 text-red-500 font-bold uppercase text-[10px]">Izdzēst visu atmiņu</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div id="print-area"></div>
-
-<script>
-let stock = [], repairs = [], clients = [];
-
-function initSystem() {
-    stock = JSON.parse(localStorage.getItem('JTC_STK')) || [];
-    repairs = JSON.parse(localStorage.getItem('JTC_REP')) || [];
-    clients = JSON.parse(localStorage.getItem('JTC_CLI')) || [];
-    render();
-}
-
-function checkLogin() {
-    if(document.getElementById('pass-input').value === 'admin') {
-        document.getElementById('login-screen').style.display='none';
-        document.getElementById('admin-panel').style.display='block';
-        genEAN();
+    function loadFromFirebase() {
+        db.ref('stock').on('value', (snapshot) => {
+            const data = snapshot.val();
+            const list = document.getElementById('list');
+            list.innerHTML = '';
+            if (data) {
+                Object.keys(data).forEach((id) => {
+                    const i = data[id];
+                    list.insertAdjacentHTML('afterbegin', `
+                        <tr>
+                            <td class="px-5 text-lg">${i.n}</td>
+                            <td class="px-5"><span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-md text-sm">${i.sh || '-'}</span></td>
+                            <td class="px-5 text-gray-600">${i.p} € <span class="text-xs text-gray-400">(${i.q} gab)</span></td>
+                            <td class="px-5"><svg id="b-${id}" class="h-8 w-32"></svg></td>
+                            <td class="text-right px-5">
+                                <button onclick="deleteItem('${id}')" class="text-red-200 hover:text-red-600 transition-colors"><i class="fas fa-trash"></i></button>
+                            </td>
+                        </tr>`);
+                    JsBarcode(`#b-${id}`, i.ean, { format: "CODE128", displayValue: false, height: 25, width: 1.2 });
+                });
+            }
+        });
     }
-}
 
-function genEAN() { document.getElementById('in-ean').value = "JTC" + Math.floor(100000 + Math.random() * 900000); }
-
-function render() {
-    document.getElementById('stk-body').innerHTML = stock.map((i, idx) => `<tr><td>${i.n}</td><td class="text-blue-600 font-black">${i.sh || '-'}</td><td>${i.p}€</td><td>${i.q}</td><td><svg id="bc-${idx}" class="barcode-small"></svg></td><td class="text-right"><button onclick="printOnlyEan(${idx})" class="text-blue-500 mr-4"><i class="fas fa-print"></i></button><button onclick="stock.splice(${idx},1);render()" class="text-red-400"><i class="fas fa-trash"></i></button></td></tr>`).join('');
-    stock.forEach((i, idx) => JsBarcode(`#bc-${idx}`, i.ean, { format: "CODE128", width: 1, height: 25, displayValue: false }));
-    
-    document.getElementById('rep-body').innerHTML = repairs.map((r, idx) => `<tr><td>${r.nr}</td><td>${r.cl}</td><td>${r.jb}</td><td class="text-right"><button onclick="repairs.splice(${idx},1);render()" class="text-red-400">X</button></td></tr>`).join('');
-    document.getElementById('cli-body').innerHTML = clients.map((c, idx) => `<tr><td>${c.nm}</td><td>${c.ph}</td><td class="text-right"><button onclick="clients.splice(${idx},1);render()" class="text-red-400">X</button></td></tr>`).join('');
-
-    localStorage.setItem('JTC_STK', JSON.stringify(stock));
-    localStorage.setItem('JTC_REP', JSON.stringify(repairs));
-    localStorage.setItem('JTC_CLI', JSON.stringify(clients));
-}
-
-function addItem() {
-    const n=document.getElementById('in-n').value, p=document.getElementById('in-p').value, q=document.getElementById('in-q').value, sh=document.getElementById('in-sh').value, ean=document.getElementById('in-ean').value;
-    if(n && p) { stock.unshift({n, p, q, sh, ean}); render(); genEAN(); document.getElementById('in-n').value=''; document.getElementById('in-p').value=''; }
-}
-
-function addRep() {
-    const nr=document.getElementById('r-nr').value;
-    if(nr) { repairs.unshift({nr:nr.toUpperCase(), cl:document.getElementById('r-cl').value, jb:document.getElementById('r-jb').value}); render(); document.getElementById('r-nr').value=''; }
-}
-
-function addCli() {
-    const nm=document.getElementById('c-nm').value;
-    if(nm) { clients.unshift({nm, ph:document.getElementById('c-ph').value}); render(); document.getElementById('c-nm').value=''; }
-}
-
-function printOnlyEan(idx) {
-    const i = stock[idx];
-    document.getElementById('print-area').innerHTML = `<div style="width:40mm;padding:5px;text-align:center;color:black;background:white;"><div style="font-size:10px;font-weight:700;">${i.n}</div><svg id="pbc"></svg><div style="font-size:8px;">${i.ean}</div></div>`;
-    JsBarcode("#pbc", i.ean, { format: "CODE128", width: 1.2, height: 35, displayValue: false });
-    window.print();
-}
-
-function toggleScanner() {
-    const con = document.getElementById('scanner-container');
-    if(con.style.display === 'block') { Quagga.stop(); con.style.display = 'none'; }
-    else {
-        con.style.display = 'block';
-        Quagga.init({ inputStream: { name: "Live", type: "LiveStream", target: con, constraints: { facingMode: "environment" } }, decoder: { readers: ["code_128_reader", "ean_reader"] } }, (err) => { if(!err) Quagga.start(); });
-        Quagga.onDetected((d) => { document.getElementById('in-ean').value = d.codeResult.code; toggleScanner(); });
-    }
-}
-
-function openTab(t) {
-    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-    document.querySelectorAll('.nav-link').forEach(b => b.classList.remove('active'));
-    document.getElementById(t).classList.add('active');
-    document.getElementById('btn-'+t).classList.add('active');
-}
-
-// EKSPORTA UN IMPORTA FUNKCIJAS
-function exportData() {
-    const data = { stock, repairs, clients };
-    const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `JTC_Dati_${new Date().toLocaleDateString()}.json`;
-    a.click();
-}
-
-function importData(event) {
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        const data = JSON.parse(e.target.result);
-        if(confirm("Vai aizvietot esošos datus ar šī faila saturu?")) {
-            stock = data.stock || [];
-            repairs = data.repairs || [];
-            clients = data.clients || [];
-            render();
-            alert("Dati veiksmīgi ielādēti!");
-        }
-    };
-    reader.readAsText(event.target.files[0]);
-}
-
-function clearAllData() {
-    if(confirm("DANGER! Tiks izdzēsti VISI dati! Turpināt?")) { localStorage.clear(); location.reload(); }
-}
+    function deleteItem(id) { if(confirm("Dzēst šo preci visiem?")) db.ref('stock/' + id).remove(); }
 </script>
 </body>
 </html>
