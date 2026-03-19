@@ -3,33 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JTC MOTORS | FULL LIVE</title>
+    <title>JTC MOTORS | LIVE SYSTEM</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
-        body { font-family: 'Inter', sans-serif; background: #f1f5f9; }
-        .sidebar { width: 260px; background: #000; height: 100vh; position: fixed; padding: 30px 20px; color: #fff; z-index: 50; }
+        body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; margin: 0; }
+        .sidebar { width: 260px; background: #000; height: 100vh; position: fixed; padding: 30px 20px; color: #fff; z-index: 100; }
         .main-content { margin-left: 260px; padding: 40px; }
-        .nav-link { padding: 12px 15px; border-radius: 10px; cursor: pointer; font-weight: 700; display: flex; align-items: center; margin-bottom: 10px; opacity: 0.6; transition: 0.2s; }
+        .nav-link { padding: 12px 15px; border-radius: 10px; cursor: pointer; font-weight: 700; display: flex; align-items: center; margin-bottom: 8px; opacity: 0.5; transition: 0.2s; }
         .nav-link.active { background: #fff; color: #000; opacity: 1; }
+        .jtc-card { background: #fff; border-radius: 20px; padding: 25px; border: 1px solid #e2e8f0; margin-bottom: 25px; }
+        .jtc-input { width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 10px; font-weight: 600; margin-bottom: 10px; }
+        .btn-jtc { background: #000; color: #fff; padding: 14px; border-radius: 10px; font-weight: 800; text-transform: uppercase; width: 100%; cursor: pointer; border: none; }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
-        .jtc-input { width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 10px; font-weight: 600; margin-bottom: 10px; }
-        .btn-jtc { background: #000; color: #fff; padding: 14px; border-radius: 10px; font-weight: 800; text-transform: uppercase; width: 100%; cursor: pointer; }
-        table td { background: #fff; padding: 15px; border-bottom: 1px solid #f1f5f9; font-weight: 700; }
-        @media (max-width: 768px) { .sidebar { width: 70px; padding: 20px 10px; } .sidebar span, .sidebar h2 { display: none; } .main-content { margin-left: 70px; padding: 20px; } }
+        @media (max-width: 768px) { .sidebar { width: 75px; padding: 20px 10px; } .sidebar span, .sidebar h2 { display: none; } .main-content { margin-left: 75px; padding: 15px; } }
     </style>
 </head>
 <body>
 
 <div id="login-screen" class="fixed inset-0 bg-black flex items-center justify-center z-[9999]">
-    <div class="bg-white p-10 rounded-3xl w-80 text-center border-t-8 border-[#d4af37]">
-        <h1 class="text-3xl font-black mb-8 italic text-black">JTC <span class="text-[#d4af37]">LIVE</span></h1>
-        <input id="user-name" type="text" placeholder="Lietotājs" class="jtc-input text-center">
+    <div class="bg-white p-10 rounded-3xl w-85 text-center shadow-2xl border-t-8 border-[#d4af37]">
+        <h1 class="text-3xl font-black mb-8 italic italic">JTC <span class="text-[#d4af37]">LIVE</span></h1>
+        <input id="user-name" type="text" placeholder="Lietotājvārds" class="jtc-input text-center">
         <input id="pass" type="password" placeholder="Parole" class="jtc-input text-center mb-6">
         <button onclick="login()" class="btn-jtc">Ieeit</button>
     </div>
@@ -37,21 +38,25 @@
 
 <div id="app" class="hidden">
     <div class="sidebar">
-        <h2 class="text-2xl font-black italic mb-10 text-[#d4af37]">JTC</h2>
+        <h2 class="text-2xl font-black italic mb-12 text-[#d4af37]">JTC MOTORS</h2>
         <nav>
             <div onclick="showTab('stk')" id="btn-stk" class="nav-link active"><i class="fas fa-boxes mr-3"></i> <span>Noliktava</span></div>
             <div onclick="showTab('rep')" id="btn-rep" class="nav-link"><i class="fas fa-tools mr-3"></i> <span>Serviss</span></div>
             <div onclick="showTab('cli')" id="btn-cli" class="nav-link"><i class="fas fa-users mr-3"></i> <span>Klienti</span></div>
         </nav>
-        <div class="absolute bottom-10 left-8 text-[10px] font-bold text-gray-400 uppercase">
-            Aktīvs: <span id="current-user" class="text-white block text-sm italic"></span>
+        <div class="absolute bottom-10 left-8">
+            <p id="current-user" class="text-white font-black italic text-lg"></p>
         </div>
     </div>
 
     <div class="main-content">
+        <header class="flex justify-between items-center mb-8">
+            <h1 id="tab-title" class="text-3xl font-black italic uppercase">Noliktava</h1>
+            <button onclick="location.reload()" class="text-xs font-bold text-red-500 uppercase">Iziet</button>
+        </header>
+
         <div id="stk" class="tab-content active">
-            <h1 class="text-3xl font-black mb-8 italic uppercase">Noliktava <span class="text-gray-400">Cloud</span></h1>
-            <div class="bg-white p-6 rounded-2xl border border-gray-200 mb-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="jtc-card grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                     <input id="n" class="jtc-input" placeholder="Preces nosaukums">
                     <div class="grid grid-cols-3 gap-2">
@@ -62,32 +67,43 @@
                     <input id="ean" class="jtc-input bg-gray-50" readonly>
                     <button onclick="addStk()" class="btn-jtc">Pievienot</button>
                 </div>
-                <div class="bg-blue-50 rounded-xl flex items-center justify-center border-2 border-dashed border-blue-200 p-4 text-center">
-                    <p class="text-blue-800 text-xs font-bold uppercase">Skenēšana un mākoņa sinhronizācija ir ieslēgta</p>
+                <div class="bg-blue-50 rounded-2xl border-2 border-dashed border-blue-200 flex flex-col items-center justify-center p-6 text-center">
+                    <p class="text-blue-800 font-bold text-xs uppercase">Sistēma sinhronizēta ar mākonī esošo bāzi.</p>
                 </div>
             </div>
-            <table class="w-full"><thead><tr class="text-[10px] text-gray-400 uppercase text-left"><th class="p-4">Prece</th><th>Plaukts</th><th>Cena/Skaits</th><th>EAN</th><th class="text-right">Darbība</th></tr></thead><tbody id="list-stk"></tbody></table>
+            <table class="w-full">
+                <thead><tr class="text-[10px] text-gray-400 uppercase text-left"><th class="p-4">Prece</th><th>Plaukts</th><th>Cena/Skaits</th><th>EAN</th><th class="text-right">Darbība</th></tr></thead>
+                <tbody id="list-stk"></tbody>
+            </table>
         </div>
 
         <div id="rep" class="tab-content">
-            <h1 class="text-3xl font-black mb-8 italic uppercase text-orange-500">Servisa <span class="text-gray-400">Rinda</span></h1>
-            <div class="bg-white p-6 rounded-2xl border border-gray-200 mb-8 flex gap-4">
-                <input id="r-nr" class="jtc-input !mb-0" placeholder="Auto Nr.">
-                <input id="r-cl" class="jtc-input !mb-0" placeholder="Klients">
-                <input id="r-jb" class="jtc-input !mb-0" placeholder="Darbs">
-                <button onclick="addRep()" class="btn-jtc w-40">Pievienot</button>
+            <div class="jtc-card">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                    <input id="r-nr" class="jtc-input" placeholder="Auto Nr.">
+                    <input id="r-cl" class="jtc-input" placeholder="Klients">
+                    <input id="r-jb" class="jtc-input" placeholder="Darbs">
+                    <button onclick="addRep()" class="btn-jtc">Pievienot</button>
+                </div>
             </div>
-            <table class="w-full"><thead><tr class="text-[10px] text-gray-400 uppercase text-left"><th class="p-4">Auto</th><th>Klients</th><th>Darbs</th><th class="text-right">Darbība</th></tr></thead><tbody id="list-rep"></tbody></table>
+            <table class="w-full">
+                <thead><tr class="text-[10px] text-gray-400 uppercase text-left"><th class="p-4">Auto Nr</th><th>Klients</th><th>Darbs</th><th class="text-right">Darbība</th></tr></thead>
+                <tbody id="list-rep"></tbody>
+            </table>
         </div>
 
         <div id="cli" class="tab-content">
-            <h1 class="text-3xl font-black mb-8 italic uppercase text-green-600">Klientu <span class="text-gray-400">Bāze</span></h1>
-            <div class="bg-white p-6 rounded-2xl border border-gray-200 mb-8 flex gap-4">
-                <input id="c-nm" class="jtc-input !mb-0" placeholder="Vārds / Uzņēmums">
-                <input id="c-ph" class="jtc-input !mb-0" placeholder="Telefons">
-                <button onclick="addCli()" class="btn-jtc w-40">Saglabāt</button>
+            <div class="jtc-card">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <input id="c-nm" class="jtc-input" placeholder="Vārds">
+                    <input id="c-ph" class="jtc-input" placeholder="Telefons">
+                    <button onclick="addCli()" class="btn-jtc">Saglabāt</button>
+                </div>
             </div>
-            <table class="w-full"><thead><tr class="text-[10px] text-gray-400 uppercase text-left"><th class="p-4">Vārds</th><th>Telefons</th><th class="text-right">Darbība</th></tr></thead><tbody id="list-cli"></tbody></table>
+            <table class="w-full">
+                <thead><tr class="text-[10px] text-gray-400 uppercase text-left"><th class="p-4">Klients</th><th>Telefons</th><th class="text-right">Darbība</th></tr></thead>
+                <tbody id="list-cli"></tbody>
+            </table>
         </div>
     </div>
 </div>
@@ -105,7 +121,14 @@
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-    const users = {"Andris":"jtc1", "Juris":"jtc2", "Janis":"jtc3", "Gints":"jtc4", "Ivars":"admin123"};
+
+    const users = {
+        "Ivars": "JTC-Ivars-2024",
+        "Andris": "JTC-Andris-99",
+        "Juris": "JTC-Juris-88",
+        "Janis": "JTC-Janis-77",
+        "Gints": "JTC-Gints-66"
+    };
 
     function login() {
         const u = document.getElementById('user-name').value;
@@ -116,7 +139,8 @@
             document.getElementById('current-user').innerText = u;
             genEAN();
             initLive();
-        } else { alert("Dati nepareizi!"); }
+            checkAndSeed(); // Pievieno parauga datus, ja tukšs
+        } else { alert("Nepareizi dati!"); }
     }
 
     function showTab(t) {
@@ -124,11 +148,12 @@
         document.querySelectorAll('.nav-link').forEach(b => b.classList.remove('active'));
         document.getElementById(t).classList.add('active');
         document.getElementById('btn-'+t).classList.add('active');
+        const titles = {'stk': 'Noliktava', 'rep': 'Servisa Rinda', 'cli': 'Klientu Bāze'};
+        document.getElementById('tab-title').innerText = titles[t];
     }
 
     function genEAN() { document.getElementById('ean').value = "JTC" + Math.floor(100000 + Math.random() * 899999); }
 
-    // FIREBASE DARBĪBAS
     function addStk() {
         const n=document.getElementById('n').value, p=document.getElementById('p').value, q=document.getElementById('q').value, sh=document.getElementById('sh').value, ean=document.getElementById('ean').value;
         if(n && p) { db.ref('stock').push().set({n, p, q, sh, ean}); document.getElementById('n').value=''; genEAN(); }
@@ -146,22 +171,38 @@
 
     function initLive() {
         db.ref('stock').on('value', s => {
-            const data = s.val(); let h = '';
-            if(data) Object.keys(data).forEach(id => { const i = data[id]; h += `<tr><td>${i.n}</td><td><span class="bg-blue-100 px-2 py-1 rounded text-xs">${i.sh||'-'}</span></td><td>${i.p}€ (${i.q}gab)</td><td><svg id="b-${id}" class="h-6 w-24"></svg></td><td class="text-right"><button onclick="db.ref('stock/${id}').remove()" class="text-red-300">X</button></td></tr>`; });
+            let h = ''; const data = s.val();
+            if(data) Object.keys(data).forEach(id => { const i = data[id]; h += `<tr><td class="p-4 font-bold">${i.n}</td><td><span class="bg-gray-200 px-2 py-1 rounded text-xs">${i.sh||'-'}</span></td><td>${i.p}€ (${i.q}gab)</td><td><svg id="b-${id}" class="h-8 w-24"></svg></td><td class="text-right"><button onclick="db.ref('stock/${id}').remove()" class="text-red-300">X</button></td></tr>`; });
             document.getElementById('list-stk').innerHTML = h;
             if(data) Object.keys(data).forEach(id => JsBarcode(`#b-${id}`, data[id].ean, {displayValue:false, height:20, width:1}));
         });
 
         db.ref('repairs').on('value', s => {
-            const data = s.val(); let h = '';
-            if(data) Object.keys(data).forEach(id => { const r = data[id]; h += `<tr><td>${r.nr}</td><td>${r.cl}</td><td>${r.jb}</td><td class="text-right"><button onclick="db.ref('repairs/${id}').remove()" class="text-red-300">X</button></td></tr>`; });
+            let h = ''; const data = s.val();
+            if(data) Object.keys(data).forEach(id => { const r = data[id]; h += `<tr><td class="p-4 font-black">${r.nr}</td><td>${r.cl}</td><td>${r.jb}</td><td class="text-right"><button onclick="db.ref('repairs/${id}').remove()" class="text-red-300">X</button></td></tr>`; });
             document.getElementById('list-rep').innerHTML = h;
         });
 
         db.ref('clients').on('value', s => {
-            const data = s.val(); let h = '';
-            if(data) Object.keys(data).forEach(id => { const c = data[id]; h += `<tr><td>${c.nm}</td><td>${c.ph}</td><td class="text-right"><button onclick="db.ref('clients/${id}').remove()" class="text-red-300">X</button></td></tr>`; });
+            let h = ''; const data = s.val();
+            if(data) Object.keys(data).forEach(id => { const c = data[id]; h += `<tr><td class="p-4">${c.nm}</td><td>${c.ph}</td><td class="text-right"><button onclick="db.ref('clients/${id}').remove()" class="text-red-300">X</button></td></tr>`; });
             document.getElementById('list-cli').innerHTML = h;
+        });
+    }
+
+    // Funkcija, kas automātiski pievieno parauga datus, ja datubāze ir tukša
+    function checkAndSeed() {
+        db.ref('stock').once('value', s => {
+            if(!s.exists()) {
+                db.ref('stock').push().set({n:"Eļļas filtrs BMW", p:"15", q:"5", sh:"A1", ean:"JTC112233"});
+                db.ref('stock').push().set({n:"Bremžu kluči Audi", p:"45", q:"2", sh:"B3", ean:"JTC445566"});
+            }
+        });
+        db.ref('repairs').once('value', s => {
+            if(!s.exists()) {
+                db.ref('repairs').push().set({nr:"LV-1234", cl:"Bērziņš", jb:"Eļļas maiņa"});
+                db.ref('repairs').push().set({nr:"JK-8821", cl:"SIA Transports", jb:"Ritošās daļas remonts"});
+            }
         });
     }
 </script>
