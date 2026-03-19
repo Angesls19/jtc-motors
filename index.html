@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JTC MOTORS | ENTERPRISE v3.1</title>
+    <title>JTC MOTORS | ENTERPRISE v3.2</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -12,14 +12,14 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
-        body { font-family: 'Inter', sans-serif; background: #f1f5f9; }
-        .sidebar { background: #0f172a; color: white; height: 100vh; position: fixed; width: 260px; z-index: 50; }
+        body { font-family: 'Inter', sans-serif; background: #f1f5f9; margin: 0; }
+        .sidebar { background: #0f172a; color: white; height: 100vh; position: fixed; width: 260px; z-index: 50; display: flex; flex-direction: column; justify-content: space-between; }
         .nav-link { display: flex; align-items: center; padding: 14px 25px; cursor: pointer; border-left: 4px solid transparent; opacity: 0.7; transition: 0.3s; }
         .nav-link.active { background: #1e293b; border-left-color: #fbbf24; opacity: 1; color: #fbbf24; }
-        .main-content { margin-left: 260px; padding: 30px; }
+        .main-content { margin-left: 260px; padding: 30px; min-height: 100vh; }
         .card { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); margin-bottom: 20px; }
         input, select, textarea { border: 1px solid #e2e8f0; padding: 12px; border-radius: 8px; width: 100%; margin-bottom: 10px; font-size: 14px; background: #f8fafc; }
-        .btn-jtc { background: #fbbf24; color: #000; font-weight: 800; padding: 12px; border-radius: 8px; width: 100%; transition: 0.2s; text-transform: uppercase; cursor: pointer; }
+        .btn-jtc { background: #fbbf24; color: #000; font-weight: 800; padding: 12px; border-radius: 8px; width: 100%; transition: 0.2s; text-transform: uppercase; cursor: pointer; border: none; }
         #login-screen { position: fixed; inset: 0; background: #0f172a; z-index: 9999; display: flex; align-items: center; justify-content: center; }
         .img-preview { width: 45px; height: 45px; object-fit: cover; border-radius: 6px; cursor: pointer; }
     </style>
@@ -29,12 +29,13 @@
     <div id="login-screen">
         <div class="bg-white p-10 rounded-3xl w-96 shadow-2xl text-center">
             <h1 class="text-4xl font-black italic mb-2">JTC <span class="text-yellow-500">MOTORS</span></h1>
-            <input id="login-pass" type="password" placeholder="Kods..." class="text-center text-xl mt-4">
+            <p class="text-gray-400 text-xs mb-8 uppercase tracking-widest">Autorizācija</p>
+            <input id="login-pass" type="password" placeholder="Kods..." class="text-center text-xl">
             <button onclick="checkLogin()" class="btn-jtc mt-4">PIESLĒGTIES</button>
         </div>
     </div>
 
-    <div class="sidebar flex flex-col justify-between">
+    <div id="app-sidebar" class="sidebar" style="display:none;">
         <div>
             <div class="p-8 text-2xl font-black italic border-b border-slate-800 text-center text-yellow-500">JTC PRO</div>
             <nav class="mt-6">
@@ -46,30 +47,17 @@
             </nav>
         </div>
         <div class="p-6 border-t border-slate-800">
-            <button onclick="location.reload()" class="text-slate-400 hover:text-white flex items-center w-full font-bold text-sm"><i class="fas fa-sign-out-alt mr-3"></i> IZIET</button>
+            <button onclick="location.reload()" class="text-slate-400 hover:text-white flex items-center w-full font-bold text-sm bg-transparent border-none cursor-pointer">
+                <i class="fas fa-sign-out-alt mr-3"></i> IZIET NO SISTĒMAS
+            </button>
         </div>
     </div>
 
-    <div class="main-content">
+    <div id="app-content" class="main-content" style="display:none;">
         <div id="admin-stats" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <div class="card bg-slate-900 text-white"><p class="text-[10px] uppercase font-bold opacity-50">Noliktava</p><h3 id="stat-stock" class="text-3xl font-black">0.00 €</h3></div>
             <div class="card border-t-4 border-green-500"><p class="text-[10px] uppercase font-bold text-gray-400">Peļņa</p><h3 id="stat-income" class="text-3xl font-black text-green-600">0.00 €</h3></div>
             <div class="card border-t-4 border-red-500"><p class="text-[10px] uppercase font-bold text-gray-400">Parādi</p><h3 id="stat-debts" class="text-3xl font-black text-red-600">0.00 €</h3></div>
-        </div>
-
-        <div id="sec-history" class="section" style="display:none;">
-            <div class="card">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-xl font-black uppercase italic">Grāmatvedība & Vēsture</h2>
-                    <button onclick="clearHistory()" class="bg-red-50 text-red-600 border border-red-200 px-4 py-2 rounded-lg text-xs font-black uppercase">Dzēst visu vēsturi</button>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-sm">
-                        <thead><tr class="text-gray-400 text-[10px] uppercase border-b pb-4"><th>Auto</th><th>Klients</th><th>Summa</th><th>Statuss</th><th>Foto</th><th class="text-right">Darbības</th></tr></thead>
-                        <tbody id="history-table"></tbody>
-                    </table>
-                </div>
-            </div>
         </div>
 
         <div id="sec-stock" class="section">
@@ -79,21 +67,56 @@
                     <input id="st-n" placeholder="Nosaukums"><input id="st-p" type="number" placeholder="Cena (€)"><input id="st-q" type="number" placeholder="Skaits"><input id="st-e" placeholder="EAN">
                     <button onclick="addStock()" class="btn-jtc">Saglabāt</button>
                 </div>
-                <div class="lg:col-span-2 card"><table class="w-full text-left"><tbody id="stock-table"></tbody></table></div>
+                <div class="lg:col-span-2 card">
+                    <table class="w-full text-left">
+                        <thead><tr class="text-[10px] text-gray-400 uppercase border-b pb-2"><th>Prece</th><th>Cena</th><th>Skaits</th><th class="text-right">Darbības</th></tr></thead>
+                        <tbody id="stock-table"></tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
         <div id="sec-repairs" class="section" style="display:none;">
-            <div class="card"><div class="grid grid-cols-1 md:grid-cols-4 gap-4"><input id="rep-nr" placeholder="Auto Nr."><input id="rep-cl" placeholder="Klients"><input id="rep-price" type="number" placeholder="Cena (€)"><select id="rep-part-select"></select><textarea id="rep-task" class="md:col-span-4" placeholder="Darba apraksts..."></textarea><button onclick="addRepair()" class="btn-jtc md:col-span-4">Pievienot rindā</button></div></div>
+            <div class="card">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <input id="rep-nr" placeholder="Auto Nr."><input id="rep-cl" placeholder="Klients"><input id="rep-price" type="number" placeholder="Cena (€)"><select id="rep-part-select"></select>
+                    <textarea id="rep-task" class="md:col-span-4" placeholder="Darba apraksts..."></textarea>
+                    <button onclick="addRepair()" class="btn-jtc md:col-span-4">Pievienot rindā</button>
+                </div>
+            </div>
             <div id="repair-list" class="grid grid-cols-1 gap-4"></div>
         </div>
 
         <div id="sec-calendar" class="section" style="display:none;">
-            <div class="card"><div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6"><input id="cal-date" type="date"><input id="cal-info" placeholder="Auto/Darbs"><input id="cal-id" type="hidden"><button id="cal-btn" onclick="addCalendar()" class="btn-jtc">Rezervēt</button></div><div id="calendar-items" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div></div>
+            <div class="card">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <input id="cal-date" type="date"><input id="cal-info" placeholder="Auto/Darbs"><input id="cal-id" type="hidden">
+                    <button id="cal-btn" onclick="addCalendar()" class="btn-jtc">Rezervēt</button>
+                </div>
+                <div id="calendar-items" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+            </div>
         </div>
 
         <div id="sec-clients" class="section" style="display:none;">
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8"><div class="card h-fit"><h4 class="font-bold text-xs uppercase text-gray-400 mb-4">Jauns klients</h4><input id="c-name" placeholder="Vārds"><input id="c-phone" placeholder="Telefons"><input id="c-auto" placeholder="Auto"><button onclick="addClient()" class="btn-jtc">Pievienot</button></div><div class="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4" id="client-grid"></div></div>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div class="card h-fit"><input id="c-name" placeholder="Vārds"><input id="c-phone" placeholder="Telefons"><input id="c-auto" placeholder="Auto"><button onclick="addClient()" class="btn-jtc">Pievienot</button></div>
+                <div class="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4" id="client-grid"></div>
+            </div>
+        </div>
+
+        <div id="sec-history" class="section" style="display:none;">
+            <div class="card">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-black uppercase italic">Vēsture</h2>
+                    <button onclick="clearHistory()" class="text-red-500 text-xs font-bold uppercase">Dzēst visu</button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead><tr class="text-gray-400 text-[10px] uppercase border-b pb-4"><th>Auto</th><th>Klients</th><th>Summa</th><th>Foto</th><th class="text-right">Darbības</th></tr></thead>
+                        <tbody id="history-table"></tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -108,56 +131,40 @@
         const db = firebase.database();
         let currentRole = "guest";
 
-        // LOGIN & INIT
         function checkLogin() {
-            const pass = document.getElementById('login-pass').value;
-            if(pass === "JTC-ADMIN-2026") { currentRole = "admin"; initApp(); }
-            else if(pass === "JTC-MEISTARS") { currentRole = "meistars"; initApp(); }
-            else { alert("Kods nepareizs!"); }
+            const pass = document.getElementById('login-pass').value.trim();
+            if(pass === "JTC-ADMIN-2026") { 
+                currentRole = "admin"; 
+                initApp(); 
+            } else if(pass === "JTC-MEISTARS") { 
+                currentRole = "meistars"; 
+                initApp(); 
+            } else { 
+                alert("Nepareizs kods!"); 
+            }
         }
-        function initApp() { document.getElementById('login-screen').style.display = 'none'; if(currentRole === "meistars") { document.getElementById('admin-stats').style.display = 'none'; document.getElementById('nav-fin').style.display = 'none'; } loadData(); }
+
+        function initApp() {
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('app-sidebar').style.display = 'flex';
+            document.getElementById('app-content').style.display = 'block';
+            
+            if(currentRole === "meistars") {
+                document.getElementById('admin-stats').style.display = 'none';
+                document.getElementById('nav-fin').style.display = 'none';
+            }
+            loadData();
+        }
+
         function loadData() { loadStock(); loadRepairs(); loadCalendar(); loadClients(); loadHistory(); }
 
-        // FINANSES / VĒSTURE (LABOTS AR DZĒŠANAS POGĀM)
-        function loadHistory() {
-            db.ref('history').on('value', s => {
-                let h = '', data = s.val(), income = 0, debt = 0;
-                if(data) Object.keys(data).reverse().forEach(id => {
-                    let r = data[id];
-                    if(r.paid) income += parseFloat(r.price || 0); else debt += parseFloat(r.price || 0);
-                    let imgHtml = r.img ? `<img src="${r.img}" onclick="window.open(this.src)" class="img-preview">` : '-';
-                    h += `<tr class="border-b hover:bg-slate-50 transition">
-                        <td class="py-4 font-bold text-slate-700">${r.nr}</td>
-                        <td class="text-xs"><b>${r.cl}</b></td>
-                        <td class="font-bold">${r.price}€</td>
-                        <td>${r.paid ? '<span class="text-green-600 font-bold">OK</span>' : '<span class="text-red-600 font-black italic">PARĀDS</span>'}</td>
-                        <td>${imgHtml}</td>
-                        <td class="text-right">
-                            <div class="flex justify-end gap-3">
-                                <button onclick="downloadInvoice('${r.nr}','${r.cl}','${r.price}','${r.task}')" class="text-blue-500 hover:text-blue-700"><i class="fas fa-file-pdf"></i></button>
-                                <button onclick="deleteHistoryItem('${id}')" class="text-red-300 hover:text-red-500"><i class="fas fa-trash-alt"></i></button>
-                            </div>
-                        </td>
-                    </tr>`;
-                });
-                document.getElementById('history-table').innerHTML = h;
-                if(currentRole === "admin") {
-                    document.getElementById('stat-income').innerText = income.toFixed(2) + " €";
-                    document.getElementById('stat-debts').innerText = debt.toFixed(2) + " €";
-                }
-            });
-        }
-
-        function deleteHistoryItem(id) { if(confirm("Vai tiešām izdzēst šo ierakstu no vēstures?")) db.ref('history/' + id).remove(); }
-        function clearHistory() { if(confirm("UZMANĪBU! Šis izdzēsīs VISU vēsturi un peļņas rādītājus. Turpināt?")) db.ref('history').remove(); }
-
-        // --- PĀRĒJĀS STANDARTA FUNKCIJAS (STOCK, REPAIRS, CALENDAR, ETC) ---
+        // --- VISAS FUNKCIJAS NO IEPRIEKŠĒJĀM VERSIJĀM ---
         function loadStock() {
             db.ref('stock').on('value', s => {
-                let h = '', opt = '<option value="">-- Izvēlies detaļu --</option>', data = s.val(), total = 0;
+                let h = '', opt = '<option value="">-- Bez detaļas --</option>', data = s.val(), total = 0;
                 if(data) Object.keys(data).forEach(id => {
                     let i = data[id]; total += (i.p * i.q);
-                    h += `<tr class="border-b"><td class="py-3 font-bold">${i.n}</td><td>${i.p}€</td><td>${i.q} gab</td><td class="text-right"><button onclick="printEAN('${i.n}','${i.e}')" class="text-blue-400 mr-2"><i class="fas fa-barcode"></i></button><button onclick="db.ref('stock/${id}').remove()" class="text-red-300"><i class="fas fa-trash"></i></button></td></tr>`;
+                    h += `<tr class="border-b"><td class="py-3 font-bold">${i.n}</td><td>${i.p}€</td><td>${i.q} gab</td><td class="text-right"><button onclick="printEAN('${i.n}','${i.e}')" class="text-blue-500 mr-2"><i class="fas fa-barcode"></i></button><button onclick="db.ref('stock/${id}').remove()" class="text-red-300"><i class="fas fa-trash"></i></button></td></tr>`;
                     opt += `<option value="${id}">${i.n} (${i.p}€)</option>`;
                 });
                 document.getElementById('stock-table').innerHTML = h;
@@ -165,7 +172,9 @@
                 if(currentRole === "admin") document.getElementById('stat-stock').innerText = total.toFixed(2) + " €";
             });
         }
+
         function addStock() { let n=document.getElementById('st-n').value, p=document.getElementById('st-p').value, q=document.getElementById('st-q').value, e=document.getElementById('st-e').value; if(n && p) db.ref('stock').push({n, p, q, e}); }
+
         function loadRepairs() {
             db.ref('repairs').on('value', s => {
                 let h = '', data = s.val();
@@ -173,21 +182,39 @@
                     let r = data[id];
                     let imgHtml = r.img ? `<img src="${r.img}" onclick="window.open(this.src)" class="img-preview mb-2">` : '';
                     h += `<div class="card flex justify-between items-center border-l-8 border-blue-500">
-                        <div><h2 class="text-2xl font-black italic">${r.nr}</h2><p class="text-sm font-bold text-gray-500">${r.cl} | ${r.price}€</p>${imgHtml}<input type="file" id="file-${id}" class="hidden" accept="image/*" onchange="uploadPhoto('${id}', this)"><button onclick="document.getElementById('file-${id}').click()" class="text-xs text-blue-500 font-bold uppercase"><i class="fas fa-camera mr-1"></i> Pievienot foto</button></div>
+                        <div><h2 class="text-2xl font-black italic">${r.nr}</h2><p class="text-sm font-bold text-gray-500">${r.cl} | ${r.price}€</p>${imgHtml}<input type="file" id="file-${id}" class="hidden" accept="image/*" onchange="uploadPhoto('${id}', this)"><button onclick="document.getElementById('file-${id}').click()" class="text-xs text-blue-500 font-bold uppercase"><i class="fas fa-camera mr-1"></i> Foto</button></div>
                         <div class="flex gap-2"><button onclick="finishRepair('${id}', true)" class="bg-green-500 text-white px-4 py-2 rounded-xl font-bold">GATAVS</button><button onclick="finishRepair('${id}', false)" class="bg-red-500 text-white px-4 py-2 rounded-xl font-bold">PARĀDS</button></div></div>`;
                 });
                 document.getElementById('repair-list').innerHTML = h;
             });
         }
+
         function uploadPhoto(id, input) { const file = input.files[0]; const reader = new FileReader(); reader.onloadend = function() { db.ref('repairs/' + id).update({ img: reader.result }); }; if (file) reader.readAsDataURL(file); }
+        
         function addRepair() {
-            let nr=document.getElementById('rep-nr').value.toUpperCase(), cl=document.getElementById('rep-cl').value, pr=parseFloat(document.getElementById('rep-price').value), task=document.getElementById('rep-task').value, partId=document.getElementById('rep-part-select').value;
+            let nr=document.getElementById('rep-nr').value.toUpperCase(), cl=document.getElementById('rep-cl').value, pr=parseFloat(document.getElementById('rep-price').value || 0), task=document.getElementById('rep-task').value, partId=document.getElementById('rep-part-select').value;
             if(nr) {
                 if(partId) { db.ref('stock/'+partId).once('value', s => { let item = s.val(); db.ref('stock/'+partId).update({q: item.q - 1}); pr += parseFloat(item.p); db.ref('repairs').push({nr, cl, price: pr, task, date: new Date().toLocaleDateString()}); });
                 } else { db.ref('repairs').push({nr, cl, price: pr, task, date: new Date().toLocaleDateString()}); }
             }
         }
+
         function finishRepair(id, paid) { db.ref('repairs/'+id).once('value', s => { let d = s.val(); d.paid = paid; db.ref('history').push(d); db.ref('repairs/'+id).remove(); }); }
+
+        function loadHistory() {
+            db.ref('history').on('value', s => {
+                let h = '', data = s.val(), income = 0, debt = 0;
+                if(data) Object.keys(data).reverse().forEach(id => {
+                    let r = data[id];
+                    if(r.paid) income += parseFloat(r.price || 0); else debt += parseFloat(r.price || 0);
+                    let imgHtml = r.img ? `<img src="${r.img}" onclick="window.open(this.src)" class="img-preview">` : '-';
+                    h += `<tr class="border-b"><td class="py-4 font-bold">${r.nr}</td><td>${r.cl}</td><td>${r.price}€</td><td>${imgHtml}</td><td class="text-right flex justify-end gap-2"><button onclick="downloadInvoice('${r.nr}','${r.cl}','${r.price}','${r.task}')" class="text-blue-500"><i class="fas fa-file-pdf"></i></button><button onclick="db.ref('history/${id}').remove()" class="text-red-300"><i class="fas fa-trash-alt"></i></button></td></tr>`;
+                });
+                document.getElementById('history-table').innerHTML = h;
+                if(currentRole === "admin") { document.getElementById('stat-income').innerText = income.toFixed(2) + " €"; document.getElementById('stat-debts').innerText = debt.toFixed(2) + " €"; }
+            });
+        }
+
         function printEAN(name, ean) { let w = window.open('', '', 'width=400,height=300'); w.document.write(`<html><body style="text-align:center;padding:20px;font-family:sans-serif;"><h2 style="margin:0">${name}</h2><svg id="barcode"></svg><script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"><\/script><script>JsBarcode("#barcode", "${ean}", {width:2, height:60}); setTimeout(()=>{window.print();window.close();},500);<\/script></body></html>`); }
         function loadCalendar() { db.ref('calendar').on('value', s => { let h = '', data = s.val(); if(data) Object.keys(data).forEach(id => { let c = data[id]; h += `<div class="bg-white border p-4 rounded-xl flex justify-between"><div><span class="block text-xs font-bold text-yellow-600">${c.date}</span><b>${c.info}</b></div><button onclick="editCalendar('${id}', '${c.date}', '${c.info}')" class="text-blue-500 text-xs font-bold">LABOT</button></div>`; }); document.getElementById('calendar-items').innerHTML = h; }); }
         function addCalendar() { let d=document.getElementById('cal-date').value, i=document.getElementById('cal-info').value, id=document.getElementById('cal-id').value; if(d && i) { if(id) db.ref('calendar/'+id).update({date:d, info:i}); else db.ref('calendar').push({date:d, info:i}); document.getElementById('cal-id').value = ''; document.getElementById('cal-btn').innerText = "Rezervēt"; } }
@@ -195,6 +222,7 @@
         function loadClients() { db.ref('clients').on('value', s => { let h = '', data = s.val(); if(data) Object.keys(data).forEach(id => { let c = data[id]; h += `<div class="bg-white border p-4 rounded-xl text-center border-t-4 border-yellow-500"><div class="font-bold">${c.name}</div><div class="text-xs text-gray-400 mb-2">${c.auto}</div><a href="tel:${c.phone}" class="bg-green-500 text-white block py-2 rounded font-bold text-xs">ZVANĪT</a></div>`; }); document.getElementById('client-grid').innerHTML = h; }); }
         function addClient() { let n=document.getElementById('c-name').value, p=document.getElementById('c-phone').value, a=document.getElementById('c-auto').value; if(n) db.ref('clients').push({name:n, phone:p, auto:a}); }
         function downloadInvoice(nr, cl, pr, task) { const { jsPDF } = window.jspdf; const doc = new jsPDF(); doc.text(`JTC MOTORS - ${nr}`, 20, 20); doc.text(`Klients: ${cl}`, 20, 30); doc.text(`Summa: ${pr} EUR`, 20, 40); doc.save(`Rekins_${nr}.pdf`); }
+        function clearHistory() { if(confirm("Dzēst visu vēsturi?")) db.ref('history').remove(); }
         function showSection(s) { document.querySelectorAll('.section').forEach(x => x.style.display = 'none'); document.querySelectorAll('.nav-link').forEach(x => x.classList.remove('active')); document.getElementById('sec-'+s).style.display = 'block'; document.getElementById('n-'+s).classList.add('active'); }
     </script>
 </body>
