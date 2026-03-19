@@ -151,8 +151,8 @@
         function checkLogin() {
             const p = document.getElementById('login-pass').value;
             if(p === "globus@2026") { currentUser="Admin"; document.getElementById('nav-history').style.display='flex'; document.getElementById('nav-logs').style.display='flex'; document.getElementById('clear-logs-btn').style.display='block'; }
-            else if(p === "JTC-BIROJS-2026") { currentUser="Birojs"; document.getElementById('nav-history').style.display='flex'; }
-            else if(p === "JTC-MEISTARS-2026") { currentUser="Meistars"; document.querySelectorAll('#box-val, #box-money, #box-debt').forEach(el => el.style.display='none'); }
+            else if(p === "JTC-ADMIN-2026") { currentUser="Birojs"; document.getElementById('nav-history').style.display='flex'; }
+            else if(p === "JTC-MEISTARS") { currentUser="Meistars"; document.querySelectorAll('#box-val, #box-money, #box-debt').forEach(el => el.style.display='none'); }
             else { alert("Kļūda!"); logout(); return; }
             localStorage.setItem('jt_motors_pass_v2', p);
             document.getElementById('login-screen').style.display='none'; document.getElementById('app-sidebar').style.display='flex'; document.getElementById('app-content').style.display='block'; document.getElementById('app-header').style.display='flex';
