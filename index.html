@@ -3,130 +3,122 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JTCMotors | Sistēma</title>
+    <title>JTC MOTORS | Vadības Sistēma</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;700;900&family=Inter:wght@400;600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; color: #1f2937; margin: 0; }
         
-        :root { --gold: #d4af37; --bg-dark: #050505; }
-        body { font-family: 'Montserrat', sans-serif; background-color: var(--bg-dark); color: #ffffff; }
+        /* Sidebar stils */
+        .sidebar { background: #111827; color: white; height: 100vh; position: fixed; width: 260px; transition: 0.3s; }
+        .nav-link { display: flex; align-items: center; padding: 15px 25px; cursor: pointer; transition: 0.2s; border-left: 4px solid transparent; }
+        .nav-link:hover { background: #1f2937; }
+        .nav-link.active { background: #1f2937; border-left-color: #d4af37; color: #d4af37; }
 
-        /* MĀJASLAPAS STILS (Tumšs) */
-        .hero-section { position: relative; height: 100vh; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-        .hero-image-bg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: url('1000065317.png'); background-size: cover; background-position: center; opacity: 0.4; z-index: 1; }
-        .hero-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle, rgba(0,0,0,0) 0%, rgba(5,5,5,1) 85%); z-index: 2; }
-        .gold-gradient-text { background: linear-gradient(to bottom, #f9e1a9 0%, #d4af37 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .gold-btn { border: 1px solid var(--gold); color: var(--gold); padding: 12px 35px; text-transform: uppercase; font-size: 12px; font-weight: 700; transition: 0.4s; cursor: pointer; display: inline-block; }
-        .gold-btn:hover { background: var(--gold); color: #000; }
+        /* Satura daļa */
+        .main-content { margin-left: 260px; padding: 40px; }
+        .card { background: white; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); padding: 25px; border: 1px solid #e5e7eb; }
         
-        /* VADĪBAS PANEĻA STILS (Gaišs un tīrs) */
-        #admin-panel { 
-            display: none; position: fixed; inset: 0; 
-            background: #f4f7f6; /* Gaiši pelēks fons */
-            color: #333; z-index: 4000; overflow-y: auto; font-family: 'Inter', sans-serif;
-        }
-        .admin-card { background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); padding: 25px; border: 1px solid #e1e8e5; }
-        .admin-input { background: #fff !important; border: 1px solid #ccd6d2 !important; color: #333 !important; padding: 10px; border-radius: 4px; width: 100%; margin-bottom: 10px; }
-        .admin-input:focus { border-color: var(--gold) !important; outline: none; }
-        
-        .admin-table { width: 100%; border-collapse: collapse; background: white; }
-        .admin-table th { background: #f8faf9; color: #666; font-size: 11px; text-transform: uppercase; padding: 15px; border-bottom: 2px solid #eee; text-align: left; }
-        .admin-table td { padding: 15px; border-bottom: 1px solid #eee; color: #444; font-size: 14px; }
-        .admin-table tr:hover { background: #fdfdfd; }
+        /* Ievades lauki */
+        input, select { background: #f9fafb; border: 1px solid #d1d5db; padding: 10px; border-radius: 6px; width: 100%; margin-bottom: 12px; outline: none; }
+        input:focus { border-color: #d4af37; ring: 2px ring-[#d4af37]; }
 
-        .status-badge { padding: 5px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; }
-        .st-saņemts { background: #e2e8f0; color: #475569; }
+        /* Tabula */
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th { text-align: left; font-size: 11px; text-transform: uppercase; color: #6b7280; padding: 12px; border-bottom: 2px solid #f3f4f6; }
+        td { padding: 12px; border-bottom: 1px solid #f3f4f6; font-size: 14px; }
+        
+        .barcode-svg { height: 40px; background: white; }
+        .btn-gold { background: #d4af37; color: black; font-weight: bold; padding: 10px 20px; border-radius: 6px; transition: 0.2s; }
+        .btn-gold:hover { background: #b8952d; }
+        
+        /* Login */
+        #login-screen { background: #0f172a; height: 100vh; display: flex; align-items: center; justify-content: center; }
+        .status-badge { padding: 4px 10px; border-radius: 99px; font-size: 11px; font-weight: 600; }
+        .st-saņemts { background: #f3f4f6; color: #374151; }
         .st-procesā { background: #fef3c7; color: #92400e; }
         .st-gatavs { background: #dcfce7; color: #166534; }
-
-        /* Login Modal */
-        #login-modal { background: rgba(0,0,0,0.9); }
-        .login-card { background: white; color: #333; padding: 40px; border-radius: 15px; width: 350px; text-align: center; }
     </style>
 </head>
 <body>
 
-    <nav id="navbar" class="fixed w-full z-50 py-6 px-10 flex justify-between items-center bg-black/50 backdrop-blur-md">
-        <div class="text-2xl font-black italic"><span class="gold-gradient-text">JTC</span>MOTORS</div>
-        <div class="hidden md:flex space-x-10 text-[10px] uppercase font-bold tracking-widest">
-            <a href="#sakums">Sākums</a><a href="#serviss">Serviss</a><a href="#veikals">Veikals</a>
-            <button onclick="checkAdminStatus()" class="text-[#d4af37]"><i class="fas fa-user-shield"></i> Ieiet</button>
-        </div>
-    </nav>
-
-    <section id="sakums" class="hero-section">
-        <div class="hero-image-bg"></div><div class="hero-overlay"></div>
-        <div class="hero-content">
-            <h1 class="text-7xl md:text-9xl font-black italic tracking-tighter uppercase mb-6">JTCMOTORS</h1>
-            <a href="#veikals" class="gold-btn">Apskatīt Veikalu</a>
-        </div>
-    </section>
-
-    <section id="veikals" class="py-20 px-10 bg-[#080808]">
-        <h2 class="text-4xl font-black italic uppercase mb-10">Veikals<span class="gold-gradient-text">.</span></h2>
-        <div id="product-grid" class="grid grid-cols-1 md:grid-cols-4 gap-6"></div>
-    </section>
-
-    <div id="admin-panel">
-        <div class="max-w-7xl mx-auto py-10 px-6">
-            <div class="flex justify-between items-center mb-8 bg-white p-6 rounded-lg shadow-sm">
-                <div>
-                    <h2 class="text-2xl font-black text-gray-800 uppercase italic">JTC <span class="text-[#d4af37]">Sistēma</span></h2>
-                    <p class="text-xs text-gray-400 mt-1" id="logged-user-display"></p>
-                </div>
-                <div class="flex gap-3">
-                    <button onclick="toggleTab('stock')" class="px-6 py-2 bg-gray-100 rounded hover:bg-gray-200 font-bold text-xs uppercase transition">Noliktava</button>
-                    <button onclick="toggleTab('repairs')" class="px-6 py-2 bg-gray-100 rounded hover:bg-gray-200 font-bold text-xs uppercase transition">Serviss</button>
-                    <button onclick="logoutAdmin()" class="px-6 py-2 bg-red-50 text-red-600 rounded font-bold text-xs uppercase border border-red-100 hover:bg-red-100 transition">Iziet</button>
-                </div>
-            </div>
-
-            <div id="tab-stock" class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div class="admin-card h-fit">
-                    <h3 class="font-bold text-gray-500 uppercase text-xs mb-4">Pievienot jaunu preci</h3>
-                    <input id="adm-n" class="admin-input" placeholder="Preces nosaukums">
-                    <input id="adm-p" class="admin-input" type="number" placeholder="Cena (€)">
-                    <input id="adm-q" class="admin-input" type="number" placeholder="Daudzums">
-                    <button onclick="saveProduct()" class="w-full bg-[#d4af37] text-white font-bold py-3 rounded mt-2 hover:bg-[#b8952d] transition">SAGLABĀT NOLIKTAVĀ</button>
-                </div>
-                <div class="lg:col-span-2 admin-card overflow-hidden">
-                    <table class="admin-table">
-                        <thead><tr><th>Prece</th><th>Cena</th><th>Skaits</th><th>Svītrkods</th><th class="text-right">Darbības</th></tr></thead>
-                        <tbody id="stock-list"></tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div id="tab-repairs" style="display:none;" class="space-y-6">
-                <div class="admin-card">
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <input id="rep-nr" class="admin-input !mb-0" placeholder="Auto Nr.">
-                        <input id="rep-cl" class="admin-input !mb-0" placeholder="Klienta Vārds">
-                        <select id="rep-st" class="admin-input !mb-0"><option>Saņemts</option><option>Procesā</option><option>Gatavs</option></select>
-                        <button onclick="addRepair()" class="bg-gray-800 text-white font-bold rounded">PIEVIENOT RINDĀ</button>
-                    </div>
-                </div>
-                <div class="admin-card">
-                    <table class="admin-table">
-                        <thead><tr><th>Auto Nr.</th><th>Klients</th><th>Statuss</th><th>Darbība</th><th class="text-right">Dzēst</th></tr></thead>
-                        <tbody id="repairs-list"></tbody>
-                    </table>
-                </div>
-            </div>
+    <div id="login-screen">
+        <div class="bg-white p-10 rounded-2xl shadow-2xl w-96 text-center">
+            <h2 class="text-3xl font-extrabold mb-2 italic">JTC <span class="text-[#d4af37]">VADĪBA</span></h2>
+            <p class="text-gray-400 text-sm mb-8 uppercase tracking-widest">Sistēmas piekļuve</p>
+            <input id="u" placeholder="Lietotājvārds">
+            <input id="p" type="password" placeholder="Parole">
+            <button onclick="login()" class="btn-gold w-full mt-4 py-3">PIESLĒGTIES</button>
         </div>
     </div>
 
-    <div id="login-modal" class="fixed inset-0 z-[5000] hidden items-center justify-center">
-        <div class="login-card">
-            <h3 class="text-2xl font-black mb-6 uppercase italic text-gray-800">Sistēmas <span class="text-[#d4af37]">Ieeja</span></h3>
-            <input id="u" class="admin-input" placeholder="Lietotājvārds">
-            <input id="p" class="admin-input" type="password" placeholder="Parole">
-            <button onclick="login()" class="w-full bg-gray-900 text-white py-3 rounded-lg font-bold mt-4 hover:bg-black transition">PIESLĒGTIES</button>
-            <button onclick="document.getElementById('login-modal').style.display='none'" class="mt-4 text-xs text-gray-400 uppercase tracking-widest">Atpakaļ</button>
+    <div id="app" style="display:none;">
+        <div class="sidebar">
+            <div class="p-8 text-2xl font-black italic border-b border-gray-800">JTC<span class="text-[#d4af37]">MOTORS</span></div>
+            <div class="mt-6">
+                <div onclick="showSection('stock')" id="n-stock" class="nav-link active"><i class="fas fa-boxes mr-3"></i> Noliktava</div>
+                <div onclick="showSection('repairs')" id="n-repairs" class="nav-link"><i class="fas fa-tools mr-3"></i> Servisa Rinda</div>
+                <div onclick="showSection('orders')" id="n-orders" class="nav-link"><i class="fas fa-shopping-cart mr-3"></i> Pasūtījumi</div>
+                <div class="absolute bottom-0 w-full p-6 border-t border-gray-800">
+                    <p id="user-display" class="text-xs text-gray-500 mb-4 font-bold uppercase"></p>
+                    <button onclick="logout()" class="text-red-500 text-sm font-bold"><i class="fas fa-sign-out-alt mr-2"></i> IZIEIET</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div id="sec-stock" class="section">
+                <h2 class="text-3xl font-black mb-8 uppercase italic">Noliktavas Krājumi</h2>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div class="card h-fit">
+                        <h3 class="font-bold mb-4 text-gray-400 uppercase text-xs">Pievienot preci</h3>
+                        <input id="st-n" placeholder="Preces nosaukums">
+                        <input id="st-p" type="number" placeholder="Cena (€)">
+                        <input id="st-q" type="number" placeholder="Skaits">
+                        <button onclick="addStock()" class="btn-gold w-full mt-2">PIEVIENOT</button>
+                    </div>
+                    <div class="lg:col-span-2 card">
+                        <table>
+                            <thead><tr><th>Prece</th><th>Cena</th><th>Skaits</th><th>Svītrkods</th><th class="text-right">Darbība</th></tr></thead>
+                            <tbody id="stock-table"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="sec-repairs" class="section" style="display:none;">
+                <h2 class="text-3xl font-black mb-8 uppercase italic">Servisa Darbi</h2>
+                <div class="card mb-8">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <input id="rep-nr" class="!mb-0" placeholder="Auto Nr.">
+                        <input id="rep-cl" class="!mb-0" placeholder="Klients">
+                        <select id="rep-st" class="!mb-0"><option>Saņemts</option><option>Procesā</option><option>Gatavs</option></select>
+                        <button onclick="addRepair()" class="btn-gold">REĢISTRĒT</button>
+                    </div>
+                </div>
+                <div class="card">
+                    <table>
+                        <thead><tr><th>Auto Nr.</th><th>Klients</th><th>Statuss</th><th>Mainīt</th><th class="text-right">Dzēst</th></tr></thead>
+                        <tbody id="repair-table"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="sec-orders" class="section" style="display:none;">
+                <h2 class="text-3xl font-black mb-8 uppercase italic">Klientu Pasūtījumi</h2>
+                <div class="card">
+                    <table>
+                        <thead><tr><th>Datums</th><th>Klients</th><th>Prece</th><th>Summa</th><th class="text-right">Statuss</th></tr></thead>
+                        <tbody id="order-table">
+                            <tr><td colspan="5" class="text-center py-10 text-gray-400">Nav jaunu pasūtījumu</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -138,9 +130,8 @@
             projectId: "jtc-motors"
         };
         firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
+        const db = firebase.database();
 
-        // 5 PERSONALIZĒTI LIETOTĀJI
         const users = {
             "admin": "JTC-Ivars-2024",
             "serviss": "JTC-Serviss-2024",
@@ -150,112 +141,100 @@
         };
 
         window.onload = () => {
-            initLive();
-            if(localStorage.getItem("jtc_admin") === "true") {
-                document.getElementById('admin-panel').style.display='block';
-                document.getElementById('logged-user-display').innerText = "Pieslēdzies kā: " + localStorage.getItem("jtc_user");
+            if(localStorage.getItem("jtc_logged") === "true") {
+                showApp();
             }
         };
 
-        function checkAdminStatus() {
-            if(localStorage.getItem("jtc_admin") === "true") document.getElementById('admin-panel').style.display='block';
-            else document.getElementById('login-modal').style.display='flex';
-        }
-
         function login() {
-            const user = document.getElementById('u').value;
-            const pass = document.getElementById('p').value;
-            if(users[user] && users[user] === pass) {
-                localStorage.setItem("jtc_admin", "true");
-                localStorage.setItem("jtc_user", user);
-                location.reload();
-            } else { alert("Nepareizi dati!"); }
+            let u = document.getElementById('u').value, p = document.getElementById('p').value;
+            if(users[u] && users[u] === p) {
+                localStorage.setItem("jtc_logged", "true");
+                localStorage.setItem("jtc_user", u);
+                showApp();
+            } else { alert("Piekļuve liegta!"); }
         }
 
-        function logoutAdmin() {
+        function logout() {
             localStorage.clear();
             location.reload();
         }
 
-        function initLive() {
-            database.ref('stock').on('value', s => {
-                const data = s.val();
-                renderStock(data);
-                renderVeikals(data);
-            });
-            database.ref('repairs').on('value', s => renderRepairs(s.val()));
+        function showApp() {
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('app').style.display = 'block';
+            document.getElementById('user-display').innerText = "Lietotājs: " + localStorage.getItem("jtc_user");
+            initData();
         }
 
-        function saveProduct() {
-            let n = document.getElementById('adm-n').value, p = document.getElementById('adm-p').value, q = document.getElementById('adm-q').value;
+        function initData() {
+            // Noliktavas ielāde
+            db.ref('stock').on('value', s => {
+                let data = s.val(), h = '';
+                if(data) Object.keys(data).forEach((id, idx) => {
+                    let i = data[id];
+                    h += `<tr><td class="font-bold">${i.n}</td><td>${i.p} €</td><td>${i.q} gb</td>
+                    <td><svg id="bc-${idx}" class="barcode-svg"></svg></td>
+                    <td class="text-right">
+                        <button onclick="printL('${id}')" class="text-blue-500 mr-4"><i class="fas fa-print"></i></button>
+                        <button onclick="db.ref('stock/${id}').remove()" class="text-red-400"><i class="fas fa-trash-alt"></i></button>
+                    </td></tr>`;
+                });
+                document.getElementById('stock-table').innerHTML = h;
+                if(data) Object.keys(data).forEach((id, idx) => {
+                    JsBarcode(`#bc-${idx}`, data[id].e, {format: "CODE128", width: 1, height: 30, displayValue: false});
+                });
+            });
+
+            // Servisa ielāde
+            db.ref('repairs').on('value', s => {
+                let data = s.val(), h = '';
+                if(data) Object.keys(data).forEach(id => {
+                    let r = data[id];
+                    h += `<tr><td class="font-black italic text-lg">${r.nr}</td><td>${r.cl}</td>
+                    <td><span class="status-badge st-${r.st.toLowerCase().replace(/ā/g,'a')}">${r.st}</span></td>
+                    <td><button onclick="cycleStatus('${id}','${r.st}')" class="text-blue-500 underline text-xs">Mainīt</button></td>
+                    <td class="text-right"><button onclick="db.ref('repairs/${id}').remove()" class="text-green-600 font-bold"><i class="fas fa-check"></i> GATAVS</button></td></tr>`;
+                });
+                document.getElementById('repair-table').innerHTML = h || '<tr><td colspan="5" class="text-center py-10">Rinda ir tukša</td></tr>';
+            });
+        }
+
+        function addStock() {
+            let n = document.getElementById('st-n').value, p = document.getElementById('st-p').value, q = document.getElementById('st-q').value;
             if(n && p) {
-                database.ref('stock').push({n, p, q, e: "20"+Math.floor(Math.random()*100000000000)});
-                document.getElementById('adm-n').value = ''; document.getElementById('adm-p').value = ''; document.getElementById('adm-q').value = '';
+                db.ref('stock').push({n, p, q, e: "JTC" + Math.floor(Math.random()*1000000)});
+                document.getElementById('st-n').value=''; document.getElementById('st-p').value=''; document.getElementById('st-q').value='';
             }
-        }
-
-        function renderStock(data) {
-            let h = '';
-            if(data) Object.keys(data).forEach((id, idx) => {
-                const i = data[id];
-                h += `<tr><td class="font-bold text-gray-800">${i.n}</td><td>${i.p} €</td><td>${i.q} gb</td>
-                <td><svg id="b${idx}" style="background:white; padding:5px; height:30px;"></svg></td>
-                <td class="text-right">
-                    <button onclick="printL('${id}')" class="text-blue-500 mr-4"><i class="fas fa-print"></i></button>
-                    <button onclick="database.ref('stock/${id}').remove()" class="text-red-300 hover:text-red-600"><i class="fas fa-trash"></i></button>
-                </td></tr>`;
-            });
-            document.getElementById('stock-list').innerHTML = h || '<tr><td colspan="5" class="text-center py-10 text-gray-300 italic">Noliktava ir tukša</td></tr>';
-            if(data) Object.keys(data).forEach((id, idx) => JsBarcode(`#b${idx}`, data[id].e, {displayValue:false, width:1, height:20}));
-        }
-
-        function renderVeikals(data) {
-            let h = '';
-            if(data) Object.keys(data).forEach(id => {
-                const i = data[id];
-                h += `<div class="bg-[#0a0a0a] border border-white/5 p-8 text-center rounded-lg">
-                    <h4 class="font-bold uppercase text-xs mb-4 tracking-widest">${i.n}</h4>
-                    <p class="gold-gradient-text font-black text-3xl mb-6">${i.p} €</p>
-                    <button class="gold-btn !py-2 !px-8 !text-[9px]">Grozā</button>
-                </div>`;
-            });
-            document.getElementById('product-grid').innerHTML = h || '<p class="text-gray-600 italic">Veikals tiek papildināts...</p>';
         }
 
         function addRepair() {
             let nr = document.getElementById('rep-nr').value.toUpperCase(), cl = document.getElementById('rep-cl').value, st = document.getElementById('rep-st').value;
-            if(nr) { database.ref('repairs').push({nr, cl, st}); document.getElementById('rep-nr').value = ''; }
+            if(nr) {
+                db.ref('repairs').push({nr, cl, st});
+                document.getElementById('rep-nr').value=''; document.getElementById('rep-cl').value='';
+            }
         }
 
-        function renderRepairs(data) {
-            let h = '';
-            if(data) Object.keys(data).forEach(id => {
-                const r = data[id];
-                h += `<tr><td class="font-black italic text-gray-800 text-lg">${r.nr}</td><td>${r.cl}</td>
-                <td><span class="status-badge st-${r.st.toLowerCase().replace(/ā/g,'a')}">${r.st}</span></td>
-                <td><button onclick="cycleStatus('${id}', '${r.st}')" class="text-xs font-bold text-blue-500 underline">Mainīt</button></td>
-                <td class="text-right"><button onclick="database.ref('repairs/${id}').remove()" class="text-red-400"><i class="fas fa-check-circle"></i> GATAVS</button></td></tr>`;
-            });
-            document.getElementById('repairs-list').innerHTML = h || '<tr><td colspan="5" class="text-center py-10 text-gray-300">Nav aktīvu darbu</td></tr>';
+        function cycleStatus(id, curr) {
+            const list = ["Saņemts", "Procesā", "Gatavs"];
+            let next = list[(list.indexOf(curr) + 1) % list.length];
+            db.ref('repairs/'+id).update({st: next});
         }
 
-        function cycleStatus(id, current) {
-            const states = ["Saņemts", "Procesā", "Gatavs"];
-            let next = states[(states.indexOf(current) + 1) % states.length];
-            database.ref('repairs/'+id).update({st: next});
+        function showSection(sec) {
+            document.querySelectorAll('.section').forEach(s => s.style.display = 'none');
+            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+            document.getElementById('sec-'+sec).style.display = 'block';
+            document.getElementById('n-'+sec).classList.add('active');
         }
 
         function printL(id) {
-            database.ref('stock/'+id).once('value', s => {
-                const item = s.val();
+            db.ref('stock/'+id).once('value', s => {
+                let i = s.val();
                 let w = window.open('', '', 'width=400,height=400');
-                w.document.write(`<html><body style="text-align:center;padding:20px;font-family:sans-serif;"><h2>${item.n}</h2><h1>${item.p} €</h1><svg id="barcode"></svg><script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"><\/script><script>window.onload=function(){JsBarcode("#barcode","${item.e}",{displayValue:true});setTimeout(()=>{window.print();window.close();},500);}<\/script></body></html>`);
+                w.document.write(`<html><body style="text-align:center;padding:20px;font-family:sans-serif;"><h2>${i.n}</h2><h1>${i.p} €</h1><svg id="b"></svg><script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"><\/script><script>window.onload=function(){JsBarcode("#b","${i.e}",{displayValue:true});setTimeout(()=>{window.print();window.close();},500);}<\/script></body></html>`);
             });
-        }
-
-        function toggleTab(t) {
-            document.getElementById('tab-stock').style.display = t === 'stock' ? 'grid' : 'none';
-            document.getElementById('tab-repairs').style.display = t === 'repairs' ? 'block' : 'none';
         }
     </script>
 </body>
