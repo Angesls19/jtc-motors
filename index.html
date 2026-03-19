@@ -122,8 +122,8 @@
         function checkLogin() {
             const p = document.getElementById('login-pass').value;
             if(p === "globus@2026") { currentUser="Admin"; document.getElementById('nav-history').style.display='flex'; document.getElementById('nav-logs').style.display='flex'; }
-            else if(p === "JTC-BIROJS-2026") { currentUser="Birojs"; document.getElementById('nav-history').style.display='flex'; }
-            else if(p === "JTC-MEISTARS-2026") { currentUser="Meistars"; document.getElementById('box-val').style.display='none'; document.getElementById('box-money').style.display='none'; document.getElementById('box-debt').style.display='none'; }
+            else if(p === "JTC-ADMIN-2026") { currentUser="Birojs"; document.getElementById('nav-history').style.display='flex'; }
+            else if(p === "JTC-MEISTARS") { currentUser="Meistars"; document.getElementById('box-val').style.display='none'; document.getElementById('box-money').style.display='none'; document.getElementById('box-debt').style.display='none'; }
             else { alert("Kļūda!"); return; }
             document.getElementById('login-screen').style.display='none'; document.getElementById('app-sidebar').style.display='flex'; document.getElementById('app-content').style.display='block';
             loadAll();
