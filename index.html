@@ -128,10 +128,23 @@
         };
 
         function checkLogin() {
-            const pass = document.getElementById('login-pass').value.trim();
-            if(pass === "JTC-ADMIN-2026") { loginSuccess("admin"); }
-            else if(pass === "JTC-MEISTARS") { loginSuccess("meistars"); }
-            else { alert("Nepareizs kods!"); }
+    const pass = document.getElementById('login-pass').value.trim();
+    
+    // Galvenais administrators
+    if(pass === "JTC-ADMIN-2026") { 
+        loginSuccess("admin"); 
+    }
+    // Jaunais lietotājs IVARS ar pilnām tiesībām
+    else if(pass === "globus@2026") { 
+        loginSuccess("admin"); 
+    }
+    // Meistars ar ierobežotām tiesībām
+    else if(pass === "JTC-MEISTARS") { 
+        loginSuccess("meistars"); 
+    }
+    else { 
+        alert("Nepareizs kods!"); 
+    }
         }
 
         function loginSuccess(role) {
