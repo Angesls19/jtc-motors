@@ -3,87 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JTC MOTORS | Vadības Sistēma</title>
+    <title>JTC MOTORS | Pro Sistēma</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
         body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; color: #1f2937; margin: 0; }
-        
-        /* Sidebar stils */
-        .sidebar { background: #111827; color: white; height: 100vh; position: fixed; width: 260px; transition: 0.3s; }
+        .sidebar { background: #111827; color: white; height: 100vh; position: fixed; width: 260px; z-index: 100; }
         .nav-link { display: flex; align-items: center; padding: 15px 25px; cursor: pointer; transition: 0.2s; border-left: 4px solid transparent; }
         .nav-link:hover { background: #1f2937; }
         .nav-link.active { background: #1f2937; border-left-color: #d4af37; color: #d4af37; }
-
-        /* Satura daļa */
         .main-content { margin-left: 260px; padding: 40px; }
-        .card { background: white; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); padding: 25px; border: 1px solid #e5e7eb; }
-        
-        /* Ievades lauki */
-        input, select { background: #f9fafb; border: 1px solid #d1d5db; padding: 10px; border-radius: 6px; width: 100%; margin-bottom: 12px; outline: none; }
-        input:focus { border-color: #d4af37; ring: 2px ring-[#d4af37]; }
-
-        /* Tabula */
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        .card { background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); padding: 25px; border: 1px solid #e5e7eb; }
+        input, select { background: #f9fafb; border: 1px solid #d1d5db; padding: 10px; border-radius: 6px; width: 100%; margin-bottom: 12px; }
         th { text-align: left; font-size: 11px; text-transform: uppercase; color: #6b7280; padding: 12px; border-bottom: 2px solid #f3f4f6; }
         td { padding: 12px; border-bottom: 1px solid #f3f4f6; font-size: 14px; }
-        
-        .barcode-svg { height: 40px; background: white; }
-        .btn-gold { background: #d4af37; color: black; font-weight: bold; padding: 10px 20px; border-radius: 6px; transition: 0.2s; }
-        .btn-gold:hover { background: #b8952d; }
-        
-        /* Login */
-        #login-screen { background: #0f172a; height: 100vh; display: flex; align-items: center; justify-content: center; }
-        .status-badge { padding: 4px 10px; border-radius: 99px; font-size: 11px; font-weight: 600; }
-        .st-saņemts { background: #f3f4f6; color: #374151; }
-        .st-procesā { background: #fef3c7; color: #92400e; }
-        .st-gatavs { background: #dcfce7; color: #166534; }
+        .btn-gold { background: #d4af37; color: black; font-weight: bold; padding: 10px 20px; border-radius: 6px; }
+        #scanner-container { position: relative; width: 100%; height: 300px; display: none; background: black; border-radius: 12px; overflow: hidden; margin-bottom: 20px; }
+        #scanner-container video { width: 100%; height: 100%; object-fit: cover; }
     </style>
 </head>
 <body>
 
-    <div id="login-screen">
-        <div class="bg-white p-10 rounded-2xl shadow-2xl w-96 text-center">
-            <h2 class="text-3xl font-extrabold mb-2 italic">JTC <span class="text-[#d4af37]">VADĪBA</span></h2>
-            <p class="text-gray-400 text-sm mb-8 uppercase tracking-widest">Sistēmas piekļuve</p>
-            <input id="u" placeholder="Lietotājvārds">
+    <div id="login-screen" class="fixed inset-0 bg-[#0f172a] z-[1000] flex items-center justify-center">
+        <div class="bg-white p-10 rounded-2xl w-96 text-center">
+            <h2 class="text-3xl font-black mb-6 italic">JTC <span class="text-[#d4af37]">SYSTEM</span></h2>
+            <input id="u" placeholder="Lietotājs">
             <input id="p" type="password" placeholder="Parole">
-            <button onclick="login()" class="btn-gold w-full mt-4 py-3">PIESLĒGTIES</button>
+            <button onclick="login()" class="btn-gold w-full py-3">IEIET</button>
         </div>
     </div>
 
     <div id="app" style="display:none;">
         <div class="sidebar">
-            <div class="p-8 text-2xl font-black italic border-b border-gray-800">JTC<span class="text-[#d4af37]">MOTORS</span></div>
-            <div class="mt-6">
+            <div class="p-8 text-2xl font-black italic border-b border-gray-800 text-[#d4af37]">JTC MOTORS</div>
+            <nav class="mt-6">
                 <div onclick="showSection('stock')" id="n-stock" class="nav-link active"><i class="fas fa-boxes mr-3"></i> Noliktava</div>
-                <div onclick="showSection('repairs')" id="n-repairs" class="nav-link"><i class="fas fa-tools mr-3"></i> Servisa Rinda</div>
-                <div onclick="showSection('orders')" id="n-orders" class="nav-link"><i class="fas fa-shopping-cart mr-3"></i> Pasūtījumi</div>
-                <div class="absolute bottom-0 w-full p-6 border-t border-gray-800">
-                    <p id="user-display" class="text-xs text-gray-500 mb-4 font-bold uppercase"></p>
-                    <button onclick="logout()" class="text-red-500 text-sm font-bold"><i class="fas fa-sign-out-alt mr-2"></i> IZIEIET</button>
-                </div>
-            </div>
+                <div onclick="showSection('repairs')" id="n-repairs" class="nav-link"><i class="fas fa-tools mr-3"></i> Serviss</div>
+                <div onclick="showSection('clients')" id="n-clients" class="nav-link"><i class="fas fa-users mr-3"></i> Klienti</div>
+                <button onclick="logout()" class="mt-10 px-6 text-red-500 font-bold text-sm uppercase italic tracking-widest"><i class="fas fa-power-off"></i> Iziet</button>
+            </nav>
         </div>
 
         <div class="main-content">
             <div id="sec-stock" class="section">
-                <h2 class="text-3xl font-black mb-8 uppercase italic">Noliktavas Krājumi</h2>
+                <div class="flex justify-between items-center mb-8">
+                    <h2 class="text-3xl font-black uppercase italic">Noliktava</h2>
+                    <button onclick="startScanner()" class="bg-black text-white px-6 py-2 rounded-lg font-bold"><i class="fas fa-camera mr-2 text-[#d4af37]"></i> SKENĒT PRECI</button>
+                </div>
+
+                <div id="scanner-container"></div>
+
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     <div class="card h-fit">
-                        <h3 class="font-bold mb-4 text-gray-400 uppercase text-xs">Pievienot preci</h3>
-                        <input id="st-n" placeholder="Preces nosaukums">
-                        <input id="st-p" type="number" placeholder="Cena (€)">
+                        <h3 class="font-bold mb-4 uppercase text-xs text-gray-400">Pievienot preci</h3>
+                        <input id="st-n" placeholder="Nosaukums">
+                        <input id="st-p" type="number" placeholder="Cena €">
                         <input id="st-q" type="number" placeholder="Skaits">
-                        <button onclick="addStock()" class="btn-gold w-full mt-2">PIEVIENOT</button>
+                        <input id="st-e" placeholder="EAN / Kods (Pēc skenēšanas parādīsies)">
+                        <button onclick="addStock()" class="btn-gold w-full">SAGLABĀT</button>
                     </div>
                     <div class="lg:col-span-2 card">
-                        <table>
-                            <thead><tr><th>Prece</th><th>Cena</th><th>Skaits</th><th>Svītrkods</th><th class="text-right">Darbība</th></tr></thead>
+                        <table class="w-full">
+                            <thead><tr><th>Prece</th><th>Cena</th><th>Skaits</th><th>Svītrkods (EAN)</th><th class="text-right">Dzēst</th></tr></thead>
                             <tbody id="stock-table"></tbody>
                         </table>
                     </div>
@@ -91,32 +77,33 @@
             </div>
 
             <div id="sec-repairs" class="section" style="display:none;">
-                <h2 class="text-3xl font-black mb-8 uppercase italic">Servisa Darbi</h2>
-                <div class="card mb-8">
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <input id="rep-nr" class="!mb-0" placeholder="Auto Nr.">
+                <h2 class="text-3xl font-black mb-8 uppercase italic">Servisa rinda</h2>
+                <div class="card mb-6">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <input id="rep-nr" class="!mb-0" placeholder="Auto Numurs">
                         <input id="rep-cl" class="!mb-0" placeholder="Klients">
-                        <select id="rep-st" class="!mb-0"><option>Saņemts</option><option>Procesā</option><option>Gatavs</option></select>
-                        <button onclick="addRepair()" class="btn-gold">REĢISTRĒT</button>
+                        <button onclick="addRepair()" class="btn-gold">PIEVIENOT</button>
                     </div>
                 </div>
-                <div class="card">
-                    <table>
-                        <thead><tr><th>Auto Nr.</th><th>Klients</th><th>Statuss</th><th>Mainīt</th><th class="text-right">Dzēst</th></tr></thead>
-                        <tbody id="repair-table"></tbody>
-                    </table>
-                </div>
+                <div class="card"><table class="w-full"><tbody id="repair-table"></tbody></table></div>
             </div>
 
-            <div id="sec-orders" class="section" style="display:none;">
-                <h2 class="text-3xl font-black mb-8 uppercase italic">Klientu Pasūtījumi</h2>
-                <div class="card">
-                    <table>
-                        <thead><tr><th>Datums</th><th>Klients</th><th>Prece</th><th>Summa</th><th class="text-right">Statuss</th></tr></thead>
-                        <tbody id="order-table">
-                            <tr><td colspan="5" class="text-center py-10 text-gray-400">Nav jaunu pasūtījumu</td></tr>
-                        </tbody>
-                    </table>
+            <div id="sec-clients" class="section" style="display:none;">
+                <h2 class="text-3xl font-black mb-8 uppercase italic">Klientu datubāze</h2>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div class="card h-fit">
+                        <h3 class="font-bold mb-4 uppercase text-xs text-gray-400">Jauns klients</h3>
+                        <input id="c-name" placeholder="Vārds / Uzvārds">
+                        <input id="c-phone" placeholder="Telefona numurs">
+                        <input id="c-auto" placeholder="Auto markas / modelis">
+                        <button onclick="addClient()" class="btn-gold w-full">PIEVIENOT KLIENTU</button>
+                    </div>
+                    <div class="lg:col-span-2 card">
+                        <table class="w-full">
+                            <thead><tr><th>Vārds</th><th>Telefons</th><th>Auto</th><th class="text-right">Dzēst</th></tr></thead>
+                            <tbody id="client-table"></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -132,109 +119,106 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        const users = {
-            "admin": "JTC-Ivars-2024",
-            "serviss": "JTC-Serviss-2024",
-            "noliktava": "JTC-Krasts-2024",
-            "birojs": "JTC-Birojs-2024",
-            "meistars": "JTC-Darbs-2024"
-        };
+        const users = {"admin": "JTC-Ivars-2024", "meistars": "123"};
 
-        window.onload = () => {
-            if(localStorage.getItem("jtc_logged") === "true") {
-                showApp();
-            }
-        };
-
+        // LOGIN FUNKCIJAS
         function login() {
             let u = document.getElementById('u').value, p = document.getElementById('p').value;
             if(users[u] && users[u] === p) {
-                localStorage.setItem("jtc_logged", "true");
-                localStorage.setItem("jtc_user", u);
+                localStorage.setItem("jtc_ok", "true");
                 showApp();
-            } else { alert("Piekļuve liegta!"); }
+            } else { alert("Kļūda!"); }
         }
-
-        function logout() {
-            localStorage.clear();
-            location.reload();
-        }
-
+        function logout() { localStorage.clear(); location.reload(); }
         function showApp() {
-            document.getElementById('login-screen').style.display = 'none';
-            document.getElementById('app').style.display = 'block';
-            document.getElementById('user-display').innerText = "Lietotājs: " + localStorage.getItem("jtc_user");
-            initData();
+            document.getElementById('login-screen').style.display='none';
+            document.getElementById('app').style.display='block';
+            loadAll();
         }
 
-        function initData() {
-            // Noliktavas ielāde
+        if(localStorage.getItem("jtc_ok")) showApp();
+
+        // DATU IELĀDE
+        function loadAll() {
+            // NOLIKTAVA UN VIZUĀLAIS EAN
             db.ref('stock').on('value', s => {
-                let data = s.val(), h = '';
+                let h = '', data = s.val();
                 if(data) Object.keys(data).forEach((id, idx) => {
                     let i = data[id];
-                    h += `<tr><td class="font-bold">${i.n}</td><td>${i.p} €</td><td>${i.q} gb</td>
-                    <td><svg id="bc-${idx}" class="barcode-svg"></svg></td>
-                    <td class="text-right">
-                        <button onclick="printL('${id}')" class="text-blue-500 mr-4"><i class="fas fa-print"></i></button>
-                        <button onclick="db.ref('stock/${id}').remove()" class="text-red-400"><i class="fas fa-trash-alt"></i></button>
-                    </td></tr>`;
+                    h += `<tr><td class="font-bold">${i.n}</td><td>${i.p}€</td><td>${i.q}</td>
+                    <td><svg id="ean-${idx}"></svg><br><small class="text-gray-400">${i.e}</small></td>
+                    <td class="text-right"><button onclick="db.ref('stock/${id}').remove()" class="text-red-400"><i class="fas fa-trash"></i></button></td></tr>`;
                 });
                 document.getElementById('stock-table').innerHTML = h;
                 if(data) Object.keys(data).forEach((id, idx) => {
-                    JsBarcode(`#bc-${idx}`, data[id].e, {format: "CODE128", width: 1, height: 30, displayValue: false});
+                    JsBarcode(`#ean-${idx}`, data[id].e, {format: "CODE128", width: 1.2, height: 35, displayValue: false});
                 });
             });
 
-            // Servisa ielāde
+            // SERVISS
             db.ref('repairs').on('value', s => {
-                let data = s.val(), h = '';
+                let h = '', data = s.val();
                 if(data) Object.keys(data).forEach(id => {
                     let r = data[id];
-                    h += `<tr><td class="font-black italic text-lg">${r.nr}</td><td>${r.cl}</td>
-                    <td><span class="status-badge st-${r.st.toLowerCase().replace(/ā/g,'a')}">${r.st}</span></td>
-                    <td><button onclick="cycleStatus('${id}','${r.st}')" class="text-blue-500 underline text-xs">Mainīt</button></td>
-                    <td class="text-right"><button onclick="db.ref('repairs/${id}').remove()" class="text-green-600 font-bold"><i class="fas fa-check"></i> GATAVS</button></td></tr>`;
+                    h += `<tr><td class="text-xl font-black italic text-[#d4af37]">${r.nr}</td><td>${r.cl}</td><td class="text-right"><button onclick="db.ref('repairs/${id}').remove()" class="text-green-500 font-bold">GATAVS</button></td></tr>`;
                 });
-                document.getElementById('repair-table').innerHTML = h || '<tr><td colspan="5" class="text-center py-10">Rinda ir tukša</td></tr>';
+                document.getElementById('repair-table').innerHTML = h;
+            });
+
+            // KLIENTI
+            db.ref('clients').on('value', s => {
+                let h = '', data = s.val();
+                if(data) Object.keys(data).forEach(id => {
+                    let c = data[id];
+                    h += `<tr><td class="font-bold">${c.name}</td><td>${c.phone}</td><td>${c.auto}</td><td class="text-right"><button onclick="db.ref('clients/${id}').remove()" class="text-red-400"><i class="fas fa-user-minus"></i></button></td></tr>`;
+                });
+                document.getElementById('client-table').innerHTML = h;
             });
         }
 
+        // PIEVIENOŠANAS FUNKCIJAS
         function addStock() {
-            let n = document.getElementById('st-n').value, p = document.getElementById('st-p').value, q = document.getElementById('st-q').value;
-            if(n && p) {
-                db.ref('stock').push({n, p, q, e: "JTC" + Math.floor(Math.random()*1000000)});
-                document.getElementById('st-n').value=''; document.getElementById('st-p').value=''; document.getElementById('st-q').value='';
-            }
+            let n=document.getElementById('st-n').value, p=document.getElementById('st-p').value, q=document.getElementById('st-q').value, e=document.getElementById('st-e').value;
+            if(!e) e = "JTC" + Date.now();
+            db.ref('stock').push({n, p, q, e});
+            document.getElementById('st-n').value=''; document.getElementById('st-e').value='';
+        }
+
+        function addClient() {
+            let name=document.getElementById('c-name').value, phone=document.getElementById('c-phone').value, auto=document.getElementById('c-auto').value;
+            if(name) db.ref('clients').push({name, phone, auto});
+            document.getElementById('c-name').value=''; document.getElementById('c-phone').value='';
         }
 
         function addRepair() {
-            let nr = document.getElementById('rep-nr').value.toUpperCase(), cl = document.getElementById('rep-cl').value, st = document.getElementById('rep-st').value;
-            if(nr) {
-                db.ref('repairs').push({nr, cl, st});
-                document.getElementById('rep-nr').value=''; document.getElementById('rep-cl').value='';
-            }
+            let nr=document.getElementById('rep-nr').value.toUpperCase(), cl=document.getElementById('rep-cl').value;
+            if(nr) db.ref('repairs').push({nr, cl});
         }
 
-        function cycleStatus(id, curr) {
-            const list = ["Saņemts", "Procesā", "Gatavs"];
-            let next = list[(list.indexOf(curr) + 1) % list.length];
-            db.ref('repairs/'+id).update({st: next});
-        }
-
-        function showSection(sec) {
-            document.querySelectorAll('.section').forEach(s => s.style.display = 'none');
-            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-            document.getElementById('sec-'+sec).style.display = 'block';
-            document.getElementById('n-'+sec).classList.add('active');
-        }
-
-        function printL(id) {
-            db.ref('stock/'+id).once('value', s => {
-                let i = s.val();
-                let w = window.open('', '', 'width=400,height=400');
-                w.document.write(`<html><body style="text-align:center;padding:20px;font-family:sans-serif;"><h2>${i.n}</h2><h1>${i.p} €</h1><svg id="b"></svg><script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"><\/script><script>window.onload=function(){JsBarcode("#b","${i.e}",{displayValue:true});setTimeout(()=>{window.print();window.close();},500);}<\/script></body></html>`);
+        // KAMERAS SKENERIS
+        function startScanner() {
+            document.getElementById('scanner-container').style.display = 'block';
+            Quagga.init({
+                inputStream: { name: "Live", type: "LiveStream", target: document.querySelector('#scanner-container') },
+                decoder: { readers: ["code_128_reader", "ean_reader", "ean_8_reader", "upc_reader"] }
+            }, function(err) {
+                if (err) { alert(err); return; }
+                Quagga.start();
             });
+
+            Quagga.onDetected(function(data) {
+                document.getElementById('st-e').value = data.codeResult.code;
+                alert("Kods noskenēts: " + data.codeResult.code);
+                Quagga.stop();
+                document.getElementById('scanner-container').style.display = 'none';
+            });
+        }
+
+        function showSection(s) {
+            document.querySelectorAll('.section').forEach(x => x.style.display = 'none');
+            document.querySelectorAll('.nav-link').forEach(x => x.classList.remove('active'));
+            document.getElementById('sec-'+s).style.display = 'block';
+            document.getElementById('n-'+s).classList.add('active');
         }
     </script>
 </body>
