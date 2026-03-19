@@ -3,19 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>JT MOTORS | ENTERPRISE v7.8.1</title>
+    <title>JT MOTORS | ENTERPRISE v7.9.4</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-auth-compat.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap');
         body { font-family: 'Inter', sans-serif; background: #f1f5f9; margin: 0; color: #1e293b; -webkit-tap-highlight-color: transparent; padding-top: 70px; }
         #login-screen { background: #0f172a; position: fixed; inset: 0; z-index: 99999; display: flex; align-items: center; justify-content: center; padding: 20px; }
         .login-box { background: #1e293b; padding: 30px; border-radius: 24px; width: 100%; max-width: 400px; text-align: center; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); }
-        #login-pass { background: white !important; color: black !important; font-size: 24px; text-align: center; border: 4px solid #fbbf24; margin-top: 20px; border-radius: 12px; width: 100%; padding: 15px; outline: none; }
+        .login-input { background: white !important; color: black !important; font-size: 18px; border: 2px solid #e2e8f0; margin-top: 10px; border-radius: 12px; width: 100%; padding: 12px; outline: none; font-weight: 600; }
+        #login-pass { border: 3px solid #fbbf24; }
         .header-logo-bar { background: #0f172a; position: fixed; top: 0; left: 0; width: 100%; height: 70px; z-index: 100; display: flex; align-items: center; justify-content: center; border-bottom: 1px solid rgba(255,255,255,0.05); }
         .logo-text { font-size: 28px; font-weight: 900; font-style: italic; text-transform: uppercase; color: white; }
         .logo-text span { color: #fbbf24; }
@@ -51,9 +53,13 @@
     <div id="login-screen">
         <div class="login-box">
             <h1 class="logo-text">JT <span>MOTORS</span></h1>
-            <p class="text-slate-400 text-xs mt-2 uppercase font-bold tracking-widest">Enterprise v7.8</p>
-            <input id="login-pass" type="password" placeholder="IERAKSTI KODU">
-            <button onclick="checkLogin()" class="btn-jt mt-6">Ienākt sistēmā</button>
+            <p class="text-slate-400 text-xs mt-2 uppercase font-bold tracking-widest">Enterprise Access</p>
+            <div class="mt-6">
+                <input id="login-email" class="login-input" type="email" placeholder="E-pasts">
+                <input id="login-pass" class="login-input" type="password" placeholder="Parole">
+                <button onclick="handleLogin()" class="btn-jt mt-6">Ienākt sistēmā</button>
+                <p id="login-error" class="text-red-500 text-xs mt-4 font-bold"></p>
+            </div>
         </div>
     </div>
 
@@ -65,7 +71,7 @@
             <div onclick="showSection('clients')" id="n-clients" class="nav-link"><i class="fas fa-users w-6"></i> <span>Klienti</span></div>
             <div id="nav-history" onclick="showSection('history')" class="nav-link" style="display:none;"><i class="fas fa-file-invoice-dollar w-6"></i> <span>Finanses</span></div>
             <div id="nav-logs" onclick="showSection('logs')" class="nav-link" style="display:none;"><i class="fas fa-history w-6"></i> <span>Žurnāls</span></div>
-            <div onclick="logout()" class="nav-link !text-red-400 border-t border-white/10 mt-auto mb-5 nav-logout"><i class="fas fa-power-off w-6"></i> <span>IZIET</span></div>
+            <div onclick="auth.signOut()" class="nav-link !text-red-400 border-t border-white/10 mt-auto mb-5 nav-logout"><i class="fas fa-power-off w-6"></i> <span>IZIET</span></div>
         </nav>
     </div>
 
@@ -134,32 +140,54 @@
 
     <script>
         const firebaseConfig = { apiKey: "AIzaSyBK20atH4pmEORbuHLCTAXaSCPUBfz9190", authDomain: "jtc-motors.firebaseapp.com", databaseURL: "https://jtc-motors-default-rtdb.europe-west1.firebasedatabase.app", projectId: "jtc-motors" };
-        firebase.initializeApp(firebaseConfig); const db = firebase.database();
+        firebase.initializeApp(firebaseConfig); 
+        const db = firebase.database();
+        const auth = firebase.auth();
         let html5QrCode = null, allStockData = {}, currentUser = "";
 
-        // TŪLĪTĒJA PĀRBAUDE PIE REFRESH
-        (function checkAutoLogin() { 
-            const saved = localStorage.getItem('jt_motors_pass_v2'); 
-            if(saved) { 
-                window.addEventListener('DOMContentLoaded', () => {
-                    document.getElementById('login-pass').value = saved; 
-                    checkLogin(); 
-                });
-            } 
-        })();
+        // AUTH KLAUSĪTĀJS (AUTOMĀTISKI IELOGOS PĒC REFRESH)
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                currentUser = user.email;
+                // Noteikt lomu pēc e-pasta
+                if(currentUser === "i.ozolins.apsitis@gmail.lv") {
+                    document.getElementById('nav-history').style.display='flex'; 
+                    document.getElementById('nav-logs').style.display='flex'; 
+                    document.getElementById('clear-logs-btn').style.display='block';
+                } else if(currentUser == "janis1talbergs@gmail.com) {
+                    document.getElementById('nav-history').style.display='flex';
+                } else if(currentUser === "meistars@jtmotors.lv") {
+                    document.querySelectorAll('#box-val, #box-money, #box-debt').forEach(el => el.style.display='none');
+                }
+                
+                document.getElementById('login-screen').style.display='none'; 
+                document.getElementById('app-sidebar').style.display='flex'; 
+                document.getElementById('app-content').style.display='block'; 
+                document.getElementById('app-header').style.display='flex';
+                loadAll();
+                logAction("Pieslēdzās");
+            } else {
+                document.getElementById('login-screen').style.display='flex';
+                document.getElementById('app-sidebar').style.display='none';
+                document.getElementById('app-content').style.display='none';
+                document.getElementById('app-header').style.display='none';
+            }
+        });
 
-        function checkLogin() {
-            const p = document.getElementById('login-pass').value;
-            if(p === "globus@2026") { currentUser="Admin"; document.getElementById('nav-history').style.display='flex'; document.getElementById('nav-logs').style.display='flex'; document.getElementById('clear-logs-btn').style.display='block'; }
-            else if(p === "JTC-ADMIN-2026") { currentUser="Birojs"; document.getElementById('nav-history').style.display='flex'; }
-            else if(p === "JTC-MEISTARS") { currentUser="Meistars"; document.querySelectorAll('#box-val, #box-money, #box-debt').forEach(el => el.style.display='none'); }
-            else { alert("Kļūda!"); logout(); return; }
-            localStorage.setItem('jt_motors_pass_v2', p);
-            document.getElementById('login-screen').style.display='none'; document.getElementById('app-sidebar').style.display='flex'; document.getElementById('app-content').style.display='block'; document.getElementById('app-header').style.display='flex';
-            loadAll(); logAction("Pieslēdzās");
+        async function handleLogin() {
+            const email = document.getElementById('login-email').value;
+            const pass = document.getElementById('login-pass').value;
+            const errorEl = document.getElementById('login-error');
+            errorEl.innerText = "";
+
+            try {
+                await auth.signInWithEmailAndPassword(email, pass);
+            } catch (error) {
+                errorEl.innerText = "Kļūda: " + error.message;
+            }
         }
-        function logout() { localStorage.removeItem('jt_motors_pass_v2'); location.reload(); }
-        function logAction(info) { db.ref('logs').push({time: new Date().toLocaleString('lv-LV'), user: currentUser, info: info}); }
+
+        function logAction(info) { if(auth.currentUser) db.ref('logs').push({time: new Date().toLocaleString('lv-LV'), user: currentUser, info: info}); }
         function clearLogs() { if(confirm("Vai tiešām izdzēst visu žurnālu?")) { db.ref('logs').remove(); logAction("Notīrīja žurnālu"); } }
         function loadAll() { loadStock(); loadRepairs(); loadCalendar(); loadClients(); loadHistory(); loadLogs(); }
         function loadLogs() { db.ref('logs').limitToLast(50).on('value', s => { let h = ''; s.forEach(c => { let l = c.val(); h = `<div class="p-2 border-b"><span class="text-blue-600 font-bold">[${l.time}]</span> <span class="bg-slate-100 px-1 rounded font-black text-slate-700">${l.user}</span>: ${l.info}</div>` + h; }); document.getElementById('logs-container').innerHTML = h || '<p class="p-4 text-slate-400">Žurnāls ir tukšs</p>'; }); }
