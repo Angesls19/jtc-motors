@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JT MOTORS | ENTERPRISE v3.4</title>
+    <title>JT MOTORS | ENTERPRISE v3.6</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -22,17 +23,10 @@
         .btn-jt { background: #fbbf24; color: #000; font-weight: 800; padding: 12px; border-radius: 8px; width: 100%; transition: 0.2s; text-transform: uppercase; cursor: pointer; border: none; }
         #login-screen { position: fixed; inset: 0; background: #0f172a; z-index: 9999; display: flex; align-items: center; justify-content: center; }
         .img-preview { width: 45px; height: 45px; object-fit: cover; border-radius: 6px; cursor: pointer; }
-        
-        .logout-btn { 
-            padding: 14px 25px; 
-            border-top: 1px solid #1e293b; 
-            color: #f87171; 
-            font-weight: bold; 
-            cursor: pointer; 
-            transition: 0.3s;
-            margin-top: 10px;
-        }
-        .logout-btn:hover { background: #450a0a; color: white; }
+        .logout-btn { padding: 14px 25px; border-top: 1px solid #1e293b; color: #f87171; font-weight: bold; cursor: pointer; transition: 0.3s; margin-top: auto; }
+        #reader { width: 100%; border-radius: 12px; overflow: hidden; margin-bottom: 15px; border: 2px solid #fbbf24; display: none; }
+        .low-stock { color: #ef4444; font-weight: 900; animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
     </style>
 </head>
 <body>
@@ -47,22 +41,21 @@
 
     <div id="app-sidebar" class="sidebar" style="display:none;">
         <div class="p-8 text-2xl font-black italic border-b border-slate-800 text-center text-yellow-500">JT MOTORS PRO</div>
-        <nav class="mt-6">
+        <nav class="flex-grow">
             <div onclick="showSection('stock')" id="n-stock" class="nav-link active"><i class="fas fa-boxes mr-3"></i> Noliktava</div>
             <div onclick="showSection('repairs')" id="n-repairs" class="nav-link"><i class="fas fa-tools mr-3"></i> Serviss</div>
             <div onclick="showSection('calendar')" id="n-calendar" class="nav-link"><i class="fas fa-calendar-alt mr-3"></i> Pieraksti</div>
             <div onclick="showSection('clients')" id="n-clients" class="nav-link"><i class="fas fa-users mr-3"></i> Klienti</div>
             <div id="nav-fin" onclick="showSection('history')" class="nav-link"><i class="fas fa-file-invoice-dollar mr-3"></i> Finanses</div>
-            
-            <div class="logout-btn flex items-center" onclick="logout()">
-                <i class="fas fa-sign-out-alt mr-3"></i> IZIET
-            </div>
         </nav>
+        <div class="logout-btn flex items-center" onclick="logout()">
+            <i class="fas fa-sign-out-alt mr-3"></i> IZIET
+        </div>
     </div>
 
     <div id="app-content" class="main-content" style="display:none;">
         <div id="admin-stats" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div class="card bg-slate-900 text-white font-black"><p class="text-[10px] opacity-50 uppercase">Noliktava</p><span id="stat-stock">0.00 €</span></div>
+            <div class="card bg-slate-900 text-white font-black"><p class="text-[10px] opacity-50 uppercase">Noliktavas vērtība</p><span id="stat-stock">0.00 €</span></div>
             <div class="card border-t-4 border-green-500 font-black text-green-600"><p class="text-[10px] text-gray-400 uppercase">Peļņa</p><span id="stat-income">0.00 €</span></div>
             <div class="card border-t-4 border-red-500 font-black text-red-600"><p class="text-[10px] text-gray-400 uppercase">Parādi</p><span id="stat-debts">0.00 €</span></div>
         </div>
@@ -71,10 +64,23 @@
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div class="card h-fit">
                     <h4 class="font-bold text-xs uppercase text-gray-400 mb-4">Jauna prece</h4>
-                    <input id="st-n" placeholder="Nosaukums"><input id="st-p" type="number" placeholder="Cena (€)"><input id="st-q" type="number" placeholder="Skaits"><input id="st-e" placeholder="EAN">
-                    <button onclick="addStock()" class="btn-jt">Saglabāt</button>
+                    <div id="reader"></div>
+                    <input id="st-n" placeholder="Preces nosaukums">
+                    <input id="st-p" type="number" placeholder="Cena par gab (€)">
+                    <input id="st-q" type="number" placeholder="Skaits noliktavā">
+                    <div class="flex gap-2 mb-2">
+                        <input id="st-e" placeholder="EAN svītrkods" class="!mb-0">
+                        <button onclick="toggleScanner()" class="bg-blue-600 text-white px-4 rounded-lg">
+                            <i class="fas fa-camera"></i>
+                        </button>
+                    </div>
+                    <button onclick="addStock()" class="btn-jt mt-2">Pievienot krājumiem</button>
                 </div>
                 <div class="lg:col-span-2 card overflow-x-auto">
+                    <div class="flex justify-between items-center mb-4">
+                         <h4 class="font-bold text-xs uppercase text-gray-400">Esošie krājumi</h4>
+                         <span class="text-[10px] bg-red-100 text-red-600 px-2 py-1 rounded font-bold">SARKANS = MAZĀK PAR 3 GAB</span>
+                    </div>
                     <table class="w-full text-left">
                         <thead><tr class="text-[10px] text-gray-400 uppercase border-b pb-2"><th>Prece</th><th>Cena</th><th>Skaits</th><th class="text-right">Darbības</th></tr></thead>
                         <tbody id="stock-table"></tbody>
@@ -84,7 +90,7 @@
         </div>
 
         <div id="sec-repairs" class="section" style="display:none;">
-            <div class="card"><div class="grid grid-cols-1 md:grid-cols-4 gap-4"><input id="rep-nr" placeholder="Auto Nr."><input id="rep-cl" placeholder="Klients"><input id="rep-price" type="number" placeholder="Cena (€)"><select id="rep-part-select"></select><textarea id="rep-task" class="md:col-span-4" placeholder="Darba apraksts..."></textarea><button onclick="addRepair()" class="btn-jt md:col-span-4">Pievienot rindā</button></div></div>
+            <div class="card"><div class="grid grid-cols-1 md:grid-cols-4 gap-4"><input id="rep-nr" placeholder="Auto Nr."><input id="rep-cl" placeholder="Klients"><input id="rep-price" type="number" placeholder="Darba cena (€)"><select id="rep-part-select"></select><textarea id="rep-task" class="md:col-span-4" placeholder="Darba apraksts..."></textarea><button onclick="addRepair()" class="btn-jt md:col-span-4">Pievienot rindā</button></div></div>
             <div id="repair-list" class="grid grid-cols-1 gap-4"></div>
         </div>
 
@@ -117,122 +123,118 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
         let currentRole = "";
+        let html5QrCode = null;
 
-        window.onload = function() {
-            const savedRole = sessionStorage.getItem('jt_motors_role');
-            if(savedRole) {
-                currentRole = savedRole;
-                initApp();
-            }
-        };
-
+        // AUTH
         function checkLogin() {
             const pass = document.getElementById('login-pass').value.trim();
-            
-            if(pass === "JTC-ADMIN-2026") { 
-                loginSuccess("admin"); 
-            }
-            else if(pass === "globus@2026") { 
-                loginSuccess("admin"); 
-            }
-            else if(pass === "JTC-MEISTARS") { 
-                loginSuccess("meistars"); 
-            }
-            else { 
-                alert("Nepareizs kods!"); 
-            }
+            if(pass === "JTC-ADMIN-2026" || pass === "globus@2026") loginSuccess("admin");
+            else if(pass === "JTC-MEISTARS") loginSuccess("meistars");
+            else alert("Nepareizs kods!");
         }
 
         function loginSuccess(role) {
             currentRole = role;
             sessionStorage.setItem('jt_motors_role', role);
-            initApp();
-        }
-
-        function logout() {
-            sessionStorage.removeItem('jt_motors_role');
-            location.reload();
-        }
-
-        function initApp() {
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('app-sidebar').style.display = 'flex';
             document.getElementById('app-content').style.display = 'block';
-            
-            if(currentRole === "meistars") {
+            if(role === "meistars") {
                 document.getElementById('admin-stats').style.display = 'none';
                 document.getElementById('nav-fin').style.display = 'none';
             }
             loadData();
         }
 
+        function logout() { sessionStorage.removeItem('jt_motors_role'); location.reload(); }
+
+        // SCANNER
+        async function toggleScanner() {
+            const readerDiv = document.getElementById('reader');
+            if (html5QrCode && html5QrCode.isScanning) { await html5QrCode.stop(); readerDiv.style.display = 'none'; return; }
+            readerDiv.style.display = 'block';
+            html5QrCode = new Html5Qrcode("reader");
+            html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (text) => {
+                document.getElementById('st-e').value = text;
+                html5QrCode.stop();
+                readerDiv.style.display = 'none';
+            }).catch(() => alert("Kameras kļūda!"));
+        }
+
+        // LOAD DATA
         function loadData() { loadStock(); loadRepairs(); loadCalendar(); loadClients(); loadHistory(); }
 
         function loadStock() {
             db.ref('stock').on('value', s => {
-                let h = '', opt = '<option value="">-- Bez detaļas --</option>', data = s.val(), total = 0;
+                let h = '', opt = '<option value="">-- Izvēlēties detaļu --</option>', data = s.val(), totalVal = 0;
                 if(data) Object.keys(data).forEach(id => {
-                    let i = data[id]; total += (i.p * i.q);
-                    h += `<tr class="border-b"><td class="py-3 font-bold">${i.n}</td><td>${i.p}€</td><td>${i.q} gab</td><td class="text-right"><button onclick="printEAN('${i.n}','${i.e}')" class="text-blue-500 mr-2"><i class="fas fa-barcode"></i></button><button onclick="db.ref('stock/${id}').remove()" class="text-red-300"><i class="fas fa-trash"></i></button></td></tr>`;
-                    opt += `<option value="${id}">${i.n} (${i.p}€)</option>`;
+                    let i = data[id]; 
+                    let qty = parseInt(i.q || 0);
+                    let price = parseFloat(i.p || 0);
+                    totalVal += (price * qty);
+
+                    // Brīdinājuma loģika
+                    let qtyClass = qty <= 3 ? 'low-stock' : 'font-bold';
+                    let warningLabel = qty <= 3 ? '<span class="ml-2 text-[10px]">⚠️ MAZS ATLIKUMS</span>' : '';
+
+                    h += `<tr class="border-b">
+                        <td class="py-3 font-bold">${i.n}</td>
+                        <td>${price.toFixed(2)}€</td>
+                        <td class="${qtyClass}">${qty} gab ${warningLabel}</td>
+                        <td class="text-right">
+                            <button onclick="printEAN('${i.n}','${i.e}')" class="text-blue-500 mr-2"><i class="fas fa-barcode"></i></button>
+                            <button onclick="db.ref('stock/${id}').remove()" class="text-red-300"><i class="fas fa-trash"></i></button>
+                        </td></tr>`;
+                    opt += `<option value="${id}">${i.n} (${price}€) - ${qty} gab</option>`;
                 });
                 document.getElementById('stock-table').innerHTML = h;
                 document.getElementById('rep-part-select').innerHTML = opt;
-                if(currentRole === "admin") document.getElementById('stat-stock').innerText = total.toFixed(2) + " €";
+                if(currentRole === "admin") document.getElementById('stat-stock').innerText = totalVal.toFixed(2) + " €";
             });
         }
 
-        function addStock() { let n=document.getElementById('st-n').value, p=document.getElementById('st-p').value, q=document.getElementById('st-q').value, e=document.getElementById('st-e').value; if(n && p) db.ref('stock').push({n, p, q, e}); }
-
-        function loadRepairs() {
-            db.ref('repairs').on('value', s => {
-                let h = '', data = s.val();
-                if(data) Object.keys(data).forEach(id => {
-                    let r = data[id];
-                    let imgHtml = r.img ? `<img src="${r.img}" onclick="window.open(this.src)" class="img-preview mb-2">` : '';
-                    h += `<div class="card flex justify-between items-center border-l-8 border-blue-500">
-                        <div><h2 class="text-2xl font-black italic">${r.nr}</h2><p class="text-sm font-bold text-gray-500">${r.cl} | ${r.price}€</p>${imgHtml}<input type="file" id="file-${id}" class="hidden" accept="image/*" onchange="uploadPhoto('${id}', this)"><button onclick="document.getElementById('file-${id}').click()" class="text-xs text-blue-500 font-bold uppercase"><i class="fas fa-camera mr-1"></i> Foto</button></div>
-                        <div class="flex gap-2"><button onclick="finishRepair('${id}', true)" class="bg-green-500 text-white px-4 py-2 rounded-xl font-bold">GATAVS</button><button onclick="finishRepair('${id}', false)" class="bg-red-500 text-white px-4 py-2 rounded-xl font-bold">PARĀDS</button></div></div>`;
-                });
-                document.getElementById('repair-list').innerHTML = h;
-            });
+        function addStock() {
+            let n=document.getElementById('st-n').value, p=document.getElementById('st-p').value, q=document.getElementById('st-q').value, e=document.getElementById('st-e').value;
+            if(n && p && q) {
+                db.ref('stock').push({n, p, q: parseInt(q), e});
+                document.getElementById('st-n').value = ''; document.getElementById('st-p').value = ''; document.getElementById('st-q').value = ''; document.getElementById('st-e').value = '';
+            } else { alert("Aizpildi visus laukus!"); }
         }
 
-        function uploadPhoto(id, input) { const file = input.files[0]; const reader = new FileReader(); reader.onloadend = function() { db.ref('repairs/' + id).update({ img: reader.result }); }; if (file) reader.readAsDataURL(file); }
-        
         function addRepair() {
             let nr=document.getElementById('rep-nr').value.toUpperCase(), cl=document.getElementById('rep-cl').value, pr=parseFloat(document.getElementById('rep-price').value || 0), task=document.getElementById('rep-task').value, partId=document.getElementById('rep-part-select').value;
             if(nr) {
-                if(partId) { db.ref('stock/'+partId).once('value', s => { let item = s.val(); db.ref('stock/'+partId).update({q: item.q - 1}); pr += parseFloat(item.p); db.ref('repairs').push({nr, cl, price: pr, task, date: new Date().toLocaleDateString()}); });
-                } else { db.ref('repairs').push({nr, cl, price: pr, task, date: new Date().toLocaleDateString()}); }
+                if(partId) { 
+                    db.ref('stock/'+partId).once('value', s => { 
+                        let item = s.val(); 
+                        if(item.q > 0) {
+                            db.ref('stock/'+partId).update({q: item.q - 1}); 
+                            pr += parseFloat(item.p); 
+                            db.ref('repairs').push({nr, cl, price: pr, task, date: new Date().toLocaleDateString('lv-LV')}); 
+                        } else { alert("Šī prece ir beigusies noliktavā!"); }
+                    });
+                } else { db.ref('repairs').push({nr, cl, price: pr, task, date: new Date().toLocaleDateString('lv-LV')}); }
+                document.getElementById('rep-nr').value = ''; document.getElementById('rep-cl').value = ''; document.getElementById('rep-price').value = ''; document.getElementById('rep-task').value = '';
             }
         }
 
+        // --- PĀRĒJĀS STANDARTA FUNKCIJAS (PDF, CALENDAR, CLIENTS) ---
+        function loadRepairs() { db.ref('repairs').on('value', s => { let h = '', data = s.val(); if(data) Object.keys(data).forEach(id => { let r = data[id]; let imgHtml = r.img ? `<img src="${r.img}" onclick="window.open(this.src)" class="img-preview mb-2">` : ''; h += `<div class="card flex justify-between items-center border-l-8 border-blue-500"><div><h2 class="text-2xl font-black italic">${r.nr}</h2><p class="text-sm font-bold text-gray-500">${r.cl} | ${r.price}€</p>${imgHtml}<input type="file" id="file-${id}" class="hidden" accept="image/*" onchange="uploadPhoto('${id}', this)"><button onclick="document.getElementById('file-${id}').click()" class="text-xs text-blue-500 font-bold uppercase"><i class="fas fa-camera mr-1"></i> Foto</button></div><div class="flex gap-2"><button onclick="finishRepair('${id}', true)" class="bg-green-500 text-white px-4 py-2 rounded-xl font-bold">GATAVS</button><button onclick="finishRepair('${id}', false)" class="bg-red-500 text-white px-4 py-2 rounded-xl font-bold">PARĀDS</button></div></div>`; }); document.getElementById('repair-list').innerHTML = h; }); }
         function finishRepair(id, paid) { db.ref('repairs/'+id).once('value', s => { let d = s.val(); d.paid = paid; db.ref('history').push(d); db.ref('repairs/'+id).remove(); }); }
-
-        function loadHistory() {
-            db.ref('history').on('value', s => {
-                let h = '', data = s.val(), income = 0, debt = 0;
-                if(data) Object.keys(data).reverse().forEach(id => {
-                    let r = data[id];
-                    if(r.paid) income += parseFloat(r.price || 0); else debt += parseFloat(r.price || 0);
-                    let imgHtml = r.img ? `<img src="${r.img}" onclick="window.open(this.src)" class="img-preview">` : '-';
-                    h += `<tr class="border-b"><td class="py-4 font-bold">${r.nr}</td><td>${r.cl}</td><td>${r.price}€</td><td>${imgHtml}</td><td class="text-right flex justify-end gap-2"><button onclick="downloadInvoice('${r.nr}','${r.cl}','${r.price}','${r.task}')" class="text-blue-500"><i class="fas fa-file-pdf"></i></button><button onclick="db.ref('history/${id}').remove()" class="text-red-300"><i class="fas fa-trash-alt"></i></button></td></tr>`;
-                });
-                document.getElementById('history-table').innerHTML = h;
-                if(currentRole === "admin") { document.getElementById('stat-income').innerText = income.toFixed(2) + " €"; document.getElementById('stat-debts').innerText = debt.toFixed(2) + " €"; }
-            });
-        }
-
+        function uploadPhoto(id, input) { const file = input.files[0]; const reader = new FileReader(); reader.onloadend = () => db.ref('repairs/' + id).update({ img: reader.result }); if (file) reader.readAsDataURL(file); }
+        function loadHistory() { db.ref('history').on('value', s => { let h = '', data = s.val(), income = 0, debt = 0; if(data) Object.keys(data).reverse().forEach(id => { let r = data[id]; if(r.paid) income += parseFloat(r.price || 0); else debt += parseFloat(r.price || 0); let imgHtml = r.img ? `<img src="${r.img}" onclick="window.open(this.src)" class="img-preview">` : '-'; h += `<tr class="border-b"><td class="py-4 font-bold">${r.nr}</td><td>${r.cl}</td><td>${r.price}€</td><td>${imgHtml}</td><td class="text-right flex justify-end gap-2"><button onclick="genPDF('${r.nr}','${r.cl}','${r.price}','${r.task}','${r.date}')" class="text-blue-500"><i class="fas fa-file-pdf"></i></button><button onclick="db.ref('history/${id}').remove()" class="text-red-300"><i class="fas fa-trash-alt"></i></button></td></tr>`; }); document.getElementById('history-table').innerHTML = h; if(currentRole === "admin") { document.getElementById('stat-income').innerText = income.toFixed(2) + " €"; document.getElementById('stat-debts').innerText = debt.toFixed(2) + " €"; } }); }
         function printEAN(name, ean) { let w = window.open('', '', 'width=400,height=300'); w.document.write(`<html><body style="text-align:center;padding:20px;font-family:sans-serif;"><h2 style="margin:0">${name}</h2><svg id="barcode"></svg><script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"><\/script><script>JsBarcode("#barcode", "${ean}", {width:2, height:60}); setTimeout(()=>{window.print();window.close();},500);<\/script></body></html>`); }
+        function genPDF(nr, cl, pr, task, date) { const { jsPDF } = window.jspdf; const doc = new jsPDF(); const gold = [184, 134, 11]; doc.setGState(new doc.GState({ opacity: 0.04 })); doc.setTextColor(gold[0], gold[1], gold[2]); doc.setFontSize(80); doc.text("JTM", 105, 140, { align: "center", angle: 45 }); doc.setGState(new doc.GState({ opacity: 1 })); doc.setTextColor(gold[0], gold[1], gold[2]); doc.setFontSize(24); doc.text("JT MOTORS", 20, 25); doc.setFontSize(9); doc.setTextColor(60, 60, 60); doc.text(["SIA JT MOTORS | Reg. Nr. 40203595994", "Krisjana Barona iela 136A, Riga, LV-1012"], 20, 33); doc.setTextColor(gold[0], gold[1], gold[2]); doc.setFontSize(14); doc.text("REKINS-FAKTURA", 190, 25, { align: "right" }); doc.setFontSize(9); doc.setTextColor(0, 0, 0); doc.text(`Nr. JTM-2026-${nr}`, 190, 31, { align: "right" }); doc.text(`Datums: ${date || new Date().toLocaleDateString()}`, 190, 36, { align: "right" }); doc.setDrawColor(gold[0], gold[1], gold[2]); doc.line(20, 45, 190, 45); doc.text(`Klients: ${cl || '-'}`, 20, 58); doc.text(`Auto reg. Nr.: ${nr || '-'}`, 20, 63); doc.setFillColor(gold[0], gold[1], gold[2]); doc.rect(20, 72, 170, 8, 'F'); doc.setTextColor(255, 255, 255); doc.text("Apraksts", 25, 77.5); doc.text("Summa (EUR)", 160, 77.5); doc.setDrawColor(220, 220, 220); doc.rect(20, 80, 170, 35); doc.setTextColor(0, 0, 0); doc.text(doc.splitTextToSize(task || "Servisa pakalpojumi", 125), 25, 88); doc.text(`${pr || '0.00'} EUR`, 165, 88); doc.setFontSize(12); doc.setTextColor(gold[0], gold[1], gold[2]); doc.text(`KOPA APMAKSAI: ${pr || '0.00'} EUR`, 190, 125, { align: "right" }); doc.save(`JTM_Rekins_${nr}.pdf`); }
         function loadCalendar() { db.ref('calendar').on('value', s => { let h = '', data = s.val(); if(data) Object.keys(data).forEach(id => { let c = data[id]; h += `<div class="bg-white border p-4 rounded-xl flex justify-between"><div><span class="block text-xs font-bold text-yellow-600">${c.date}</span><b>${c.info}</b></div><button onclick="editCalendar('${id}', '${c.date}', '${c.info}')" class="text-blue-500 text-xs font-bold">LABOT</button></div>`; }); document.getElementById('calendar-items').innerHTML = h; }); }
         function addCalendar() { let d=document.getElementById('cal-date').value, i=document.getElementById('cal-info').value, id=document.getElementById('cal-id').value; if(d && i) { if(id) db.ref('calendar/'+id).update({date:d, info:i}); else db.ref('calendar').push({date:d, info:i}); document.getElementById('cal-id').value = ''; document.getElementById('cal-btn').innerText = "Rezervēt"; } }
         function editCalendar(id, date, info) { document.getElementById('cal-date').value = date; document.getElementById('cal-info').value = info; document.getElementById('cal-id').value = id; document.getElementById('cal-btn').innerText = "SAGLABĀT"; }
         function loadClients() { db.ref('clients').on('value', s => { let h = '', data = s.val(); if(data) Object.keys(data).forEach(id => { let c = data[id]; h += `<div class="bg-white border p-4 rounded-xl text-center border-t-4 border-yellow-500"><div class="font-bold">${c.name}</div><div class="text-xs text-gray-400 mb-2">${c.auto}</div><a href="tel:${c.phone}" class="bg-green-500 text-white block py-2 rounded font-bold text-xs">ZVANĪT</a></div>`; }); document.getElementById('client-grid').innerHTML = h; }); }
         function addClient() { let n=document.getElementById('c-name').value, p=document.getElementById('c-phone').value, a=document.getElementById('c-auto').value; if(n) db.ref('clients').push({name:n, phone:p, auto:a}); }
-        function downloadInvoice(nr, cl, pr, task) { const { jsPDF } = window.jspdf; const doc = new jsPDF(); doc.text(`JTMotors - ${nr}`, 20, 20); doc.text(`Klients: ${cl}`, 20, 30); doc.text(`Summa: ${pr} EUR`, 20, 40); doc.save(`Rekins_${nr}.pdf`); }
         function clearHistory() { if(confirm("Dzēst visu vēsturi?")) db.ref('history').remove(); }
         function showSection(s) { document.querySelectorAll('.section').forEach(x => x.style.display = 'none'); document.querySelectorAll('.nav-link').forEach(x => x.classList.remove('active')); document.getElementById('sec-'+s).style.display = 'block'; document.getElementById('n-'+s).classList.add('active'); }
+
+        const savedRole = sessionStorage.getItem('jt_motors_role');
+        if(savedRole) loginSuccess(savedRole);
     </script>
 </body>
 </html>
