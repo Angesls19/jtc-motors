@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JTC MOTORS | ENTERPRISE v3.2</title>
+    <title>JTC MOTORS | ENTERPRISE v3.3</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -12,8 +12,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
-        body { font-family: 'Inter', sans-serif; background: #f1f5f9; margin: 0; }
-        .sidebar { background: #0f172a; color: white; height: 100vh; position: fixed; width: 260px; z-index: 50; display: flex; flex-direction: column; justify-content: space-between; }
+        body { font-family: 'Inter', sans-serif; background: #f1f5f9; margin: 0; overflow-x: hidden; }
+        .sidebar { background: #0f172a; color: white; height: 100vh; position: fixed; width: 260px; z-index: 50; display: flex; flex-direction: column; }
         .nav-link { display: flex; align-items: center; padding: 14px 25px; cursor: pointer; border-left: 4px solid transparent; opacity: 0.7; transition: 0.3s; }
         .nav-link.active { background: #1e293b; border-left-color: #fbbf24; opacity: 1; color: #fbbf24; }
         .main-content { margin-left: 260px; padding: 30px; min-height: 100vh; }
@@ -22,6 +22,8 @@
         .btn-jtc { background: #fbbf24; color: #000; font-weight: 800; padding: 12px; border-radius: 8px; width: 100%; transition: 0.2s; text-transform: uppercase; cursor: pointer; border: none; }
         #login-screen { position: fixed; inset: 0; background: #0f172a; z-index: 9999; display: flex; align-items: center; justify-content: center; }
         .img-preview { width: 45px; height: 45px; object-fit: cover; border-radius: 6px; cursor: pointer; }
+        .logout-btn { margin-top: auto; padding: 20px; border-top: 1px solid #1e293b; color: #94a3b8; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        .logout-btn:hover { color: white; background: #1e293b; }
     </style>
 </head>
 <body>
@@ -29,45 +31,40 @@
     <div id="login-screen">
         <div class="bg-white p-10 rounded-3xl w-96 shadow-2xl text-center">
             <h1 class="text-4xl font-black italic mb-2">JTC <span class="text-yellow-500">MOTORS</span></h1>
-            <p class="text-gray-400 text-xs mb-8 uppercase tracking-widest">Autorizācija</p>
-            <input id="login-pass" type="password" placeholder="Kods..." class="text-center text-xl">
+            <input id="login-pass" type="password" placeholder="Kods..." class="text-center text-xl mt-4">
             <button onclick="checkLogin()" class="btn-jtc mt-4">PIESLĒGTIES</button>
         </div>
     </div>
 
     <div id="app-sidebar" class="sidebar" style="display:none;">
-        <div>
-            <div class="p-8 text-2xl font-black italic border-b border-slate-800 text-center text-yellow-500">JTC PRO</div>
-            <nav class="mt-6">
-                <div onclick="showSection('stock')" id="n-stock" class="nav-link active"><i class="fas fa-boxes mr-3"></i> Noliktava</div>
-                <div onclick="showSection('repairs')" id="n-repairs" class="nav-link"><i class="fas fa-tools mr-3"></i> Serviss</div>
-                <div onclick="showSection('calendar')" id="n-calendar" class="nav-link"><i class="fas fa-calendar-alt mr-3"></i> Pieraksti</div>
-                <div onclick="showSection('clients')" id="n-clients" class="nav-link"><i class="fas fa-users mr-3"></i> Klienti</div>
-                <div id="nav-fin" onclick="showSection('history')" class="nav-link"><i class="fas fa-file-invoice-dollar mr-3"></i> Finanses</div>
-            </nav>
-        </div>
-        <div class="p-6 border-t border-slate-800">
-            <button onclick="location.reload()" class="text-slate-400 hover:text-white flex items-center w-full font-bold text-sm bg-transparent border-none cursor-pointer">
-                <i class="fas fa-sign-out-alt mr-3"></i> IZIET NO SISTĒMAS
-            </button>
+        <div class="p-8 text-2xl font-black italic border-b border-slate-800 text-center text-yellow-500">JTC PRO</div>
+        <nav class="mt-6 flex-grow">
+            <div onclick="showSection('stock')" id="n-stock" class="nav-link active"><i class="fas fa-boxes mr-3"></i> Noliktava</div>
+            <div onclick="showSection('repairs')" id="n-repairs" class="nav-link"><i class="fas fa-tools mr-3"></i> Serviss</div>
+            <div onclick="showSection('calendar')" id="n-calendar" class="nav-link"><i class="fas fa-calendar-alt mr-3"></i> Pieraksti</div>
+            <div onclick="showSection('clients')" id="n-clients" class="nav-link"><i class="fas fa-users mr-3"></i> Klienti</div>
+            <div id="nav-fin" onclick="showSection('history')" class="nav-link"><i class="fas fa-file-invoice-dollar mr-3"></i> Finanses</div>
+        </nav>
+        <div class="logout-btn flex items-center" onclick="logout()">
+            <i class="fas fa-sign-out-alt mr-3"></i> IZIET
         </div>
     </div>
 
     <div id="app-content" class="main-content" style="display:none;">
         <div id="admin-stats" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div class="card bg-slate-900 text-white"><p class="text-[10px] uppercase font-bold opacity-50">Noliktava</p><h3 id="stat-stock" class="text-3xl font-black">0.00 €</h3></div>
-            <div class="card border-t-4 border-green-500"><p class="text-[10px] uppercase font-bold text-gray-400">Peļņa</p><h3 id="stat-income" class="text-3xl font-black text-green-600">0.00 €</h3></div>
-            <div class="card border-t-4 border-red-500"><p class="text-[10px] uppercase font-bold text-gray-400">Parādi</p><h3 id="stat-debts" class="text-3xl font-black text-red-600">0.00 €</h3></div>
+            <div class="card bg-slate-900 text-white font-black"><p class="text-[10px] opacity-50 uppercase">Noliktava</p><span id="stat-stock">0.00 €</span></div>
+            <div class="card border-t-4 border-green-500 font-black text-green-600"><p class="text-[10px] text-gray-400 uppercase">Peļņa</p><span id="stat-income">0.00 €</span></div>
+            <div class="card border-t-4 border-red-500 font-black text-red-600"><p class="text-[10px] text-gray-400 uppercase">Parādi</p><span id="stat-debts">0.00 €</span></div>
         </div>
 
         <div id="sec-stock" class="section">
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div class="card h-fit">
-                    <h4 class="font-bold text-xs uppercase text-gray-400 mb-4">Pievienot preci</h4>
+                    <h4 class="font-bold text-xs uppercase text-gray-400 mb-4">Jauna prece</h4>
                     <input id="st-n" placeholder="Nosaukums"><input id="st-p" type="number" placeholder="Cena (€)"><input id="st-q" type="number" placeholder="Skaits"><input id="st-e" placeholder="EAN">
                     <button onclick="addStock()" class="btn-jtc">Saglabāt</button>
                 </div>
-                <div class="lg:col-span-2 card">
+                <div class="lg:col-span-2 card overflow-x-auto">
                     <table class="w-full text-left">
                         <thead><tr class="text-[10px] text-gray-400 uppercase border-b pb-2"><th>Prece</th><th>Cena</th><th>Skaits</th><th class="text-right">Darbības</th></tr></thead>
                         <tbody id="stock-table"></tbody>
@@ -77,45 +74,25 @@
         </div>
 
         <div id="sec-repairs" class="section" style="display:none;">
-            <div class="card">
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <input id="rep-nr" placeholder="Auto Nr."><input id="rep-cl" placeholder="Klients"><input id="rep-price" type="number" placeholder="Cena (€)"><select id="rep-part-select"></select>
-                    <textarea id="rep-task" class="md:col-span-4" placeholder="Darba apraksts..."></textarea>
-                    <button onclick="addRepair()" class="btn-jtc md:col-span-4">Pievienot rindā</button>
-                </div>
-            </div>
+            <div class="card"><div class="grid grid-cols-1 md:grid-cols-4 gap-4"><input id="rep-nr" placeholder="Auto Nr."><input id="rep-cl" placeholder="Klients"><input id="rep-price" type="number" placeholder="Cena (€)"><select id="rep-part-select"></select><textarea id="rep-task" class="md:col-span-4" placeholder="Darba apraksts..."></textarea><button onclick="addRepair()" class="btn-jtc md:col-span-4">Pievienot rindā</button></div></div>
             <div id="repair-list" class="grid grid-cols-1 gap-4"></div>
         </div>
 
         <div id="sec-calendar" class="section" style="display:none;">
-            <div class="card">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                    <input id="cal-date" type="date"><input id="cal-info" placeholder="Auto/Darbs"><input id="cal-id" type="hidden">
-                    <button id="cal-btn" onclick="addCalendar()" class="btn-jtc">Rezervēt</button>
-                </div>
-                <div id="calendar-items" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
-            </div>
+            <div class="card"><div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6"><input id="cal-date" type="date"><input id="cal-info" placeholder="Auto/Darbs"><input id="cal-id" type="hidden"><button id="cal-btn" onclick="addCalendar()" class="btn-jtc">Rezervēt</button></div><div id="calendar-items" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div></div>
         </div>
 
         <div id="sec-clients" class="section" style="display:none;">
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div class="card h-fit"><input id="c-name" placeholder="Vārds"><input id="c-phone" placeholder="Telefons"><input id="c-auto" placeholder="Auto"><button onclick="addClient()" class="btn-jtc">Pievienot</button></div>
-                <div class="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4" id="client-grid"></div>
-            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8"><div class="card h-fit"><input id="c-name" placeholder="Vārds"><input id="c-phone" placeholder="Telefons"><input id="c-auto" placeholder="Auto"><button onclick="addClient()" class="btn-jtc">Pievienot</button></div><div class="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4" id="client-grid"></div></div>
         </div>
 
         <div id="sec-history" class="section" style="display:none;">
-            <div class="card">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-xl font-black uppercase italic">Vēsture</h2>
-                    <button onclick="clearHistory()" class="text-red-500 text-xs font-bold uppercase">Dzēst visu</button>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-sm">
-                        <thead><tr class="text-gray-400 text-[10px] uppercase border-b pb-4"><th>Auto</th><th>Klients</th><th>Summa</th><th>Foto</th><th class="text-right">Darbības</th></tr></thead>
-                        <tbody id="history-table"></tbody>
-                    </table>
-                </div>
+            <div class="card overflow-x-auto">
+                <div class="flex justify-between items-center mb-6"><h2 class="text-xl font-black uppercase italic">Vēsture</h2><button onclick="clearHistory()" class="text-red-500 text-xs font-bold uppercase">Dzēst visu</button></div>
+                <table class="w-full text-left text-sm">
+                    <thead><tr class="text-gray-400 text-[10px] uppercase border-b pb-4"><th>Auto</th><th>Klients</th><th>Summa</th><th>Foto</th><th class="text-right">Darbības</th></tr></thead>
+                    <tbody id="history-table"></tbody>
+                </table>
             </div>
         </div>
     </div>
@@ -129,19 +106,32 @@
         };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
-        let currentRole = "guest";
+
+        // Pārbauda sesiju pie ielādes
+        window.onload = function() {
+            const savedRole = sessionStorage.getItem('jtc_role');
+            if(savedRole) {
+                currentRole = savedRole;
+                initApp();
+            }
+        };
 
         function checkLogin() {
             const pass = document.getElementById('login-pass').value.trim();
-            if(pass === "JTC-ADMIN-2026") { 
-                currentRole = "admin"; 
-                initApp(); 
-            } else if(pass === "JTC-MEISTARS") { 
-                currentRole = "meistars"; 
-                initApp(); 
-            } else { 
-                alert("Nepareizs kods!"); 
-            }
+            if(pass === "JTC-ADMIN-2026") { loginSuccess("admin"); }
+            else if(pass === "JTC-MEISTARS") { loginSuccess("meistars"); }
+            else { alert("Nepareizs kods!"); }
+        }
+
+        function loginSuccess(role) {
+            currentRole = role;
+            sessionStorage.setItem('jtc_role', role);
+            initApp();
+        }
+
+        function logout() {
+            sessionStorage.removeItem('jtc_role');
+            location.reload();
         }
 
         function initApp() {
@@ -158,7 +148,7 @@
 
         function loadData() { loadStock(); loadRepairs(); loadCalendar(); loadClients(); loadHistory(); }
 
-        // --- VISAS FUNKCIJAS NO IEPRIEKŠĒJĀM VERSIJĀM ---
+        // --- CORE FUNCTIONS ---
         function loadStock() {
             db.ref('stock').on('value', s => {
                 let h = '', opt = '<option value="">-- Bez detaļas --</option>', data = s.val(), total = 0;
