@@ -127,7 +127,7 @@
 
         <div id="sec-repairs" class="section hidden">
             <div class="card bg-slate-900 p-6 border-b-4 border-yellow-500 shadow-xl">
-                <h3 class="text-white font-black uppercase mb-4">Auto Servisa Reģistrācija</h3>
+                <h3 class="text-white font-black uppercase mb-4" id="repair-form-title">Auto Servisa Reģistrācija</h3>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
                     <div><label class="text-[9px] text-slate-400 font-bold ml-1 uppercase">Marka</label><select id="rep-make" onchange="updateModels()" class="!mb-0"></select></div>
                     <div><label class="text-[9px] text-slate-400 font-bold ml-1 uppercase">Modelis</label><select id="rep-model" disabled class="!mb-0 opacity-50"></select></div>
@@ -137,13 +137,13 @@
                     <input id="rep-nr" placeholder="VALSTS NR." class="uppercase font-black border-2 border-yellow-500 text-center">
                     <input id="rep-cl" placeholder="KLIENTA VĀRDS">
                     <input id="rep-phone" placeholder="TELEFONA NR.">
-                    <input id="rep-price" type="number" placeholder="DARBA CENA €">
+                    <input id="rep-price" type="number" placeholder="KOPĒJĀ CENA €">
                     <div class="md:col-span-4">
-                        <label class="text-[9px] text-slate-400 font-bold ml-1 uppercase">Detaļa no noliktavas</label>
+                        <label class="text-[9px] text-slate-400 font-bold ml-1 uppercase">Detaļa no noliktavas (pēc izvēles)</label>
                         <select id="rep-part-select" class="bg-blue-50"></select>
                     </div>
-                    <textarea id="rep-task" class="md:col-span-4 h-24" placeholder="APRAKSTS / DEFEKTI..."></textarea>
-                    <button onclick="addRepair()" class="btn-jt md:col-span-4 !py-5">Ievietot Servisā</button>
+                    <textarea id="rep-task" class="md:col-span-4 h-24" placeholder="APRAKSTS / VEIKTIE DARBI..."></textarea>
+                    <button id="btn-add-repair" onclick="addRepair()" class="btn-jt md:col-span-4 !py-5">Ievietot Servisā</button>
                 </div>
             </div>
             <div id="repair-list" class="space-y-4 mt-8"></div>
@@ -151,7 +151,21 @@
 
         <div id="sec-calendar" class="section hidden"><div class="card bg-slate-800 p-6 flex flex-wrap gap-4"><input id="cal-date" type="date" class="w-full md:w-1/4"><input id="cal-nr" placeholder="Auto Nr." class="w-full md:w-1/4 uppercase"><input id="cal-model" placeholder="Modelis" class="w-full md:w-1/4"><button onclick="addCalendar()" class="btn-jt w-full md:w-auto px-10">Rezervēt</button><textarea id="cal-task" placeholder="Apraksts..." class="w-full"></textarea></div><div id="calendar-items" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div></div>
         <div id="sec-clients" class="section hidden"><div class="grid grid-cols-1 lg:grid-cols-4 gap-4"><div class="card h-fit"><input id="c-name" placeholder="Vārds"><input id="c-phone" placeholder="Telefons"><input id="c-auto" placeholder="Auto/Nr."><button onclick="addClient()" class="btn-jt">Pievienot</button></div><div id="client-grid" class="lg:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-4"></div></div></div>
-        <div id="sec-history" class="section hidden"><div class="card !p-0 overflow-hidden"><table class="w-full text-sm text-left"><thead><tr class="bg-slate-50"><th>Auto / Datums</th><th>Klients</th><th>Summa</th><th class="text-right">Darbības</th></tr></thead><tbody id="history-table"></tbody></table></div></div>
+        <div id="sec-history" class="section hidden">
+            <div class="card !p-0 overflow-hidden">
+                <table class="w-full text-sm text-left">
+                    <thead>
+                        <tr class="bg-slate-50">
+                            <th class="p-4">Auto / Datums</th>
+                            <th class="p-4">Klients</th>
+                            <th class="p-4">Summa</th>
+                            <th class="p-4 text-right">Darbības</th>
+                        </tr>
+                    </thead>
+                    <tbody id="history-table"></tbody>
+                </table>
+            </div>
+        </div>
         <div id="sec-logs" class="section hidden"><div id="logs-container" class="card space-y-2 text-[11px] bg-white font-mono"></div></div>
     </div>
 
@@ -244,11 +258,8 @@
             document.getElementById('rep-part-select').innerHTML = opt;
         }
 
-        // --- NOLIKTAVAS LABOŠANAS FUNKCIJAS ---
-
         function prepareEditStock(id) {
             let i = allStockData[id];
-            // Ielādējam datus formā
             document.getElementById('st-id-edit').value = id;
             document.getElementById('st-n').value = i.n;
             document.getElementById('st-p').value = i.p;
@@ -256,14 +267,10 @@
             document.getElementById('st-q').value = i.q;
             document.getElementById('st-l').value = i.l || "";
             document.getElementById('st-e-1').value = (i.e && i.e[0]) ? i.e[0] : "";
-
-            // Mainām vizuālo izskatu
             document.getElementById('st-form-header').classList.replace('bg-slate-800', 'bg-blue-800');
             document.getElementById('st-form-header').innerHTML = `<h3 class="font-black uppercase text-sm text-white flex items-center gap-2"><i class="fas fa-edit text-yellow-500"></i> Labot preci: ${i.n}</h3>`;
             document.getElementById('st-btn-save').innerText = "Saglabāt izmaiņas";
             document.getElementById('st-btn-cancel').classList.remove('hidden');
-            
-            // Uzrullējam uz augšu pie formas
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
@@ -275,7 +282,6 @@
             document.getElementById('st-l').value = '';
             document.getElementById('st-e-1').value = '';
             document.getElementById('st-vat').value = '21';
-
             document.getElementById('st-form-header').classList.replace('bg-blue-800', 'bg-slate-800');
             document.getElementById('st-form-header').innerHTML = `<h3 class="font-black uppercase text-sm text-white flex items-center gap-2"><i class="fas fa-plus-circle text-yellow-500"></i> Jauna prece</h3>`;
             document.getElementById('st-btn-save').innerText = "Saglabāt preci";
@@ -290,32 +296,12 @@
             let l = document.getElementById('st-l').value;
             let vat = document.getElementById('st-vat').value;
             let ean = document.getElementById('st-e-1').value || generateEan();
-
             if(!n || !p) return alert("Aizpildi nosaukumu un cenu!");
-
-            const stockData = {
-                n: n,
-                p: parseFloat(p),
-                q: parseInt(q || 0),
-                l: l,
-                vat: parseInt(vat),
-                e: [ean]
-            };
-
-            if(id) {
-                // UPDATE eksistējošu
-                db.ref('stock/' + id).update(stockData);
-                logAction("Izlaboja preci: " + n);
-            } else {
-                // Pievienot JAUNU
-                db.ref('stock').push(stockData);
-                logAction("Pievienoja preci: " + n);
-            }
-
+            const stockData = { n: n, p: parseFloat(p), q: parseInt(q || 0), l: l, vat: parseInt(vat), e: [ean] };
+            if(id) { db.ref('stock/' + id).update(stockData); logAction("Izlaboja preci: " + n); }
+            else { db.ref('stock').push(stockData); logAction("Pievienoja preci: " + n); }
             resetStockForm();
         }
-
-        // --- PĀRĒJĀS FUNKCIJAS ---
 
         function addRepair() {
             let mk=document.getElementById('rep-make').value, md=document.getElementById('rep-model').value, yr=document.getElementById('rep-year').value;
@@ -332,7 +318,11 @@
                     entry.partName = i.n; 
                     db.ref('repairs').push(entry);
                 });
-            } else { entry.partName = 'Darbs'; db.ref('repairs').push(entry); }
+            } else { entry.partName = 'Pakalpojums'; db.ref('repairs').push(entry); }
+            clearRepairForm();
+        }
+
+        function clearRepairForm() {
             document.getElementById('rep-nr').value=''; document.getElementById('rep-cl').value=''; document.getElementById('rep-phone').value=''; document.getElementById('rep-task').value=''; document.getElementById('rep-price').value='';
         }
 
@@ -354,17 +344,31 @@
             db.ref('history').on('value', s => { 
                 let h='', total=0; s.forEach(c => { 
                     let r=c.val(); total+=parseFloat(r.price); 
-                    h = `<tr class="border-b">
-                        <td class="p-4"><b>${r.nr}</b><br><small>${r.autoInfo || ''}</small></td>
-                        <td class="p-4">${r.cl}<br><small>${r.phone || ''}</small></td>
-                        <td class="p-4 font-black">${parseFloat(r.price).toFixed(2)}€</td>
+                    h = `<tr class="border-b hover:bg-slate-50">
+                        <td class="p-4"><b>${r.nr}</b><br><small class="text-slate-400">${r.date}</small></td>
+                        <td class="p-4">${r.cl}<br><small>${r.autoInfo || ''}</small></td>
+                        <td class="p-4 font-black text-green-600">${parseFloat(r.price).toFixed(2)}€</td>
                         <td class="p-4 text-right">
-                            <button onclick="printInvoice('${c.key}')" class="text-slate-600 mr-4"><i class="fas fa-print"></i></button>
-                            <i onclick="safeDelete('history/${c.key}','Vēsturi','${r.nr}')" class="fas fa-trash-alt text-red-500 cursor-pointer p-2"></i>
+                            <button onclick="printInvoice('${c.key}')" class="text-slate-400 hover:text-slate-600 mr-4" title="Drukāt"><i class="fas fa-print"></i></button>
+                            <button onclick="editInvoice('${c.key}')" class="text-blue-400 hover:text-blue-600 mr-4" title="Labot rēķinu"><i class="fas fa-edit"></i></button>
+                            <i onclick="safeDelete('history/${c.key}','Vēsturi','${r.nr}')" class="fas fa-trash-alt text-red-300 hover:text-red-500 cursor-pointer p-2"></i>
                         </td>
                     </tr>` + h; 
                 });
                 document.getElementById('history-table').innerHTML=h; document.getElementById('stat-money').innerText=total.toFixed(2)+"€";
+            });
+        }
+
+        function editInvoice(id) {
+            db.ref('history/'+id).once('value', s => {
+                const r = s.val();
+                showSection('repairs');
+                document.getElementById('rep-nr').value = r.nr;
+                document.getElementById('rep-cl').value = r.cl;
+                document.getElementById('rep-phone').value = r.phone || '';
+                document.getElementById('rep-price').value = r.price;
+                document.getElementById('rep-task').value = r.task;
+                alert("Dati ielādēti servisa formā labošanai. Pēc izmaiņām spied 'Ievietot Servisā'. Vecais ieraksts vēsturē tiks saglabāts, kamēr to neizdzēsīsiet.");
             });
         }
 
@@ -385,23 +389,45 @@
                 const r = s.val();
                 const area = document.getElementById('print-area');
                 area.innerHTML = `
-                <div style="padding: 40px; font-family: 'Inter', sans-serif;">
-                    <div style="display: flex; justify-content: space-between; border-bottom: 2px solid #000; padding-bottom: 20px;">
-                        <div><h1 style="font-size: 30px; font-weight: 900;">JT MOTORS</h1><p>Ventspils, Latvija<br>Tālr: +371 20000000</p></div>
-                        <div style="text-align: right;"><h2 style="font-size: 20px; font-weight: 700;">RĒĶINS - KVĪTS</h2><p>Datums: ${r.date}</p></div>
-                    </div>
-                    <div style="margin: 30px 0;">
-                        <p><strong>Klients:</strong> ${r.cl}</p>
-                        <p><strong>Auto:</strong> ${r.autoInfo} (${r.nr})</p>
+                <div style="padding: 50px; font-family: 'Helvetica', Arial, sans-serif; color: #333; line-height: 1.5;">
+                    <table style="width: 100%; margin-bottom: 50px;">
+                        <tr>
+                            <td><h1 style="font-size: 42px; font-weight: 900; color: #000; margin: 0;">JT <span style="color: #fbbf24;">MOTORS</span></h1><p style="margin: 5px 0; font-size: 14px;">Ventspils, Latvija | Tālr: +371 20000000</p></td>
+                            <td style="text-align: right; vertical-align: top;"><h2 style="font-size: 24px; margin: 0; text-transform: uppercase;">Rēķins - Kvīts</h2><p style="margin: 5px 0;">Nr. REK-${id.substring(1, 6).toUpperCase()}</p><p style="margin: 0;">Datums: <b>${r.date}</b></p></td>
+                        </tr>
+                    </table>
+                    <div style="background: #f8fafc; padding: 20px; border-radius: 10px; margin-bottom: 30px; border: 1px solid #e2e8f0;">
+                        <table style="width: 100%;">
+                            <tr>
+                                <td style="width: 50%;"><b>KLIENTS:</b><br>${r.cl}<br>${r.phone || ''}</td>
+                                <td style="width: 50%;"><b>TRANSPORTS:</b><br>${r.autoInfo}<br>Valsts Nr: <b>${r.nr}</b></td>
+                            </tr>
+                        </table>
                     </div>
                     <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
-                        <thead><tr style="background: #f1f5f9; text-align: left;"><th style="padding: 10px; border: 1px solid #ddd;">Apraksts</th><th style="padding: 10px; border: 1px solid #ddd; text-align: right;">Summa</th></tr></thead>
+                        <thead><tr style="background: #1e293b; color: white;"><th style="padding: 15px; border: 1px solid #1e293b; text-align: left;">PAKALPOJUMA / DARBA APRAKSTS</th><th style="padding: 15px; border: 1px solid #1e293b; text-align: right; width: 120px;">SUMMA</th></tr></thead>
                         <tbody>
-                            <tr><td style="padding: 10px; border: 1px solid #ddd;">Pakalpojumi un detaļas: ${r.task}<br><small>${r.partName || ''}</small></td><td style="padding: 10px; border: 1px solid #ddd; text-align: right;">${parseFloat(r.price).toFixed(2)}€</td></tr>
+                            <tr>
+                                <td style="padding: 20px; border: 1px solid #e2e8f0; font-size: 15px; vertical-align: top;">${r.task}<br><span style="color: #64748b; font-size: 12px; margin-top: 10px; display: block;">Izmantotās detaļas: ${r.partName || 'Nav'}</span></td>
+                                <td style="padding: 20px; border: 1px solid #e2e8f0; text-align: right; font-weight: bold; font-size: 16px;">${parseFloat(r.price).toFixed(2)} €</td>
+                            </tr>
                         </tbody>
-                        <tfoot><tr><th style="padding: 10px; text-align: right;">KOPĀ:</th><th style="padding: 10px; text-align: right; font-size: 18px;">${parseFloat(r.price).toFixed(2)}€</th></tr></tfoot>
                     </table>
-                    <div style="margin-top: 50px; text-align: center; font-size: 12px; color: #64748b;">Paldies, ka izvēlējāties JT MOTORS!</div>
+                    <table style="width: 100%; margin-top: 20px;">
+                        <tr>
+                            <td style="width: 60%; font-size: 11px; color: #64748b; padding-right: 40px;">Rēķins sagatavots elektroniski un ir derīgs bez paraksta. Lūdzam veikt apmaksu skaidrā naudā vai ar pārskaitījumu.</td>
+                            <td style="width: 40%;">
+                                <table style="width: 100%;">
+                                    <tr><td style="padding: 5px; text-align: right; font-size: 14px;">Summa apmaksai:</td><td style="padding: 5px; text-align: right; font-size: 22px; font-weight: 900;">${parseFloat(r.price).toFixed(2)} €</td></tr>
+                                </table>
+                            </td>
+                        </tr>
+                    </table>
+                    <div style="margin-top: 100px; display: flex; justify-content: space-between; border-top: 1px dashed #cbd5e1; padding-top: 20px;">
+                        <div style="text-align: center; width: 200px;"><p style="font-size: 10px; margin: 0;">Izdeva (Paraksts / Atšifrējums)</p></div>
+                        <div style="text-align: center; width: 200px;"><p style="font-size: 10px; margin: 0;">Saņēma (Paraksts / Atšifrējums)</p></div>
+                    </div>
+                    <div style="margin-top: 50px; text-align: center; font-size: 14px; font-weight: bold; color: #fbbf24;">PALDIES, KA IZVĒLĒJĀTIES JT MOTORS!</div>
                 </div>`;
                 setTimeout(() => { window.print(); area.innerHTML = ""; }, 500);
             });
@@ -427,15 +453,11 @@
 
         function safeDelete(p, t, i) { if(confirm(`Dzēst ${t}: ${i}?`)) { db.ref(p).remove(); logAction(`IZDZĒSA ${t}: ${i}`); } }
         function generateEan() { return "26" + Math.floor(Math.random() * 90000000000); }
-        function showSection(s) { document.querySelectorAll('.section').forEach(x=>x.classList.add('hidden')); document.querySelectorAll('.nav-link').forEach(x=>x.classList.remove('active')); document.getElementById('sec-'+s).classList.remove('hidden'); document.getElementById('n-'+s).classList.add('active'); }
+        function showSection(s) { document.querySelectorAll('.section').forEach(x=>x.classList.add('hidden')); document.querySelectorAll('.nav-link').forEach(x=>x.classList.remove('active')); document.getElementById('sec-'+s).classList.remove('hidden'); if(document.getElementById('n-'+s)) document.getElementById('n-'+s).classList.add('active'); }
         
         async function toggleScanner(inputId, isSearch = false) { 
             const r = document.getElementById('reader'); 
-            if (html5QrCode && html5QrCode.isScanning) { 
-                await html5QrCode.stop(); 
-                r.classList.add('hidden'); 
-                return; 
-            } 
+            if (html5QrCode && html5QrCode.isScanning) { await html5QrCode.stop(); r.classList.add('hidden'); return; } 
             r.classList.remove('hidden'); 
             html5QrCode = new Html5Qrcode("reader"); 
             html5QrCode.start({facingMode:"environment"}, {fps:15, qrbox:250}, (text) => { 
@@ -450,4 +472,5 @@
     </script>
 </body>
 </html>
+
 
