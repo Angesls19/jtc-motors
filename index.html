@@ -87,7 +87,7 @@
                 <div class="p-6">
                     <div class="grid grid-cols-1 md:grid-cols-12 gap-5 mb-5">
                         <div class="md:col-span-7"><input id="st-n" placeholder="Nosaukums"></div>
-                        <div class="md:col-span-5 flex gap-2"><input id="st-p" type="number" placeholder="Cena €"><select id="st-vat"><option value="21">PVN 21%</option><option value="0">Bez PVN</option></select></div>
+                        <div class="md:col-span-5 flex gap-2"><input id="st-p" type="number" placeholder="Cena € (bez PVN)"><select id="st-vat"><option value="21">PVN 21%</option><option value="0">Bez PVN</option></select></div>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-12 gap-5 mb-6">
                         <div class="md:col-span-3"><input id="st-q" type="number" placeholder="Gab."></div>
@@ -103,7 +103,22 @@
                 </div>
             </div>
             <div class="card mb-6 flex gap-3 !p-3"><input id="stock-search" onkeyup="filterStock()" placeholder="Meklēt preces..." class="!mb-0 flex-1"><button onclick="toggleScanner('stock-search', true)" class="bg-blue-600 text-white px-6 rounded-xl"><i class="fas fa-barcode"></i></button></div>
-            <div class="card !p-0 overflow-x-auto"><table class="w-full text-sm text-left"><thead><tr class="bg-slate-50"><th>Prece</th><th>Plaukts</th><th>PVN</th><th>Cena</th><th>Skaits</th><th class="text-right">Darbības</th></tr></thead><tbody id="stock-table"></tbody></table></div>
+            <div class="card !p-0 overflow-x-auto">
+                <table class="w-full text-sm text-left">
+                    <thead>
+                        <tr class="bg-slate-50">
+                            <th class="p-4">Prece</th>
+                            <th class="p-4">Plaukts</th>
+                            <th class="p-4 text-center">PVN</th>
+                            <th class="p-4">Bez PVN</th>
+                            <th class="p-4">Ar PVN</th>
+                            <th class="p-4">Skaits</th>
+                            <th class="p-4 text-right">Darbības</th>
+                        </tr>
+                    </thead>
+                    <tbody id="stock-table"></tbody>
+                </table>
+            </div>
         </div>
 
         <div id="sec-repairs" class="section hidden">
@@ -201,31 +216,64 @@
             Object.keys(allStockData).forEach(id => {
                 let i = allStockData[id];
                 if(i.n.toLowerCase().includes(q)) {
-                    h += `<tr class="border-b">
-                        <td class="p-4 font-bold">${i.n}</td>
-                        <td class="p-4">${i.l || '-'}</td>
-                        <td class="p-4">${i.vat || 0}%</td>
-                        <td class="p-4 font-black text-blue-600">${i.p}€</td>
+                    let vatRate = parseInt(i.vat || 0);
+                    let priceNoVat = parseFloat(i.p);
+                    let priceWithVat = vatRate > 0 ? priceNoVat * 1.21 : priceNoVat;
+
+                    h += `<tr class="border-b hover:bg-slate-50">
+                        <td class="p-4 font-bold text-slate-800">${i.n}</td>
+                        <td class="p-4 text-slate-500 font-mono">${i.l || '-'}</td>
+                        <td class="p-4 text-center"><span class="bg-slate-100 px-2 py-1 rounded text-[10px] font-bold">${vatRate}%</span></td>
+                        <td class="p-4 font-semibold text-slate-600">${priceNoVat.toFixed(2)}€</td>
+                        <td class="p-4 font-black text-blue-600">${priceWithVat.toFixed(2)}€</td>
                         <td class="p-4 font-bold">${i.q} gab</td>
                         <td class="p-4 text-right">
-                            <button onclick="printEan('${i.e ? i.e[0] : ''}', '${i.n}')" class="text-slate-600 mr-3"><i class="fas fa-print"></i></button>
-                            <button onclick="editStock('${id}', ${i.q}, ${i.p})" class="text-blue-500 mr-3"><i class="fas fa-edit"></i></button>
-                            <button onclick="safeDelete('stock/${id}', 'Preci', '${i.n}')" class="text-red-400"><i class="fas fa-trash"></i></button>
+                            <button onclick="printEan('${i.e ? i.e[0] : ''}', '${i.n}')" class="text-slate-400 hover:text-slate-600 mr-3"><i class="fas fa-print"></i></button>
+                            <button onclick="editStock('${id}')" class="text-blue-500 hover:text-blue-700 mr-3"><i class="fas fa-edit"></i></button>
+                            <button onclick="safeDelete('stock/${id}', 'Preci', '${i.n}')" class="text-red-300 hover:text-red-500"><i class="fas fa-trash"></i></button>
                         </td>
                     </tr>`;
-                    opt += `<option value="${id}">${i.n} (${i.p}€)</option>`;
+                    opt += `<option value="${id}">${i.n} (${priceWithVat.toFixed(2)}€ ar PVN)</option>`;
                 }
             });
             document.getElementById('stock-table').innerHTML = h;
             document.getElementById('rep-part-select').innerHTML = opt;
         }
 
+        function editStock(id) {
+            let i = allStockData[id];
+            let newN = prompt("Nosaukums:", i.n);
+            if (newN === null) return;
+            
+            let newP = prompt("Cena bez PVN (€):", i.p);
+            if (newP === null) return;
+            
+            let newVat = prompt("PVN likme (0 vai 21):", i.vat || 0);
+            if (newVat === null) return;
+            
+            let newQ = prompt("Skaits (gab):", i.q);
+            if (newQ === null) return;
+            
+            let newL = prompt("Plaukts:", i.l || "");
+            if (newL === null) return;
+
+            db.ref('stock/' + id).update({
+                n: newN,
+                p: parseFloat(newP),
+                vat: parseInt(newVat),
+                q: parseInt(newQ),
+                l: newL
+            });
+            logAction("Izlaboja preci: " + newN);
+        }
+
         function addStock() {
             let n=document.getElementById('st-n').value, p=document.getElementById('st-p').value, q=document.getElementById('st-q').value, l=document.getElementById('st-l').value, vat=document.getElementById('st-vat').value;
             if(!n || !p) return;
             let ean = document.getElementById('st-e-1').value || generateEan();
-            db.ref('stock').push({n, p: parseFloat(p), q: parseInt(q||0), l, vat, e: [ean]});
+            db.ref('stock').push({n, p: parseFloat(p), q: parseInt(q||0), l, vat: parseInt(vat), e: [ean]});
             logAction("Pievienoja preci: " + n);
+            document.getElementById('st-n').value = ''; document.getElementById('st-p').value = ''; document.getElementById('st-q').value = ''; document.getElementById('st-l').value = '';
         }
 
         function addRepair() {
@@ -235,8 +283,13 @@
             const entry = { nr, cl, phone: ph, price: pr, task, date: new Date().toLocaleString('lv-LV'), autoInfo: `${mk} ${md} ${yr}` };
             if(partId) {
                 db.ref('stock/'+partId).once('value', s => {
-                    let i = s.val(); db.ref('stock/'+partId).update({q: i.q-1});
-                    entry.price += i.p; entry.partName = i.n; db.ref('repairs').push(entry);
+                    let i = s.val(); 
+                    let vatRate = parseInt(i.vat || 0);
+                    let partPriceWithVat = vatRate > 0 ? i.p * 1.21 : i.p;
+                    db.ref('stock/'+partId).update({q: i.q-1});
+                    entry.price += partPriceWithVat; 
+                    entry.partName = i.n; 
+                    db.ref('repairs').push(entry);
                 });
             } else { entry.partName = 'Darbs'; db.ref('repairs').push(entry); }
             document.getElementById('rep-nr').value=''; document.getElementById('rep-cl').value=''; document.getElementById('rep-phone').value=''; document.getElementById('rep-task').value=''; document.getElementById('rep-price').value='';
@@ -318,7 +371,19 @@
         function loadClients() { db.ref('clients').on('value', s => { let h=''; let count=0; s.forEach(c=>{ count++; let cl=c.val(); h+=`<div class="card text-center"><i onclick="safeDelete('clients/${c.key}','Klientu','${cl.name}')" class="fas fa-trash-alt text-red-400 float-right cursor-pointer"></i><div class="font-black">${cl.name}</div><div class="text-[10px] opacity-50 uppercase">${cl.auto}</div><div class="flex gap-2 mt-2"><a href="tel:${cl.phone}" class="bg-slate-800 text-white flex-1 py-2 rounded-lg text-[10px]">ZVANĪT</a></div></div>`; }); document.getElementById('client-grid').innerHTML=h; document.getElementById('stat-clients').innerText=count; }); }
         function addClient() { let n=document.getElementById('c-name').value; if(n) db.ref('clients').push({name:n, phone:document.getElementById('c-phone').value, auto:document.getElementById('c-auto').value}); }
         function loadLogs() { db.ref('logs').limitToLast(100).on('value', s => { let h=''; s.forEach(c => { let l=c.val(); h = `<div class="p-1 border-b"><b>[${l.time}]</b> ${l.user}: ${l.info}</div>` + h; }); document.getElementById('logs-container').innerHTML=h; }); }
-        function updateStats() { let tv=0, tq=0; Object.values(allStockData).forEach(i=>{ tv+=(i.p*i.q); tq+=i.q; }); document.getElementById('stat-value').innerText=tv.toFixed(2)+"€"; document.getElementById('stat-qty').innerText=tq; }
+        
+        function updateStats() { 
+            let tv=0, tq=0; 
+            Object.values(allStockData).forEach(i=>{ 
+                let vatRate = parseInt(i.vat || 0);
+                let priceWithVat = vatRate > 0 ? i.p * 1.21 : i.p;
+                tv+=(priceWithVat * i.q); 
+                tq+=i.q; 
+            }); 
+            document.getElementById('stat-value').innerText=tv.toFixed(2)+"€"; 
+            document.getElementById('stat-qty').innerText=tq; 
+        }
+
         function safeDelete(p, t, i) { if(confirm(`Dzēst ${t}: ${i}?`)) { db.ref(p).remove(); logAction(`IZDZĒSA ${t}: ${i}`); } }
         function generateEan() { return "26" + Math.floor(Math.random() * 90000000000); }
         function showSection(s) { document.querySelectorAll('.section').forEach(x=>x.classList.add('hidden')); document.querySelectorAll('.nav-link').forEach(x=>x.classList.remove('active')); document.getElementById('sec-'+s).classList.remove('hidden'); document.getElementById('n-'+s).classList.add('active'); }
@@ -339,12 +404,9 @@
                 if(isSearch) filterStock(); 
             }).catch(err => { alert("Kameras kļūda: " + err); r.classList.add('hidden'); });
         }
-        
-        function editStock(id, q, p) { let nq=prompt("Skaits:", q), np=prompt("Cena:", p); if(nq!==null && np!==null) db.ref('stock/'+id).update({q:parseInt(nq), p:parseFloat(np)}); }
 
         (function() { const saved = localStorage.getItem('jt_motors_pass_v2'); if(saved) { window.addEventListener('DOMContentLoaded', () => { document.getElementById('login-pass').value = saved; checkLogin(); }); } })();
     </script>
 </body>
 </html>
-
 
