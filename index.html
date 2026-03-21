@@ -79,53 +79,69 @@
         <div id="reader" class="hidden"></div>
 
         <div id="sec-stock" class="section">
-            <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
-                <div class="card h-fit lg:sticky lg:top-[160px] bg-slate-50 border-2">
-                    <h3 class="font-black mb-4 uppercase text-xs text-slate-500">Jauna Prece</h3>
-                    <input id="st-n" placeholder="Nosaukums">
-                    <div class="grid grid-cols-2 gap-2">
-                        <input id="st-p" type="number" placeholder="Cena AR PVN €">
-                        <select id="st-vat">
-                            <option value="21">Ar PVN (21%)</option>
-                            <option value="0">Bez PVN (0%)</option>
-                        </select>
+            <div class="card bg-slate-50 border-2 mb-6">
+                <h3 class="font-black mb-4 uppercase text-xs text-slate-500 border-b pb-2">Jauna prece</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3 items-end">
+                    <div>
+                        <label class="text-[10px] font-bold uppercase text-slate-400 ml-1">Preces nosaukums</label>
+                        <input id="st-n" placeholder="Nosaukums" class="!mb-0">
                     </div>
-                    <input id="st-q" type="number" placeholder="Skaits">
-                    <input id="st-l" placeholder="Plaukts">
-                    <div id="ean-inputs" class="space-y-2 mb-2">
-                        <div class="flex gap-2">
-                            <input id="st-e-1" class="st-ean-list !mb-0" placeholder="EAN (Auto-gen ja tukšs)">
-                            <button onclick="toggleScanner('st-e-1')" class="bg-blue-600 text-white px-4 rounded-xl"><i class="fas fa-camera"></i></button>
+                    <div>
+                        <label class="text-[10px] font-bold uppercase text-slate-400 ml-1">Cena un Nodoklis</label>
+                        <div class="flex gap-1">
+                            <input id="st-p" type="number" placeholder="€" class="!mb-0 flex-1">
+                            <select id="st-vat" class="!mb-0 w-28">
+                                <option value="21">PVN 21%</option>
+                                <option value="0">Bez PVN</option>
+                            </select>
                         </div>
                     </div>
-                    <div class="flex justify-between mb-6">
-                        <button onclick="addEanField()" class="text-[10px] font-black text-blue-600 uppercase">+ EAN</button>
-                        <button onclick="generateEan('st-e-1')" class="text-[10px] font-black text-green-600 uppercase">Ģenerēt EAN</button>
+                    <div>
+                        <label class="text-[10px] font-bold uppercase text-slate-400 ml-1">Skaits un Plaukts</label>
+                        <div class="flex gap-1">
+                            <input id="st-q" type="number" placeholder="Skaits" class="!mb-0 w-20">
+                            <input id="st-l" placeholder="Plaukts" class="!mb-0 flex-1">
+                        </div>
                     </div>
-                    <button onclick="addStock()" class="btn-jt w-full">Saglabāt</button>
+                    <div>
+                        <label class="text-[10px] font-bold uppercase text-slate-400 ml-1">EAN Svītrkods</label>
+                        <div id="ean-inputs" class="space-y-2">
+                            <div class="flex gap-1">
+                                <input id="st-e-1" class="st-ean-list !mb-0 text-xs" placeholder="EAN (Auto)">
+                                <button onclick="toggleScanner('st-e-1')" class="bg-blue-600 text-white px-3 rounded-lg"><i class="fas fa-camera"></i></button>
+                            </div>
+                        </div>
+                        <div class="flex justify-between mt-1">
+                            <button onclick="addEanField()" class="text-[9px] font-black text-blue-600 uppercase">+ EAN</button>
+                            <button onclick="generateEan('st-e-1')" class="text-[9px] font-black text-green-600 uppercase">Ģenerēt</button>
+                        </div>
+                    </div>
+                    <div>
+                        <button onclick="addStock()" class="btn-jt w-full !py-3">Saglabāt</button>
+                    </div>
                 </div>
-                <div class="lg:col-span-3">
-                    <div class="card mb-4 flex gap-2 !p-2 bg-white sticky top-[140px] z-10 border-2 border-yellow-500/20">
-                        <input id="stock-search" onkeyup="filterStock()" placeholder="Meklēt preces vai EAN..." class="!mb-0 h-14 flex-1 border-none bg-transparent text-lg">
-                        <button onclick="toggleScanner('stock-search', true)" class="bg-blue-600 text-white px-6 rounded-xl"><i class="fas fa-barcode text-xl"></i></button>
-                    </div>
-                    <div class="card !p-0 overflow-hidden shadow-sm">
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-sm">
-                                <thead>
-                                    <tr>
-                                        <th>Prece / EAN</th>
-                                        <th>Plaukts</th>
-                                        <th>Bez PVN</th>
-                                        <th>Ar PVN (Cena)</th>
-                                        <th>Skaits</th>
-                                        <th class="text-right">Darbības</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="stock-table"></tbody>
-                            </table>
-                        </div>
-                    </div>
+            </div>
+
+            <div class="card mb-4 flex gap-2 !p-2 bg-white sticky top-[140px] z-10 border-2 border-yellow-500/20">
+                <input id="stock-search" onkeyup="filterStock()" placeholder="Meklēt preces vai EAN..." class="!mb-0 h-14 flex-1 border-none bg-transparent text-lg">
+                <button onclick="toggleScanner('stock-search', true)" class="bg-blue-600 text-white px-6 rounded-xl"><i class="fas fa-barcode text-xl"></i></button>
+            </div>
+            
+            <div class="card !p-0 overflow-hidden shadow-sm">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr>
+                                <th>Prece / EAN</th>
+                                <th>Plaukts</th>
+                                <th>Bez PVN</th>
+                                <th>Ar PVN (Cena)</th>
+                                <th>Skaits</th>
+                                <th class="text-right">Darbības</th>
+                            </tr>
+                        </thead>
+                        <tbody id="stock-table"></tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -138,6 +154,7 @@
             </div>
             <div id="repair-list" class="space-y-4"></div>
         </div>
+
         <div id="sec-calendar" class="section hidden"><div class="card bg-slate-800 p-6 flex flex-wrap gap-4"><input id="cal-date" type="date" class="w-full md:w-1/4"><input id="cal-nr" placeholder="Auto Nr." class="w-full md:w-1/4 uppercase"><input id="cal-model" placeholder="Modelis" class="w-full md:w-1/4"><button onclick="addCalendar()" class="btn-jt w-full md:w-auto px-10">Rezervēt</button><textarea id="cal-task" placeholder="Apraksts..." class="w-full"></textarea></div><div id="calendar-items" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div></div>
         <div id="sec-clients" class="section hidden"><div class="grid grid-cols-1 lg:grid-cols-4 gap-4"><div class="card h-fit"><input id="c-name" placeholder="Vārds"><input id="c-phone" placeholder="Telefons"><input id="c-auto" placeholder="Auto/Nr."><button onclick="addClient()" class="btn-jt">Pievienot</button></div><div id="client-grid" class="lg:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-4"></div></div></div>
         <div id="sec-history" class="section hidden"><div class="card !p-0 overflow-hidden"><table class="w-full text-sm"><thead><tr><th>Auto / Datums</th><th>Klients</th><th>Summa</th><th class="text-right">Darbības</th></tr></thead><tbody id="history-table"></tbody></table></div></div>
@@ -178,10 +195,9 @@
         function logAction(info) { db.ref('logs').push({time: new Date().toLocaleString('lv-LV'), user: currentUser, info: info}); }
         function loadAll() { loadStock(); loadRepairs(); loadCalendar(); loadClients(); loadHistory(); loadLogs(); }
         
-        function loadLogs() { db.ref('logs').limitToLast(100).on('value', s => { let h = ''; if(!s.exists()) h = '<div class="p-4 text-center text-slate-400">Žurnāls ir tukšs</div>'; s.forEach(c => { let l = c.val(); h = `<div class="p-2 border-b"><span class="text-blue-600 font-bold">[${l.time}]</span> <span class="bg-slate-100 px-1 rounded font-black text-slate-700">${l.user}</span>: ${l.info}</div>` + h; }); document.getElementById('logs-container').innerHTML = h; }); }
+        function loadLogs() { db.ref('logs').limitToLast(100).on('value', s => { let h = ''; if(!s.exists()) h = '<div class="p-4 text-center text-slate-400">Žurnāls ir tukšs</div>'; s.forEach(c => { let l = c.val(); h = <div class="p-2 border-b"><span class="text-blue-600 font-bold">[${l.time}]</span> <span class="bg-slate-100 px-1 rounded font-black text-slate-700">${l.user}</span>: ${l.info}</div> + h; }); document.getElementById('logs-container').innerHTML = h; }); }
         function clearLogs() { if(confirm("VAI TIEŠĀM VĒLATIES PILNĪBĀ IZTĪRĪT ŽURNĀLU?")) { db.ref('logs').remove(); logAction("IZTĪRĪJA ŽURNĀLU"); } }
 
-        // Noliktavas loģika ar PVN integrāciju
         function loadStock() { db.ref('stock').on('value', s => { allStockData = s.val() || {}; filterStock(); updateStats(); }); }
         
         function filterStock() { 
@@ -191,13 +207,10 @@
                 let i = allStockData[id]; 
                 let eans = Array.isArray(i.e) ? i.e : [i.e]; 
                 if(i.n.toLowerCase().includes(q) || eans.some(e => String(e).includes(q))) { 
-                    
                     const pvnLikme = parseFloat(i.vat || 0);
                     const cenaArPvn = parseFloat(i.p);
                     const cenaBezPvn = pvnLikme > 0 ? cenaArPvn / (1 + pvnLikme/100) : cenaArPvn;
-                    
                     const vatLabel = i.vat == "21" ? '<span class="vat-badge bg-green-500 text-white">PVN 21%</span>' : '<span class="vat-badge bg-gray-400 text-white">0%</span>';
-                    
                     h += `<tr class="border-b hover:bg-slate-50">
                         <td class="p-4"><div class="font-black">${i.n}</div><div class="text-[10px] text-slate-400">${eans.join(', ')}</div></td>
                         <td class="p-4">${i.l||'-'}</td>
@@ -209,7 +222,7 @@
                             <i onclick="editStock('${id}', '${i.n}', ${i.q}, ${i.p}, '${i.vat}')" class="fas fa-edit text-blue-500 cursor-pointer p-2"></i>
                             <i onclick="safeDelete('stock/${id}', 'Preci', '${i.n}')" class="fas fa-trash-alt text-red-400 cursor-pointer p-2"></i>
                         </td></tr>`; 
-                    opt += `<option value="${id}">${i.n}</option>`; 
+                    opt += <option value="${id}">${i.n}</option>; 
                 } 
             }); 
             document.getElementById('stock-table').innerHTML = h; document.getElementById('rep-part-select').innerHTML = opt; 
@@ -220,18 +233,17 @@
             if(!n || !p) return alert("Aizpildi nosaukumu un cenu!"); 
             let eans = []; document.querySelectorAll('.st-ean-list').forEach(el => { let v=el.value.trim(); if(!v) v=generateEan(el.id); eans.push(v); });
             db.ref('stock').push({n, p: parseFloat(p), q:parseInt(q||0), l, e:eans, vat: vat});
-            logAction(`Pievienoja preci: ${n} (PVN: ${vat}%)`);
-            document.getElementById('st-n').value = ''; document.getElementById('st-p').value = ''; document.getElementById('st-q').value = '';
+            logAction(Pievienoja preci: ${n} (PVN: ${vat}%));
+            document.getElementById('st-n').value = ''; document.getElementById('st-p').value = ''; document.getElementById('st-q').value = ''; document.getElementById('st-l').value = '';
         }
 
-        // Pārējās funkcijas
         function printBarcode(name, code, price) {
             if(!code || code === 'undefined') return alert("Precei nav EAN koda!");
             const canvas = document.createElement('canvas');
             JsBarcode(canvas, code, { format: "CODE128", width: 2, height: 40, displayValue: true });
             const barcodeImg = canvas.toDataURL("image/png");
             const w = window.open('', '', 'width=400,height=400');
-            w.document.write(`<html><head><style>body{text-align:center;padding:10px;} .label{width:50mm;margin:auto;border:1px dashed #ccc;padding:5px;} .price{font-size:18px;font-weight:900;}</style></head><body><div class="label"><div>${name.toUpperCase()}</div><img src="${barcodeImg}" style="width:100%"><div class="price">${price} €</div></div><script>window.onload=()=>{window.print();window.close();};<\/script></body></html>`);
+            w.document.write(<html><head><style>body{text-align:center;padding:10px;} .label{width:50mm;margin:auto;border:1px dashed #ccc;padding:5px;} .price{font-size:18px;font-weight:900;}</style></head><body><div class="label"><div>${name.toUpperCase()}</div><img src="${barcodeImg}" style="width:100%"><div class="price">${price} €</div></div><script>window.onload=()=>{window.print();window.close();};<\/script></body></html>);
         }
 
         function generateEan(targetId) {
@@ -240,7 +252,7 @@
             return code;
         }
 
-        function safeDelete(path, type, info) { if(confirm(`Dzēst ${type}: ${info}?`)) { db.ref(path).remove(); logAction(`IZDZĒSA ${type}: ${info}`); } }
+        function safeDelete(path, type, info) { if(confirm(Dzēst ${type}: ${info}?)) { db.ref(path).remove(); logAction(IZDZĒSA ${type}: ${info}); } }
         function showSection(s) { document.querySelectorAll('.section').forEach(x=>x.classList.add('hidden')); document.querySelectorAll('.nav-link').forEach(x=>x.classList.remove('active')); document.getElementById('sec-'+s).classList.remove('hidden'); document.getElementById('n-'+s).classList.add('active'); }
         
         function editStock(id, name, q, p, currentVat) { 
@@ -255,7 +267,7 @@
             document.getElementById('stat-qty').innerText=tq; 
         }
 
-        function loadRepairs() { db.ref('repairs').on('value', s => { let h=''; let count=0; s.forEach(c => { count++; let r=c.val(); h += `<div class="card border-l-8 border-yellow-500"><div class="flex justify-between"><div><h2 class="text-xl font-black">${r.nr}</h2><p class="text-xs uppercase">${r.cl} • ${r.price}€</p></div><button onclick="finishRepair('${c.key}')" class="bg-green-600 text-white px-4 py-2 rounded-xl font-black text-xs">GATAVS</button></div><p class="mt-2 text-sm italic">${r.task}</p></div>`; }); document.getElementById('repair-list').innerHTML=h; document.getElementById('stat-repairs').innerText=count; }); }
+        function loadRepairs() { db.ref('repairs').on('value', s => { let h=''; let count=0; s.forEach(c => { count++; let r=c.val(); h += <div class="card border-l-8 border-yellow-500"><div class="flex justify-between"><div><h2 class="text-xl font-black">${r.nr}</h2><p class="text-xs uppercase">${r.cl} • ${r.price}€</p></div><button onclick="finishRepair('${c.key}')" class="bg-green-600 text-white px-4 py-2 rounded-xl font-black text-xs">GATAVS</button></div><p class="mt-2 text-sm italic">${r.task}</p></div>; }); document.getElementById('repair-list').innerHTML=h; document.getElementById('stat-repairs').innerText=count; }); }
         function finishRepair(id) { db.ref('repairs/'+id).once('value', s => { db.ref('history').push(s.val()); db.ref('repairs/'+id).remove(); logAction("Pabeidza remontu: "+s.val().nr); }); }
         
         function addRepair() { 
@@ -277,9 +289,9 @@
             } 
         }
 
-        function loadCalendar() { db.ref('calendar').on('value', s => { let h = ''; s.forEach(c => { let cal = c.val(); h += `<div class="card"><div class="flex justify-between"><span class="text-[10px] font-black bg-slate-100 px-2 py-1 rounded">${cal.date}</span><i onclick="safeDelete('calendar/${c.key}','Pierakstu','${cal.nr}')" class="fas fa-trash-alt text-red-400"></i></div><h3 class="font-black mt-1">${cal.nr}</h3><p class="text-sm">${cal.task}</p></div>`; }); document.getElementById('calendar-items').innerHTML = h; }); }
+        function loadCalendar() { db.ref('calendar').on('value', s => { let h = ''; s.forEach(c => { let cal = c.val(); h += <div class="card"><div class="flex justify-between"><span class="text-[10px] font-black bg-slate-100 px-2 py-1 rounded">${cal.date}</span><i onclick="safeDelete('calendar/${c.key}','Pierakstu','${cal.nr}')" class="fas fa-trash-alt text-red-400"></i></div><h3 class="font-black mt-1">${cal.nr}</h3><p class="text-sm">${cal.task}</p></div>; }); document.getElementById('calendar-items').innerHTML = h; }); }
         function addCalendar() { let d=document.getElementById('cal-date').value, nr=document.getElementById('cal-nr').value, t=document.getElementById('cal-task').value; if(d && nr) db.ref('calendar').push({date:d, nr, task:t}); }
-        function loadClients() { db.ref('clients').on('value', s => { let h=''; let count=0; s.forEach(c=>{ count++; let cl=c.val(); h+=`<div class="card text-center"><i onclick="safeDelete('clients/${c.key}','Klientu','${cl.name}')" class="fas fa-trash-alt text-red-400 float-right"></i><div class="font-black">${cl.name}</div><div class="text-[10px] opacity-50 uppercase">${cl.auto}</div><div class="flex gap-2 mt-2"><a href="tel:${cl.phone}" class="bg-slate-800 text-white flex-1 py-2 rounded-lg text-[10px]">ZVANĪT</a><a href="sms:${cl.phone}" class="bg-blue-600 text-white flex-1 py-2 rounded-lg text-[10px]">SMS</a></div></div>`; }); document.getElementById('client-grid').innerHTML=h; document.getElementById('stat-clients').innerText=count; }); }
+        function loadClients() { db.ref('clients').on('value', s => { let h=''; let count=0; s.forEach(c=>{ count++; let cl=c.val(); h+=<div class="card text-center"><i onclick="safeDelete('clients/${c.key}','Klientu','${cl.name}')" class="fas fa-trash-alt text-red-400 float-right"></i><div class="font-black">${cl.name}</div><div class="text-[10px] opacity-50 uppercase">${cl.auto}</div><div class="flex gap-2 mt-2"><a href="tel:${cl.phone}" class="bg-slate-800 text-white flex-1 py-2 rounded-lg text-[10px]">ZVANĪT</a><a href="sms:${cl.phone}" class="bg-blue-600 text-white flex-1 py-2 rounded-lg text-[10px]">SMS</a></div></div>; }); document.getElementById('client-grid').innerHTML=h; document.getElementById('stat-clients').innerText=count; }); }
         function addClient() { let n=document.getElementById('c-name').value; if(n) db.ref('clients').push({name:n, phone:document.getElementById('c-phone').value, auto:document.getElementById('c-auto').value}); }
         
         function loadHistory() { 
@@ -288,7 +300,7 @@
                 s.forEach(c => { 
                     let r=c.val(); 
                     total+=parseFloat(r.price); 
-                    h = `<tr class="border-b"><td class="p-4"><b>${r.nr}</b><br><small>${r.date}</small></td><td class="p-4">${r.cl}</td><td class="p-4 font-black text-green-600">${parseFloat(r.price).toFixed(2)}€</td><td class="p-4 text-right flex gap-3 justify-end"><i onclick="printInvoice('${c.key}')" class="fas fa-print text-blue-500 cursor-pointer p-2"></i><i onclick="safeDelete('history/${c.key}','Vēsturi','${r.nr}')" class="fas fa-trash-alt text-red-500 cursor-pointer p-2"></i></td></tr>` + h; 
+                    h = <tr class="border-b"><td class="p-4"><b>${r.nr}</b><br><small>${r.date}</small></td><td class="p-4">${r.cl}</td><td class="p-4 font-black text-green-600">${parseFloat(r.price).toFixed(2)}€</td><td class="p-4 text-right flex gap-3 justify-end"><i onclick="printInvoice('${c.key}')" class="fas fa-print text-blue-500 cursor-pointer p-2"></i><i onclick="safeDelete('history/${c.key}','Vēsturi','${r.nr}')" class="fas fa-trash-alt text-red-500 cursor-pointer p-2"></i></td></tr> + h; 
                 }); 
                 document.getElementById('history-table').innerHTML = h; 
                 document.getElementById('stat-money').innerText = total.toFixed(2) + "€"; 
@@ -302,12 +314,12 @@
                 const neto = total / 1.21;
                 const pvn = total - neto;
                 const w = window.open('', '', 'width=800,height=900'); 
-                w.document.write(`<html><head><title>JT MOTORS - REKINS</title></head><body style="font-family:sans-serif;padding:40px;color:#1e293b;"><div style="display:flex;justify-content:space-between;border-bottom:4px solid #fbbf24;padding-bottom:20px;margin-bottom:30px;"><div><h1 style="margin:0;">JT <span style="color:#fbbf24;">MOTORS</span></h1><p>PROFESIONĀLS AUTO SERVISS</p></div><div style="text-align:right;"><p>Datums: <b>${r.date}</b></p><p>Rēķina Nr: <b>#${id.substring(1,7).toUpperCase()}</b></p></div></div><div style="margin-bottom:40px;"><h3>Klients: ${r.cl || 'Nav norādīts'}</h3><h3>Auto: ${r.nr}</h3></div><div style="background:#f8fafc;padding:20px;border-radius:10px;border:1px solid #e2e8f0;"><h4>Apraksts:</h4><p>${r.task || 'Nav apraksta'}</p><p>Detaļas: <b>${r.partName || '-'}</b></p></div><div style="text-align:right;margin-top:50px;border-top:2px solid #000;padding-top:20px;"><p>Summa bez PVN: ${neto.toFixed(2)} €</p><p>PVN (21%): ${pvn.toFixed(2)} €</p><h2 style="font-size:32px;">KOPĀ: ${total.toFixed(2)} €</h2></div><script>window.onload=()=>{setTimeout(()=>{window.print();window.close();},500);};<\/script></body></html>`); 
+                w.document.write(<html><head><title>JT MOTORS - REKINS</title></head><body style="font-family:sans-serif;padding:40px;color:#1e293b;"><div style="display:flex;justify-content:space-between;border-bottom:4px solid #fbbf24;padding-bottom:20px;margin-bottom:30px;"><div><h1 style="margin:0;">JT <span style="color:#fbbf24;">MOTORS</span></h1><p>PROFESIONĀLS AUTO SERVISS</p></div><div style="text-align:right;"><p>Datums: <b>${r.date}</b></p><p>Rēķina Nr: <b>#${id.substring(1,7).toUpperCase()}</b></p></div></div><div style="margin-bottom:40px;"><h3>Klients: ${r.cl || 'Nav norādīts'}</h3><h3>Auto: ${r.nr}</h3></div><div style="background:#f8fafc;padding:20px;border-radius:10px;border:1px solid #e2e8f0;"><h4>Apraksts:</h4><p>${r.task || 'Nav apraksta'}</p><p>Detaļas: <b>${r.partName || '-'}</b></p></div><div style="text-align:right;margin-top:50px;border-top:2px solid #000;padding-top:20px;"><p>Summa bez PVN: ${neto.toFixed(2)} €</p><p>PVN (21%): ${pvn.toFixed(2)} €</p><h2 style="font-size:32px;">KOPĀ: ${total.toFixed(2)} €</h2></div><script>window.onload=()=>{setTimeout(()=>{window.print();window.close();},500);};<\/script></body></html>); 
             }); 
         }
 
         async function toggleScanner(inputId, isSearch = false) { const r = document.getElementById('reader'); if (html5QrCode && html5QrCode.isScanning) { await html5QrCode.stop(); r.classList.add('hidden'); return; } r.classList.remove('hidden'); html5QrCode = new Html5Qrcode("reader"); html5QrCode.start({facingMode:"environment"}, {fps:15, qrbox:250}, (text) => { document.getElementById(inputId).value = text; html5QrCode.stop(); r.classList.add('hidden'); if(isSearch) filterStock(); }).catch(() => { r.classList.add('hidden'); }); }
-        function addEanField() { const id='ean-'+Date.now(); const div=document.createElement('div'); div.className='flex gap-2 mt-2'; div.innerHTML=`<input id="${id}" class="st-ean-list !mb-0" placeholder="EAN"><button onclick="toggleScanner('${id}')" class="bg-blue-600 text-white px-4 rounded-xl"><i class="fas fa-camera"></i></button>`; document.getElementById('ean-inputs').appendChild(div); }
+        function addEanField() { const id='ean-'+Date.now(); const div=document.createElement('div'); div.className='flex gap-2 mt-2'; div.innerHTML=<input id="${id}" class="st-ean-list !mb-0" placeholder="EAN"><button onclick="toggleScanner('${id}')" class="bg-blue-600 text-white px-4 rounded-xl"><i class="fas fa-camera"></i></button>; document.getElementById('ean-inputs').appendChild(div); }
     </script>
 </body>
 </html>
