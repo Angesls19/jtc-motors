@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>JT MOTORS | ENTERPRISE v7.8.3</title>
+    <title>JT MOTORS | ENTERPRISE v7.8.4</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
@@ -25,7 +25,6 @@
         @media (max-width: 1023px) {
             body { padding-top: 140px; }
             .sidebar { height: 70px; width: 100%; top: 70px; flex-direction: row; justify-content: space-around; padding: 0 10px; background: #0f172a; }
-            .sidebar nav { flex-direction: row; width: 100%; margin-top: 0 !important; }
             .nav-link { flex-direction: column; padding: 10px 5px; border-left: none; border-bottom: 3px solid transparent; font-size: 10px; flex: 1; text-align: center; justify-content: center; }
             .nav-link i { margin-right: 0 !important; margin-bottom: 4px; font-size: 18px; }
             .nav-link.active { border-bottom-color: #fbbf24; background: transparent; }
@@ -33,14 +32,62 @@
         }
         .main-content { margin-left: 260px; padding: 30px; min-height: calc(100vh - 70px); }
         .card { background: white; border-radius: 20px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 15px; border: 1px solid #e2e8f0; }
-        .btn-jt { background: #fbbf24; color: #000; font-weight: 900; padding: 16px; border-radius: 14px; width: 100%; cursor: pointer; border: none; text-transform: uppercase; box-shadow: 0 4px 0 #d97706; }
+        .btn-jt { background: #fbbf24; color: #000; font-weight: 900; padding: 16px; border-radius: 14px; width: 100%; cursor: pointer; border: none; text-transform: uppercase; box-shadow: 0 4px 0 #d97706; transition: 0.1s; }
+        .btn-jt:active { transform: translateY(2px); box-shadow: 0 2px 0 #d97706; }
         input, select, textarea { border: 2px solid #e2e8f0; padding: 12px; border-radius: 10px; width: 100%; margin-bottom: 10px; font-weight: 600; outline: none; background: #fff; color: #1e293b !important; }
         .stat-card { background: #1e293b; color: white; padding: 15px; border-radius: 16px; text-align: center; border-bottom: 4px solid #fbbf24; }
         th { text-align: left; padding: 12px 16px; background: #f8fafc; font-size: 10px; text-transform: uppercase; color: #64748b; font-weight: 900; border-bottom: 2px solid #e2e8f0; }
         .vat-badge { font-size: 8px; padding: 2px 4px; border-radius: 4px; font-weight: 900; margin-left: 5px; vertical-align: middle; }
+        
+        /* MODAL STYLE */
+        #edit-modal { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(4px); z-index: 9999; display: none; align-items: center; justify-content: center; padding: 20px; }
+        .modal-content { background: white; width: 100%; max-width: 500px; border-radius: 24px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); border: 1px solid #e2e8f0; }
     </style>
 </head>
 <body>
+
+    <div id="edit-modal">
+        <div class="modal-content animate-in fade-in zoom-in duration-200">
+            <div class="bg-slate-900 p-4 flex justify-between items-center">
+                <h3 class="text-white font-black uppercase text-sm tracking-widest">Labot preci</h3>
+                <button onclick="closeEditModal()" class="text-slate-400 hover:text-white"><i class="fas fa-times text-xl"></i></button>
+            </div>
+            <div class="p-6">
+                <input type="hidden" id="edit-id">
+                <label class="text-[10px] font-black uppercase text-slate-400 ml-1">Preces nosaukums</label>
+                <input id="edit-n" class="bg-slate-50 border-slate-200">
+                
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-[10px] font-black uppercase text-slate-400 ml-1">Cena (Ar PVN)</label>
+                        <input id="edit-p" type="number" step="0.01" class="bg-slate-50 border-slate-200">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-black uppercase text-slate-400 ml-1">Skaits noliktavā</label>
+                        <input id="edit-q" type="number" class="bg-slate-50 border-slate-200">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 mb-4">
+                    <div>
+                        <label class="text-[10px] font-black uppercase text-slate-400 ml-1">PVN likme</label>
+                        <select id="edit-vat" class="bg-slate-50 border-slate-200">
+                            <option value="21">PVN 21%</option>
+                            <option value="0">Bez PVN</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-black uppercase text-slate-400 ml-1">Plaukts</label>
+                        <input id="edit-l" class="bg-slate-50 border-slate-200">
+                    </div>
+                </div>
+
+                <button onclick="saveStockEdit()" class="btn-jt flex items-center justify-center gap-2">
+                    <i class="fas fa-check-circle"></i> Saglabāt izmaiņas
+                </button>
+            </div>
+        </div>
+    </div>
 
     <div class="header-logo-bar" style="display:none;" id="app-header">
         <div class="logo-text">JT <span>MOTORS</span></div>
@@ -85,57 +132,17 @@
                         <i class="fas fa-plus-circle text-yellow-500"></i> Jaunas preces reģistrācija
                     </h3>
                 </div>
-                
                 <div class="p-6">
                     <div class="grid grid-cols-1 md:grid-cols-12 gap-5 mb-5">
-                        <div class="md:col-span-7">
-                            <label class="text-[11px] font-black uppercase text-slate-500 mb-1.5 block ml-1">Preces nosaukums</label>
-                            <input id="st-n" placeholder="Nosaukums" class="!mb-0 bg-slate-50 border-slate-300">
-                        </div>
-                        <div class="md:col-span-5">
-                            <label class="text-[11px] font-black uppercase text-slate-500 mb-1.5 block ml-1">Cena un Nodoklis</label>
-                            <div class="flex gap-2">
-                                <div class="relative flex-1">
-                                    <span class="absolute left-3 top-3 text-slate-400 font-bold">€</span>
-                                    <input id="st-p" type="number" placeholder="0.00" class="!mb-0 pl-7 bg-slate-50 border-slate-300">
-                                </div>
-                                <select id="st-vat" class="!mb-0 w-32 bg-slate-50 border-slate-300 font-bold text-sm">
-                                    <option value="21">PVN 21%</option>
-                                    <option value="0">Bez PVN</option>
-                                </select>
-                            </div>
-                        </div>
+                        <div class="md:col-span-7"><label class="text-[11px] font-black uppercase text-slate-500 mb-1.5 block ml-1">Preces nosaukums</label><input id="st-n" placeholder="Nosaukums" class="!mb-0 bg-slate-50 border-slate-300"></div>
+                        <div class="md:col-span-5"><label class="text-[11px] font-black uppercase text-slate-500 mb-1.5 block ml-1">Cena un Nodoklis</label><div class="flex gap-2"><div class="relative flex-1"><span class="absolute left-3 top-3 text-slate-400 font-bold">€</span><input id="st-p" type="number" placeholder="0.00" class="!mb-0 pl-7 bg-slate-50 border-slate-300"></div><select id="st-vat" class="!mb-0 w-32 bg-slate-50 border-slate-300 font-bold text-sm"><option value="21">PVN 21%</option><option value="0">Bez PVN</option></select></div></div>
                     </div>
-
                     <div class="grid grid-cols-1 md:grid-cols-12 gap-5 mb-6">
-                        <div class="md:col-span-3">
-                            <label class="text-[11px] font-black uppercase text-slate-500 mb-1.5 block ml-1">Skaits</label>
-                            <input id="st-q" type="number" placeholder="Gab." class="!mb-0 bg-slate-50 border-slate-300">
-                        </div>
-                        <div class="md:col-span-4">
-                            <label class="text-[11px] font-black uppercase text-slate-500 mb-1.5 block ml-1">Plaukts</label>
-                            <input id="st-l" placeholder="Atrašanās vieta" class="!mb-0 bg-slate-50 border-slate-300">
-                        </div>
-                        <div class="md:col-span-5">
-                            <label class="text-[11px] font-black uppercase text-slate-500 mb-1.5 block ml-1">EAN Svītrkods</label>
-                            <div id="ean-inputs" class="space-y-2">
-                                <div class="flex gap-2">
-                                    <input id="st-e-1" class="st-ean-list !mb-0 text-sm bg-slate-50 border-slate-300" placeholder="EAN (Auto)">
-                                    <button onclick="toggleScanner('st-e-1')" class="bg-blue-600 text-white px-4 rounded-lg"><i class="fas fa-camera"></i></button>
-                                </div>
-                            </div>
-                            <div class="flex justify-between mt-2">
-                                <button onclick="addEanField()" class="text-[10px] font-black text-blue-600 uppercase">+ EAN LAUKS</button>
-                                <button onclick="generateEan('st-e-1')" class="text-[10px] font-black text-green-600 uppercase">ĢENERĒT KODU</button>
-                            </div>
-                        </div>
+                        <div class="md:col-span-3"><label class="text-[11px] font-black uppercase text-slate-500 mb-1.5 block ml-1">Skaits</label><input id="st-q" type="number" placeholder="Gab." class="!mb-0 bg-slate-50 border-slate-300"></div>
+                        <div class="md:col-span-4"><label class="text-[11px] font-black uppercase text-slate-500 mb-1.5 block ml-1">Plaukts</label><input id="st-l" placeholder="Atrašanās vieta" class="!mb-0 bg-slate-50 border-slate-300"></div>
+                        <div class="md:col-span-5"><label class="text-[11px] font-black uppercase text-slate-500 mb-1.5 block ml-1">EAN Svītrkods</label><div id="ean-inputs" class="space-y-2"><div class="flex gap-2"><input id="st-e-1" class="st-ean-list !mb-0 text-sm bg-slate-50 border-slate-300" placeholder="EAN (Auto)"><button onclick="toggleScanner('st-e-1')" class="bg-blue-600 text-white px-4 rounded-lg"><i class="fas fa-camera"></i></button></div></div><div class="flex justify-between mt-2"><button onclick="addEanField()" class="text-[10px] font-black text-blue-600 uppercase">+ EAN LAUKS</button><button onclick="generateEan('st-e-1')" class="text-[10px] font-black text-green-600 uppercase">ĢENERĒT KODU</button></div></div>
                     </div>
-
-                    <div class="pt-4 border-t border-slate-100">
-                        <button onclick="addStock()" class="btn-jt w-full !py-4 flex items-center justify-center gap-3">
-                            <i class="fas fa-save"></i> Saglabāt preci
-                        </button>
-                    </div>
+                    <div class="pt-4 border-t border-slate-100"><button onclick="addStock()" class="btn-jt w-full !py-4 flex items-center justify-center gap-3"><i class="fas fa-save"></i> Saglabāt preci</button></div>
                 </div>
             </div>
 
@@ -147,16 +154,7 @@
             <div class="card !p-0 overflow-hidden shadow-sm">
                 <div class="overflow-x-auto">
                     <table class="w-full text-sm">
-                        <thead>
-                            <tr class="bg-slate-50">
-                                <th>Prece / EAN</th>
-                                <th>Plaukts</th>
-                                <th>Bez PVN</th>
-                                <th>Ar PVN (Cena)</th>
-                                <th>Skaits</th>
-                                <th class="text-right">Darbības</th>
-                            </tr>
-                        </thead>
+                        <thead><tr class="bg-slate-50"><th>Prece / EAN</th><th>Plaukts</th><th>Bez PVN</th><th>Ar PVN (Cena)</th><th>Skaits</th><th class="text-right">Darbības</th></tr></thead>
                         <tbody id="stock-table"></tbody>
                     </table>
                 </div>
@@ -171,16 +169,11 @@
             </div>
             <div id="repair-list" class="space-y-4"></div>
         </div>
+
         <div id="sec-calendar" class="section hidden"><div class="card bg-slate-800 p-6 flex flex-wrap gap-4"><input id="cal-date" type="date" class="w-full md:w-1/4"><input id="cal-nr" placeholder="Auto Nr." class="w-full md:w-1/4 uppercase"><input id="cal-model" placeholder="Modelis" class="w-full md:w-1/4"><button onclick="addCalendar()" class="btn-jt w-full md:w-auto px-10">Rezervēt</button><textarea id="cal-task" placeholder="Apraksts..." class="w-full"></textarea></div><div id="calendar-items" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div></div>
         <div id="sec-clients" class="section hidden"><div class="grid grid-cols-1 lg:grid-cols-4 gap-4"><div class="card h-fit"><input id="c-name" placeholder="Vārds"><input id="c-phone" placeholder="Telefons"><input id="c-auto" placeholder="Auto/Nr."><button onclick="addClient()" class="btn-jt">Pievienot</button></div><div id="client-grid" class="lg:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-4"></div></div></div>
         <div id="sec-history" class="section hidden"><div class="card !p-0 overflow-hidden"><table class="w-full text-sm"><thead><tr><th>Auto / Datums</th><th>Klients</th><th>Summa</th><th class="text-right">Darbības</th></tr></thead><tbody id="history-table"></tbody></table></div></div>
-        <div id="sec-logs" class="section hidden">
-            <div class="flex justify-between items-center mb-4 px-2">
-                <h2 class="font-black uppercase text-slate-500">Sistēmas Žurnāls</h2>
-                <button id="btn-clear-logs" onclick="clearLogs()" class="bg-red-500 text-white px-4 py-2 rounded-lg text-xs font-black shadow-lg hover:bg-red-600 transition" style="display:none;">IZTĪRĪT ŽURNĀLU</button>
-            </div>
-            <div id="logs-container" class="card space-y-2 text-[11px] bg-white font-mono"></div>
-        </div>
+        <div id="sec-logs" class="section hidden"><div class="flex justify-between items-center mb-4 px-2"><h2 class="font-black uppercase text-slate-500">Sistēmas Žurnāls</h2><button id="btn-clear-logs" onclick="clearLogs()" class="bg-red-500 text-white px-4 py-2 rounded-lg text-xs font-black shadow-lg hover:bg-red-600 transition" style="display:none;">IZTĪRĪT ŽURNĀLU</button></div><div id="logs-container" class="card space-y-2 text-[11px] bg-white font-mono"></div></div>
     </div>
 
     <div style="display:none;"><svg id="barcode-gen"></svg></div>
@@ -190,12 +183,6 @@
         firebase.initializeApp(firebaseConfig); 
         const db = firebase.database();
         let html5QrCode = null, allStockData = {}, currentUser = "";
-
-        // Autentifikācija
-        (function checkAutoLogin() { 
-            const saved = localStorage.getItem('jt_motors_pass_v2'); 
-            if(saved) { window.addEventListener('DOMContentLoaded', () => { document.getElementById('login-pass').value = saved; checkLogin(); }); } 
-        })();
 
         function checkLogin() {
             const p = document.getElementById('login-pass').value;
@@ -212,16 +199,15 @@
             logAction("Pieslēdzās");
         }
 
+        (function checkAutoLogin() { const saved = localStorage.getItem('jt_motors_pass_v2'); if(saved) { window.addEventListener('DOMContentLoaded', () => { document.getElementById('login-pass').value = saved; checkLogin(); }); } })();
+
         function logout() { localStorage.removeItem('jt_motors_pass_v2'); location.reload(); }
         function logAction(info) { db.ref('logs').push({time: new Date().toLocaleString('lv-LV'), user: currentUser, info: info}); }
         function loadAll() { loadStock(); loadRepairs(); loadCalendar(); loadClients(); loadHistory(); loadLogs(); }
-        
         function loadLogs() { db.ref('logs').limitToLast(100).on('value', s => { let h = ''; if(!s.exists()) h = '<div class="p-4 text-center text-slate-400">Žurnāls ir tukšs</div>'; s.forEach(c => { let l = c.val(); h = `<div class="p-2 border-b"><span class="text-blue-600 font-bold">[${l.time}]</span> <span class="bg-slate-100 px-1 rounded font-black text-slate-700">${l.user}</span>: ${l.info}</div>` + h; }); document.getElementById('logs-container').innerHTML = h; }); }
         function clearLogs() { if(confirm("VAI TIEŠĀM VĒLATIES PILNĪBĀ IZTĪRĪT ŽURNĀLU?")) { db.ref('logs').remove(); logAction("IZTĪRĪJA ŽURNĀLU"); } }
-
         function loadStock() { db.ref('stock').on('value', s => { allStockData = s.val() || {}; filterStock(); updateStats(); }); }
-        
-        // LABOTĀ FILTERSTOCK FUNKCIJA
+
         function filterStock() { 
             const q = document.getElementById('stock-search').value.toLowerCase(); 
             let h = '', opt = '<option value="">-- Bez detaļas --</option>'; 
@@ -232,40 +218,19 @@
                     const pvnLikme = parseFloat(i.vat || 0);
                     const cenaArPvn = parseFloat(i.p);
                     const cenaBezPvn = pvnLikme > 0 ? cenaArPvn / (1 + pvnLikme/100) : cenaArPvn;
-                    
-                    const vatLabel = i.vat == "21" 
-                        ? '<span class="vat-badge bg-green-500 text-white">PVN 21%</span>' 
-                        : '<span class="vat-badge bg-gray-400 text-white">0% PVN</span>';
+                    const vatLabel = i.vat == "21" ? '<span class="vat-badge bg-green-500 text-white">PVN 21%</span>' : '<span class="vat-badge bg-gray-400 text-white">0%</span>';
 
                     h += `<tr class="border-b hover:bg-slate-50 transition-colors">
-                        <td class="p-4">
-                            <div class="font-black text-slate-800">${i.n}</div>
-                            <div class="text-[10px] text-slate-400 font-mono">${eans.join(', ')}</div>
-                        </td>
+                        <td class="p-4"><div class="font-black text-slate-800">${i.n}</div><div class="text-[10px] text-slate-400 font-mono">${eans.join(', ')}</div></td>
                         <td class="p-4 text-slate-600 font-medium">${i.l || '-'}</td>
-                        <td class="p-4">
-                            <span class="text-slate-500 font-semibold">${cenaBezPvn.toFixed(2)} €</span>
-                        </td>
-                        <td class="p-4">
-                            <div class="flex items-center gap-1">
-                                <span class="font-black text-blue-600 text-base">${cenaArPvn.toFixed(2)} €</span>
-                                ${vatLabel}
-                            </div>
-                        </td>
-                        <td class="p-4">
-                            <span class="bg-slate-100 px-2 py-1 rounded-md font-bold text-slate-700">${i.q} gab.</span>
-                        </td>
+                        <td class="p-4"><span class="text-slate-500 font-semibold">${cenaBezPvn.toFixed(2)} €</span></td>
+                        <td class="p-4"><div class="flex items-center gap-1"><span class="font-black text-blue-600 text-base">${cenaArPvn.toFixed(2)} €</span>${vatLabel}</div></td>
+                        <td class="p-4"><span class="bg-slate-100 px-2 py-1 rounded-md font-bold text-slate-700">${i.q} gab.</span></td>
                         <td class="p-4 text-right">
                             <div class="flex gap-1 justify-end">
-                                <button onclick="printBarcode('${i.n}', '${eans[0]}', '${cenaArPvn}')" class="p-2 text-slate-400 hover:text-black transition-colors" title="Drukāt">
-                                    <i class="fas fa-print"></i>
-                                </button>
-                                <button onclick="editStock('${id}', '${i.n}', ${i.q}, ${i.p}, '${i.vat}')" class="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button onclick="safeDelete('stock/${id}', 'Preci', '${i.n}')" class="p-2 text-red-400 hover:bg-red-50 rounded-lg transition-colors">
-                                    <i class="fas fa-trash-alt"></i>
-                                </button>
+                                <button onclick="printBarcode('${i.n}', '${eans[0]}', '${cenaArPvn}')" class="p-2 text-slate-400 hover:text-black"><i class="fas fa-print"></i></button>
+                                <button onclick="openEditModal('${id}')" class="p-2 text-blue-500 hover:bg-blue-50 rounded-lg"><i class="fas fa-edit"></i></button>
+                                <button onclick="safeDelete('stock/${id}', 'Preci', '${i.n}')" class="p-2 text-red-400 hover:bg-red-50 rounded-lg"><i class="fas fa-trash-alt"></i></button>
                             </div>
                         </td>
                     </tr>`; 
@@ -276,7 +241,41 @@
             document.getElementById('rep-part-select').innerHTML = opt; 
         }
 
-        // Pārējās funkcijas paliek identiskas
+        /* --- JAUNĀS EDIT MODAL FUNKCIJAS --- */
+        function openEditModal(id) {
+            const i = allStockData[id];
+            document.getElementById('edit-id').value = id;
+            document.getElementById('edit-n').value = i.n;
+            document.getElementById('edit-p').value = i.p;
+            document.getElementById('edit-q').value = i.q;
+            document.getElementById('edit-l').value = i.l || "";
+            document.getElementById('edit-vat').value = i.vat || "21";
+            document.getElementById('edit-modal').style.display = 'flex';
+        }
+
+        function closeEditModal() {
+            document.getElementById('edit-modal').style.display = 'none';
+        }
+
+        function saveStockEdit() {
+            const id = document.getElementById('edit-id').value;
+            const updateData = {
+                n: document.getElementById('edit-n').value,
+                p: parseFloat(document.getElementById('edit-p').value),
+                q: parseInt(document.getElementById('edit-q').value),
+                l: document.getElementById('edit-l').value,
+                vat: document.getElementById('edit-vat').value
+            };
+
+            if(!updateData.n || isNaN(updateData.p)) return alert("Lūdzu aizpildiet visus laukus!");
+
+            db.ref('stock/' + id).update(updateData).then(() => {
+                logAction(`LABOJA PRECI: ${updateData.n}`);
+                closeEditModal();
+            });
+        }
+        /* ---------------------------------- */
+
         function addStock() { 
             let n=document.getElementById('st-n').value, p=document.getElementById('st-p').value, q=document.getElementById('st-q').value, l=document.getElementById('st-l').value, vat=document.getElementById('st-vat').value; 
             if(!n || !p) return alert("Aizpildi nosaukumu un cenu!"); 
@@ -292,30 +291,13 @@
             JsBarcode(canvas, code, { format: "CODE128", width: 2, height: 40, displayValue: true });
             const barcodeImg = canvas.toDataURL("image/png");
             const w = window.open('', '', 'width=400,height=400');
-            w.document.write(`<html><head><style>body{text-align:center;padding:10px;} .label{width:50mm;margin:auto;border:1px dashed #ccc;padding:5px;} .price{font-size:18px;font-weight:900;}</style></head><body><div class="label"><div>${name.toUpperCase()}</div><img src="${barcodeImg}" style="width:100%"><div class="price">${price} €</div></div><script>window.onload=()=>{window.print();window.close();};<\/script></body></html>`);
+            w.document.write(`<html><head><style>body{text-align:center;padding:10px;font-family:sans-serif;} .label{width:50mm;margin:auto;border:1px dashed #ccc;padding:5px;} .price{font-size:18px;font-weight:900;}</style></head><body><div class="label"><div>${name.toUpperCase()}</div><img src="${barcodeImg}" style="width:100%"><div class="price">${price} €</div></div><script>window.onload=()=>{window.print();window.close();};<\/script></body></html>`);
         }
 
-        function generateEan(targetId) {
-            const code = "26" + Math.floor(100000 + Math.random() * 900000);
-            document.getElementById(targetId).value = code;
-            return code;
-        }
-
+        function generateEan(targetId) { const code = "26" + Math.floor(100000 + Math.random() * 900000); document.getElementById(targetId).value = code; return code; }
         function safeDelete(path, type, info) { if(confirm(`Dzēst ${type}: ${info}?`)) { db.ref(path).remove(); logAction(`IZDZĒSA ${type}: ${info}`); } }
         function showSection(s) { document.querySelectorAll('.section').forEach(x=>x.classList.add('hidden')); document.querySelectorAll('.nav-link').forEach(x=>x.classList.remove('active')); document.getElementById('sec-'+s).classList.remove('hidden'); document.getElementById('n-'+s).classList.add('active'); }
-        
-        function editStock(id, name, q, p, currentVat) { 
-            let nq=prompt("Jaunais skaits:", q), np=prompt("Jaunā cena (ar PVN):", p); 
-            if(nq!==null && np!==null) db.ref('stock/'+id).update({q:parseInt(nq), p:parseFloat(np)}); 
-        }
-
-        function updateStats() { 
-            let tv=0, tq=0; 
-            Object.values(allStockData).forEach(i=>{ tv+=(parseFloat(i.p)*parseInt(i.q)); tq+=parseInt(i.q); }); 
-            document.getElementById('stat-value').innerText=tv.toFixed(2)+"€"; 
-            document.getElementById('stat-qty').innerText=tq; 
-        }
-
+        function updateStats() { let tv=0, tq=0; Object.values(allStockData).forEach(i=>{ tv+=(parseFloat(i.p)*parseInt(i.q)); tq+=parseInt(i.q); }); document.getElementById('stat-value').innerText=tv.toFixed(2)+"€"; document.getElementById('stat-qty').innerText=tq; }
         function loadRepairs() { db.ref('repairs').on('value', s => { let h=''; let count=0; s.forEach(c => { count++; let r=c.val(); h += `<div class="card border-l-8 border-yellow-500"><div class="flex justify-between"><div><h2 class="text-xl font-black">${r.nr}</h2><p class="text-xs uppercase">${r.cl} • ${r.price}€</p></div><button onclick="finishRepair('${c.key}')" class="bg-green-600 text-white px-4 py-2 rounded-xl font-black text-xs">GATAVS</button></div><p class="mt-2 text-sm italic">${r.task}</p></div>`; }); document.getElementById('repair-list').innerHTML=h; document.getElementById('stat-repairs').innerText=count; }); }
         function finishRepair(id) { db.ref('repairs/'+id).once('value', s => { db.ref('history').push(s.val()); db.ref('repairs/'+id).remove(); logAction("Pabeidza remontu: "+s.val().nr); }); }
         
@@ -327,15 +309,10 @@
                 db.ref('stock/'+partId).once('value', s => { 
                     let i=s.val(); 
                     db.ref('stock/'+partId).update({q: i.q-1}); 
-                    entry.price += parseFloat(i.p); 
-                    entry.partName = i.n; 
-                    entry.partVat = i.vat || "0"; 
+                    entry.price += parseFloat(i.p); entry.partName = i.n; entry.partVat = i.vat || "0"; 
                     db.ref('repairs').push(entry); 
                 }); 
-            } else { 
-                entry.partName = 'Bez detaļas'; 
-                db.ref('repairs').push(entry); 
-            } 
+            } else { entry.partName = 'Bez detaļas'; db.ref('repairs').push(entry); } 
         }
 
         function loadCalendar() { db.ref('calendar').on('value', s => { let h = ''; s.forEach(c => { let cal = c.val(); h += `<div class="card"><div class="flex justify-between"><span class="text-[10px] font-black bg-slate-100 px-2 py-1 rounded">${cal.date}</span><i onclick="safeDelete('calendar/${c.key}','Pierakstu','${cal.nr}')" class="fas fa-trash-alt text-red-400"></i></div><h3 class="font-black mt-1">${cal.nr}</h3><p class="text-sm">${cal.task}</p></div>`; }); document.getElementById('calendar-items').innerHTML = h; }); }
@@ -345,12 +322,7 @@
         
         function loadHistory() { 
             db.ref('history').on('value', s => { 
-                let h = '', total = 0; 
-                s.forEach(c => { 
-                    let r=c.val(); 
-                    total+=parseFloat(r.price); 
-                    h = `<tr class="border-b"><td class="p-4"><b>${r.nr}</b><br><small>${r.date}</small></td><td class="p-4">${r.cl}</td><td class="p-4 font-black text-green-600">${parseFloat(r.price).toFixed(2)}€</td><td class="p-4 text-right flex gap-3 justify-end"><i onclick="printInvoice('${c.key}')" class="fas fa-print text-blue-500 cursor-pointer p-2"></i><i onclick="safeDelete('history/${c.key}','Vēsturi','${r.nr}')" class="fas fa-trash-alt text-red-500 cursor-pointer p-2"></i></td></tr>` + h; 
-                }); 
+                let h = '', total = 0; s.forEach(c => { let r=c.val(); total+=parseFloat(r.price); h = `<tr class="border-b"><td class="p-4"><b>${r.nr}</b><br><small>${r.date}</small></td><td class="p-4">${r.cl}</td><td class="p-4 font-black text-green-600">${parseFloat(r.price).toFixed(2)}€</td><td class="p-4 text-right flex gap-3 justify-end"><i onclick="printInvoice('${c.key}')" class="fas fa-print text-blue-500 cursor-pointer p-2"></i><i onclick="safeDelete('history/${c.key}','Vēsturi','${r.nr}')" class="fas fa-trash-alt text-red-500 cursor-pointer p-2"></i></td></tr>` + h; }); 
                 document.getElementById('history-table').innerHTML = h; 
                 document.getElementById('stat-money').innerText = total.toFixed(2) + "€"; 
             }); 
@@ -358,11 +330,7 @@
 
         function printInvoice(id) { 
             db.ref('history/'+id).once('value', s => { 
-                const r = s.val(); 
-                const total = parseFloat(r.price);
-                const neto = total / 1.21;
-                const pvn = total - neto;
-                const w = window.open('', '', 'width=800,height=900'); 
+                const r = s.val(); const total = parseFloat(r.price); const neto = total / 1.21; const pvn = total - neto; const w = window.open('', '', 'width=800,height=900'); 
                 w.document.write(`<html><head><title>JT MOTORS - REKINS</title></head><body style="font-family:sans-serif;padding:40px;color:#1e293b;"><div style="display:flex;justify-content:space-between;border-bottom:4px solid #fbbf24;padding-bottom:20px;margin-bottom:30px;"><div><h1 style="margin:0;">JT <span style="color:#fbbf24;">MOTORS</span></h1><p>PROFESIONĀLS AUTO SERVISS</p></div><div style="text-align:right;"><p>Datums: <b>${r.date}</b></p><p>Rēķina Nr: <b>#${id.substring(1,7).toUpperCase()}</b></p></div></div><div style="margin-bottom:40px;"><h3>Klients: ${r.cl || 'Nav norādīts'}</h3><h3>Auto: ${r.nr}</h3></div><div style="background:#f8fafc;padding:20px;border-radius:10px;border:1px solid #e2e8f0;"><h4>Apraksts:</h4><p>${r.task || 'Nav apraksta'}</p><p>Detaļas: <b>${r.partName || '-'}</b></p></div><div style="text-align:right;margin-top:50px;border-top:2px solid #000;padding-top:20px;"><p>Summa bez PVN: ${neto.toFixed(2)} €</p><p>PVN (21%): ${pvn.toFixed(2)} €</p><h2 style="font-size:32px;">KOPĀ: ${total.toFixed(2)} €</h2></div><script>window.onload=()=>{setTimeout(()=>{window.print();window.close();},500);};<\/script></body></html>`); 
             }); 
         }
