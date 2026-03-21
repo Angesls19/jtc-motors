@@ -150,7 +150,25 @@
         </div>
 
         <div id="sec-calendar" class="section hidden"><div class="card bg-slate-800 p-6 flex flex-wrap gap-4"><input id="cal-date" type="date" class="w-full md:w-1/4"><input id="cal-nr" placeholder="Auto Nr." class="w-full md:w-1/4 uppercase"><input id="cal-model" placeholder="Modelis" class="w-full md:w-1/4"><button onclick="addCalendar()" class="btn-jt w-full md:w-auto px-10">Rezervēt</button><textarea id="cal-task" placeholder="Apraksts..." class="w-full"></textarea></div><div id="calendar-items" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div></div>
-        <div id="sec-clients" class="section hidden"><div class="grid grid-cols-1 lg:grid-cols-4 gap-4"><div class="card h-fit"><input id="c-name" placeholder="Vārds"><input id="c-phone" placeholder="Telefons"><input id="c-auto" placeholder="Auto/Nr."><button onclick="addClient()" class="btn-jt">Pievienot</button></div><div id="client-grid" class="lg:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-4"></div></div></div>
+        
+        <div id="sec-clients" class="section hidden">
+            <div class="card bg-white shadow-md mb-6" id="client-form-container">
+                <h4 id="cl-title" class="text-[10px] font-black uppercase text-slate-400 mb-3 ml-1">Pievienot jaunu klientu vai uzņēmumu</h4>
+                <input type="hidden" id="c-id-edit">
+                <div class="grid grid-cols-1 md:grid-cols-5 gap-2">
+                    <input id="c-name" placeholder="Vārds / Uzņēmums" class="!mb-0">
+                    <input id="c-reg" placeholder="Reģ. Nr. / PVN" class="!mb-0">
+                    <input id="c-phone" placeholder="Telefons" class="!mb-0">
+                    <input id="c-auto" placeholder="Auto / Valsts Nr." class="!mb-0">
+                    <div class="flex gap-2">
+                        <button id="btn-client-save" onclick="addClient()" class="btn-jt !py-0 h-[48px] flex-1">Saglabāt</button>
+                        <button id="btn-client-cancel" onclick="resetClientForm()" class="btn-cancel !py-0 h-[48px] flex-1 hidden">Atcelt</button>
+                    </div>
+                </div>
+            </div>
+            <div id="client-grid" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
+        </div>
+
         <div id="sec-history" class="section hidden">
             <div class="card !p-0 overflow-hidden">
                 <table class="w-full text-sm text-left">
@@ -392,8 +410,7 @@
                 <div style="padding: 50px; font-family: 'Helvetica', Arial, sans-serif; color: #333; line-height: 1.5;">
                     <table style="width: 100%; margin-bottom: 50px;">
                         <tr>
-                            <td><h1 style="font-size: 42px; font-weight: 900; color: #000; margin: 0;">JT <span style="color: #fbbf24;">MOTORS</span></h1><p style="margin: 5px 0; font-size: 14px;">Krišjāņa Barona iela 136a,Latgales priekšpilsēta.Rīga,LV-1012
-| Tālr: +371 26999309</p></td>
+                            <td><h1 style="font-size: 42px; font-weight: 900; color: #000; margin: 0;">JT <span style="color: #fbbf24;">MOTORS</span></h1><p style="margin: 5px 0; font-size: 14px;">Ventspils, Latvija | Tālr: +371 20000000</p></td>
                             <td style="text-align: right; vertical-align: top;"><h2 style="font-size: 24px; margin: 0; text-transform: uppercase;">Rēķins - Kvīts</h2><p style="margin: 5px 0;">Nr. REK-${id.substring(1, 6).toUpperCase()}</p><p style="margin: 0;">Datums: <b>${r.date}</b></p></td>
                         </tr>
                     </table>
@@ -436,8 +453,83 @@
 
         function loadCalendar() { db.ref('calendar').on('value', s => { let h=''; s.forEach(c => { let cal=c.val(); h+=`<div class="card"><div class="flex justify-between"><span class="text-[10px] font-black bg-slate-100 px-2 py-1">${cal.date}</span><i onclick="safeDelete('calendar/${c.key}','Pierakstu','${cal.nr}')" class="fas fa-trash-alt text-red-400 cursor-pointer"></i></div><h3 class="font-black mt-1">${cal.nr}</h3><p class="text-sm">${cal.task}</p></div>`; }); document.getElementById('calendar-items').innerHTML=h; }); }
         function addCalendar() { let d=document.getElementById('cal-date').value, nr=document.getElementById('cal-nr').value, t=document.getElementById('cal-task').value; if(d && nr) db.ref('calendar').push({date:d, nr, task:t}); }
-        function loadClients() { db.ref('clients').on('value', s => { let h=''; let count=0; s.forEach(c=>{ count++; let cl=c.val(); h+=`<div class="card text-center"><i onclick="safeDelete('clients/${c.key}','Klientu','${cl.name}')" class="fas fa-trash-alt text-red-400 float-right cursor-pointer"></i><div class="font-black">${cl.name}</div><div class="text-[10px] opacity-50 uppercase">${cl.auto}</div><div class="flex gap-2 mt-2"><a href="tel:${cl.phone}" class="bg-slate-800 text-white flex-1 py-2 rounded-lg text-[10px]">ZVANĪT</a></div></div>`; }); document.getElementById('client-grid').innerHTML=h; document.getElementById('stat-clients').innerText=count; }); }
-        function addClient() { let n=document.getElementById('c-name').value; if(n) db.ref('clients').push({name:n, phone:document.getElementById('c-phone').value, auto:document.getElementById('c-auto').value}); }
+
+        /* KLIENTU FUNKCIJAS (UZLABOTAS) */
+        function loadClients() { 
+            db.ref('clients').on('value', s => { 
+                let h=''; let count=0; 
+                s.forEach(c=>{ 
+                    count++; let cl=c.val(); 
+                    h+=`<div class="card text-center border-t-4 border-slate-200">
+                        <div class="flex justify-between items-start mb-2">
+                            <button onclick="prepareEditClient('${c.key}')" class="text-blue-500 hover:text-blue-700 text-xs"><i class="fas fa-edit"></i></button>
+                            <button onclick="safeDelete('clients/${c.key}','Klientu','${cl.name}')" class="text-red-300 hover:text-red-500 text-xs"><i class="fas fa-trash-alt"></i></button>
+                        </div>
+                        <div class="font-black uppercase text-sm">${cl.name}</div>
+                        ${cl.reg ? `<div class="text-[10px] text-blue-600 font-bold">${cl.reg}</div>` : ''}
+                        <div class="text-[11px] opacity-70 mt-1">${cl.auto || '-'}</div>
+                        <div class="flex gap-2 mt-4">
+                            <a href="tel:${cl.phone}" class="bg-slate-800 text-white flex-1 py-2 rounded-lg text-[10px] font-bold flex items-center justify-center gap-2"><i class="fas fa-phone"></i> ZVANĪT</a>
+                        </div>
+                    </div>`; 
+                }); 
+                document.getElementById('client-grid').innerHTML=h; 
+                document.getElementById('stat-clients').innerText=count; 
+            }); 
+        }
+
+        function addClient() { 
+            let id = document.getElementById('c-id-edit').value;
+            let n = document.getElementById('c-name').value;
+            let r = document.getElementById('c-reg').value;
+            let p = document.getElementById('c-phone').value;
+            let a = document.getElementById('c-auto').value;
+            
+            if(!n) return alert("Ievadiet klienta vārdu vai uzņēmuma nosaukumu!");
+            
+            const clientData = { name: n, reg: r, phone: p, auto: a };
+            
+            if(id) {
+                db.ref('clients/' + id).update(clientData);
+                logAction("Izlaboja klientu: " + n);
+            } else {
+                db.ref('clients').push(clientData);
+                logAction("Pievienoja klientu: " + n);
+            }
+            resetClientForm();
+        }
+
+        function prepareEditClient(id) {
+            db.ref('clients/' + id).once('value', s => {
+                const cl = s.val();
+                document.getElementById('c-id-edit').value = id;
+                document.getElementById('c-name').value = cl.name;
+                document.getElementById('c-reg').value = cl.reg || "";
+                document.getElementById('c-phone').value = cl.phone;
+                document.getElementById('c-auto').value = cl.auto;
+                
+                document.getElementById('cl-title').innerText = "Labot klienta informāciju";
+                document.getElementById('cl-title').classList.replace('text-slate-400', 'text-blue-600');
+                document.getElementById('btn-client-save').innerText = "Saglabāt izmaiņas";
+                document.getElementById('btn-client-cancel').classList.remove('hidden');
+                document.querySelectorAll('#client-form-container input').forEach(el => el.classList.add('border-blue-200'));
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+        }
+
+        function resetClientForm() {
+            document.getElementById('c-id-edit').value = '';
+            document.getElementById('c-name').value = '';
+            document.getElementById('c-reg').value = '';
+            document.getElementById('c-phone').value = '';
+            document.getElementById('c-auto').value = '';
+            document.getElementById('cl-title').innerText = "Pievienot jaunu klientu vai uzņēmumu";
+            document.getElementById('cl-title').classList.replace('text-blue-600', 'text-slate-400');
+            document.getElementById('btn-client-save').innerText = "Saglabāt";
+            document.getElementById('btn-client-cancel').classList.add('hidden');
+            document.querySelectorAll('#client-form-container input').forEach(el => el.classList.remove('border-blue-200'));
+        }
+
         function loadLogs() { db.ref('logs').limitToLast(100).on('value', s => { let h=''; s.forEach(c => { let l=c.val(); h = `<div class="p-1 border-b"><b>[${l.time}]</b> ${l.user}: ${l.info}</div>` + h; }); document.getElementById('logs-container').innerHTML=h; }); }
         
         function updateStats() { 
