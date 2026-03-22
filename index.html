@@ -57,6 +57,7 @@
             transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             font-size: 10px; 
             font-weight: 600; 
+            cursor: pointer;
         }
         .nav-link i { font-size: 20px; margin-bottom: 4px; transition: 0.3s; }
         .nav-link.active { color: var(--jt-yellow); position: relative; }
@@ -175,6 +176,24 @@
         .store-card-body { padding: 16px; flex-grow: 1; }
 
         #edit-modal { backdrop-filter: blur(5px); }
+        
+        /* Jaunās stila papildinājumi izkārtojumam */
+        .shelf-btn {
+            width: 100%;
+            text-align: left;
+            padding: 12px 16px;
+            border-radius: 12px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            font-weight: 700;
+            transition: 0.2s;
+        }
+        .shelf-btn.active {
+            background: #0f172a;
+            color: white;
+            border-color: #0f172a;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.2);
+        }
     </style>
 </head>
 <body>
@@ -212,6 +231,7 @@
             </div>
             <nav class="nav-bar">
                 <div onclick="setSec('stock')" id="n-stock" class="nav-link active"><i class="fas fa-boxes"></i><span>Krājumi</span></div>
+                <div onclick="setSec('layout')" id="n-layout" class="nav-link"><i class="fas fa-layer-group"></i><span>Izkārtojums</span></div>
                 <div onclick="setSec('repairs')" id="n-repairs" class="nav-link"><i class="fas fa-tools"></i><span>Serviss</span></div>
                 <div onclick="setSec('store')" id="n-store" class="nav-link"><i class="fas fa-shopping-cart"></i><span>Veikals</span></div>
                 <div onclick="setSec('orders')" id="n-orders" class="nav-link"><i class="fas fa-truck-loading"></i><span>Pasūtījumi</span></div>
@@ -276,6 +296,30 @@
                 </div>
                 <div class="relative mb-4"><i class="fas fa-search absolute left-4 top-4 text-slate-400"></i><input id="q-stock" oninput="drawStock()" placeholder="Meklēt krājumos pēc nosaukuma vai EAN..." class="pl-12 !mb-0 bg-white shadow-sm border-none"></div>
                 <div id="stock-list" class="grid gap-3"></div>
+            </div>
+
+            <div id="sec-layout" class="tab-content hidden">
+                <div class="flex items-center justify-between mb-6 px-2">
+                    <h2 class="text-2xl font-black italic uppercase tracking-tighter">Noliktavas <span class="text-amber-500">Izkārtojums</span></h2>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                    <div class="card md:col-span-1 border-none shadow-xl">
+                        <h3 class="font-black uppercase text-xs mb-4 text-slate-400 tracking-widest flex items-center gap-2">
+                            <i class="fas fa-filter"></i> Plauktu Filtrs
+                        </h3>
+                        <div id="shelf-list" class="space-y-2 max-h-[60vh] overflow-y-auto pr-2">
+                            </div>
+                    </div>
+                    
+                    <div class="md:col-span-3">
+                        <div id="shelf-view" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <div class="col-span-full text-center p-20 opacity-30 bg-white rounded-[30px] border-2 border-dashed border-slate-300">
+                                <i class="fas fa-arrow-left text-4xl mb-4"></i>
+                                <p class="font-bold">Izvēlies plauktu sānjoslā, lai redzētu tajā esošās preces</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div id="sec-repairs" class="tab-content hidden">
@@ -493,6 +537,9 @@
             document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
             document.getElementById('sec-' + s).classList.remove('hidden');
             document.getElementById('n-' + s).classList.add('active');
+            
+            // Ja atveram izkārtojumu, uzģenerējam plauktus
+            if(s === 'layout') updateLayoutView();
         }
 
         function init() {
@@ -514,6 +561,54 @@
             });
         }
 
+        // --- IZKĀRTOJUMA LOĢIKA ---
+        function updateLayoutView() {
+            const shelfList = document.getElementById('shelf-list');
+            const shelves = new Set();
+            
+            // Atrodam visus unikālos plauktus no noliktavas
+            Object.values(stock).forEach(item => {
+                if(item.l) shelves.add(item.l.toUpperCase());
+            });
+            
+            let html = '';
+            Array.from(shelves).sort().forEach(shelf => {
+                html += `<button onclick="showShelfContent('${shelf}')" class="shelf-btn" id="btn-shelf-${shelf}">${shelf}</button>`;
+            });
+            
+            shelfList.innerHTML = html || '<p class="text-xs text-slate-400">Nav definētu plauktu</p>';
+        }
+
+        function showShelfContent(shelfName) {
+            // Aktīvā poga
+            document.querySelectorAll('.shelf-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(`btn-shelf-${shelfName}`).classList.add('active');
+            
+            const shelfView = document.getElementById('shelf-view');
+            let html = '';
+            
+            Object.keys(stock).forEach(id => {
+                const i = stock[id];
+                if(i.l && i.l.toUpperCase() === shelfName) {
+                    html += `
+                    <div class="card !p-4 border-none shadow-md">
+                        <div class="text-[10px] font-black text-slate-400 mb-1 uppercase tracking-tighter">Svītrkods: ${i.e || '-'}</div>
+                        <h4 class="font-bold text-sm text-slate-800 leading-tight mb-2">${i.n}</h4>
+                        <div class="flex justify-between items-end mt-4">
+                            <span class="text-xs font-black bg-amber-100 text-amber-700 px-2 py-1 rounded">${i.q} GAB</span>
+                            <div class="text-right">
+                                <div class="text-xs text-slate-400 font-bold uppercase">Cena ar PVN</div>
+                                <div class="text-lg font-black text-slate-900 leading-none">${(i.p * (i.vat == 21 ? 1.21 : 1)).toFixed(2)}€</div>
+                            </div>
+                        </div>
+                    </div>`;
+                }
+            });
+            
+            shelfView.innerHTML = html;
+        }
+
+        // --- PĀRĒJĀS FUNKCIJAS (BEZ IZMAIŅĀM) ---
         function fillMakes() {
             let h = '<option value="">Izvēlies...</option>';
             Object.keys(modelsByMake).sort().forEach(m => h += `<option value="${m}">${m}</option>`);
@@ -594,7 +689,7 @@
             log("Noliktava: Pievienota prece " + n);
         }
 
-        // VEIKALS (AR KATEGORIJĀM)
+        // VEIKALS 
         function loadStore() { db.ref('store_items').on('value', s => { storeItems = s.val() || {}; drawStore(); }); }
 
         function addStoreItem() {
@@ -693,10 +788,6 @@
                     container.innerHTML += sectionHtml;
                 }
             });
-
-            if (container.innerHTML === '') {
-                container.innerHTML = '<div class="text-center py-20 opacity-30 font-bold uppercase tracking-widest text-slate-400">VEIKALS ŠOBRĪD IR TUKŠS</div>';
-            }
         }
 
         // --- LABOŠANAS MODĀLĀ LOGA FUNKCIJAS ---
@@ -814,7 +905,7 @@
             });
         }
 
-        // --- PĀRĒJĀS FUNKCIJAS ---
+        // --- PĀRĒJĀS SERVISA UN FINANŠU FUNKCIJAS ---
         function loadRepairs() {
             db.ref('repairs').on('value', s => {
                 let h = '', c = 0;
@@ -924,7 +1015,6 @@
             if(!scanner) scanner = new Html5Qrcode("reader");
             scanner.start({facingMode: "environment"}, {fps: 10, qrbox: 250}, text => { 
                 document.getElementById(targetId).value = text; 
-                // Ja meklējam veikalā, uzreiz izsaucam drawStore()
                 if(targetId === 'q-store') drawStore();
                 scanner.stop(); 
                 r.classList.add('hidden'); 
@@ -933,10 +1023,10 @@
 
         function generateEAN(targetId) {
             const timestamp = Date.now().toString();
-            // Izmantojam prefiksu 200 (iekšējai lietošanai) + unikālu laika daļu
             const ean = "200" + timestamp.slice(-10);
             document.getElementById(targetId).value = ean;
         }
     </script>
 </body>
 </html>
+q
