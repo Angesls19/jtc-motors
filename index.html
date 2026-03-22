@@ -268,6 +268,7 @@
                         <label class="input-group-label text-slate-400">Svītrkods (EAN)</label>
                         <div class="flex gap-2">
                             <input id="st-e" placeholder="Skenēt..." class="!bg-slate-800 !text-white border-slate-700 font-mono">
+                            <button onclick="generateEAN('st-e')" class="bg-blue-500 text-white w-14 h-[50px] rounded-xl flex items-center justify-center font-black text-xs">GEN</button>
                             <button onclick="startScan('st-e')" class="bg-amber-500 text-slate-900 w-14 h-[50px] rounded-xl flex items-center justify-center shadow-lg shadow-amber-500/20"><i class="fas fa-barcode"></i></button>
                         </div>
                         <button onclick="addStock()" class="btn-jt w-full mt-4 !py-4">Saglabāt Noliktavā</button>
@@ -331,6 +332,7 @@
                         <label class="input-group-label text-slate-400">Svītrkods (EAN)</label>
                         <div class="flex gap-2">
                             <input id="store-in-e" placeholder="Skenēt vai ierakstīt..." class="!bg-slate-800 !text-white border-slate-700 font-mono text-sm">
+                            <button onclick="generateEAN('store-in-e')" class="bg-blue-500 text-white w-14 h-[50px] rounded-xl flex items-center justify-center font-black text-xs">GEN</button>
                             <button onclick="startScan('store-in-e')" class="bg-amber-500 text-slate-900 w-14 h-[50px] rounded-xl flex items-center justify-center shadow-lg shadow-amber-500/20"><i class="fas fa-barcode"></i></button>
                         </div>
 
@@ -338,14 +340,18 @@
                     </div>
                 </div>
 
-                <div class="flex justify-between items-center mb-6 px-2">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4 px-2">
                     <h2 class="text-2xl font-black italic uppercase tracking-tighter">JT VEIKALS <span class="text-amber-500">LIVE</span></h2>
-                    <div class="relative w-1/2">
-                        <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                        <input id="q-store" oninput="drawStore()" placeholder="Meklēt veikalā..." class="!mb-0 pl-12 py-3 !bg-white shadow-sm border-slate-200">
+                    <div class="relative w-full md:w-1/2 flex gap-2">
+                        <div class="relative flex-grow">
+                            <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                            <input id="q-store" oninput="drawStore()" placeholder="Meklēt veikalā..." class="!mb-0 pl-12 py-3 !bg-white shadow-sm border-slate-200">
+                        </div>
+                        <button onclick="startScan('q-store')" class="bg-white border border-slate-200 text-slate-600 w-12 h-[50px] rounded-xl flex items-center justify-center shadow-sm"><i class="fas fa-camera"></i></button>
                     </div>
                 </div>
-                <div id="store-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
+                
+                <div id="store-container" class="space-y-12"></div>
             </div>
 
             <div id="sec-orders" class="tab-content hidden">
@@ -588,7 +594,7 @@
             log("Noliktava: Pievienota prece " + n);
         }
 
-        // VEIKALS
+        // VEIKALS (AR KATEGORIJĀM)
         function loadStore() { db.ref('store_items').on('value', s => { storeItems = s.val() || {}; drawStore(); }); }
 
         function addStoreItem() {
@@ -609,46 +615,91 @@
 
         function drawStore() {
             const q = document.getElementById('q-store').value.toLowerCase();
-            let h = '';
-            Object.keys(storeItems).forEach(id => {
-                const i = storeItems[id];
-                if(i.n.toLowerCase().includes(q) || (i.e && i.e.toString().includes(q))) {
-                    const imgHtml = i.img 
-                        ? `<img src="${i.img}" alt="${i.n}">` 
-                        : `<i class="fas fa-shopping-bag text-slate-200 fa-3x"></i>`;
+            const container = document.getElementById('store-container');
+            container.innerHTML = '';
 
-                    h += `
-                    <div class="store-card-v2">
-                        <div class="store-card-header">
-                            ${imgHtml}
-                            <div class="absolute top-3 left-3 shelf-tag !bg-white/90 shadow-sm">${i.l || 'V-1'}</div>
-                            <div class="absolute bottom-2 right-3 text-[10px] font-black text-slate-700 bg-white/90 px-2 py-0.5 rounded-full shadow-sm">${i.q} GAB</div>
-                        </div>
-                        <div class="store-card-body">
-                            <div class="text-[9px] font-black text-amber-500 uppercase tracking-widest mb-1">Veikala Prece</div>
-                            <h3 class="font-bold text-slate-800 text-sm leading-tight h-10 overflow-hidden mb-3">${i.n}</h3>
-                            <div class="bg-slate-50 p-2 rounded-xl border border-slate-100 flex justify-between items-center">
-                                <div>
-                                    <div class="text-[9px] text-slate-400 font-bold uppercase">Cena ar PVN</div>
-                                    <div class="text-xl font-black text-slate-900 leading-none">${parseFloat(i.p).toFixed(2)}€</div>
-                                    <div class="text-[10px] text-slate-400 font-medium mt-1">${parseFloat(i.p_neto || 0).toFixed(2)}€ bez PVN</div>
-                                </div>
-                                <div class="flex gap-1">
-                                    <button onclick="editStore('${id}')" class="w-8 h-8 rounded-full bg-white text-slate-400 shadow-sm flex items-center justify-center hover:text-blue-500"><i class="fas fa-edit text-[10px]"></i></button>
-                                    <button onclick="printEAN('${i.e}', '${i.n}')" class="w-8 h-8 rounded-full bg-white text-slate-400 shadow-sm flex items-center justify-center hover:text-amber-500"><i class="fas fa-print text-[10px]"></i></button>
-                                    <button onclick="if(confirm('Dzēst preci no veikala?')) db.ref('store_items/${id}').remove()" class="w-8 h-8 rounded-full bg-white text-slate-200 shadow-sm flex items-center justify-center hover:text-red-500"><i class="fas fa-trash text-[10px]"></i></button>
-                                </div>
-                            </div>
-                            <div class="mt-3 text-[9px] font-mono text-slate-400 text-center">EAN: ${i.e || '-'}</div>
-                        </div>
-                    </div>`;
+            const categories = [
+                { name: "Eļļas un šķidrumi", keys: ["eļļa", "ella", "oil", "antifriz", "tosol", "škidrums", "skidrums"] },
+                { name: "Filtri", keys: ["filtrs", "filter"] },
+                { name: "Bremžu sistēma", keys: ["bremžu", "bremzu", "brake", "kluci", "disks", "support"] },
+                { name: "Ritošā daļa", keys: ["svira", "bukse", "atspere", "amortizator", "stūre", "sture", "balsts"] },
+                { name: "Elektroiekārtas", keys: ["svece", "spuldze", "lukturis", "akumulator", "vads", "sensors"] },
+                { name: "Cits / Dažādi", keys: [] }
+            ];
+
+            let categorizedData = {};
+            categories.forEach(cat => categorizedData[cat.name] = []);
+
+            Object.keys(storeItems).forEach(id => {
+                const item = storeItems[id];
+                if (item.n.toLowerCase().includes(q) || (item.e && item.e.toString().includes(q))) {
+                    let found = false;
+                    for (let cat of categories) {
+                        if (cat.keys.some(key => item.n.toLowerCase().includes(key))) {
+                            categorizedData[cat.name].push({ id, ...item });
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found) categorizedData["Cits / Dažādi"].push({ id, ...item });
                 }
             });
-            document.getElementById('store-grid').innerHTML = h || '<div class="col-span-full text-center py-20 opacity-30 font-bold">VEIKALS ŠOBRĪD IR TUKŠS</div>';
+
+            categories.forEach(cat => {
+                const items = categorizedData[cat.name];
+                if (items.length > 0) {
+                    let sectionHtml = `
+                        <div>
+                            <div class="flex items-center gap-4 mb-4 px-2">
+                                <div class="h-px bg-slate-300 flex-grow"></div>
+                                <h3 class="text-xs font-black uppercase tracking-[0.2em] text-slate-500 whitespace-nowrap">${cat.name}</h3>
+                                <div class="h-px bg-slate-300 flex-grow"></div>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    `;
+
+                    items.forEach(i => {
+                        const imgHtml = i.img 
+                            ? `<img src="${i.img}" alt="${i.n}">` 
+                            : `<i class="fas fa-shopping-bag text-slate-200 fa-3x"></i>`;
+
+                        sectionHtml += `
+                            <div class="store-card-v2">
+                                <div class="store-card-header">
+                                    ${imgHtml}
+                                    <div class="absolute top-3 left-3 shelf-tag !bg-white/90 shadow-sm">${i.l || 'V-1'}</div>
+                                    <div class="absolute bottom-2 right-3 text-[10px] font-black text-slate-700 bg-white/90 px-2 py-0.5 rounded-full shadow-sm">${i.q} GAB</div>
+                                </div>
+                                <div class="store-card-body">
+                                    <h3 class="font-bold text-slate-800 text-sm leading-tight h-10 overflow-hidden mb-3">${i.n}</h3>
+                                    <div class="bg-slate-50 p-2 rounded-xl border border-slate-100 flex justify-between items-center">
+                                        <div>
+                                            <div class="text-[9px] text-slate-400 font-bold uppercase">Cena ar PVN</div>
+                                            <div class="text-xl font-black text-slate-900 leading-none">${parseFloat(i.p).toFixed(2)}€</div>
+                                            <div class="text-[10px] text-slate-400 font-medium mt-1">${parseFloat(i.p_neto || 0).toFixed(2)}€ bez PVN</div>
+                                        </div>
+                                        <div class="flex gap-1">
+                                            <button onclick="editStore('${i.id}')" class="w-8 h-8 rounded-full bg-white text-slate-400 shadow-sm flex items-center justify-center hover:text-blue-500"><i class="fas fa-edit text-[10px]"></i></button>
+                                            <button onclick="printEAN('${i.e}', '${i.n}')" class="w-8 h-8 rounded-full bg-white text-slate-400 shadow-sm flex items-center justify-center hover:text-amber-500"><i class="fas fa-print text-[10px]"></i></button>
+                                            <button onclick="if(confirm('Dzēst preci no veikala?')) db.ref('store_items/${i.id}').remove()" class="w-8 h-8 rounded-full bg-white text-slate-200 shadow-sm flex items-center justify-center hover:text-red-500"><i class="fas fa-trash text-[10px]"></i></button>
+                                        </div>
+                                    </div>
+                                    <div class="mt-3 text-[9px] font-mono text-slate-400 text-center">EAN: ${i.e || '-'}</div>
+                                </div>
+                            </div>`;
+                    });
+
+                    sectionHtml += `</div></div>`;
+                    container.innerHTML += sectionHtml;
+                }
+            });
+
+            if (container.innerHTML === '') {
+                container.innerHTML = '<div class="text-center py-20 opacity-30 font-bold uppercase tracking-widest text-slate-400">VEIKALS ŠOBRĪD IR TUKŠS</div>';
+            }
         }
 
         // --- LABOŠANAS MODĀLĀ LOGA FUNKCIJAS ---
-
         function openEditModal(title, contentHtml) {
             document.getElementById('edit-modal-title').innerText = title;
             document.getElementById('edit-modal-content').innerHTML = contentHtml;
@@ -657,7 +708,6 @@
 
         function closeEditModal() { document.getElementById('edit-modal').classList.add('hidden'); }
 
-        // Noliktavas labošana
         function editStock(id) {
             const i = stock[id];
             const html = `
@@ -690,7 +740,6 @@
             db.ref('stock/' + id).update(updates).then(() => { closeEditModal(); log("Noliktava: Rediģēts " + updates.n); });
         }
 
-        // Veikala labošana
         function editStore(id) {
             const i = storeItems[id];
             const html = `
@@ -729,7 +778,6 @@
             db.ref('store_items/' + id).update(updates).then(() => { closeEditModal(); log("Veikals: Rediģēts " + updates.n); });
         }
 
-        // Klientu labošana
         function editClient(id) {
             db.ref('clients/' + id).once('value', s => {
                 const c = s.val();
@@ -766,8 +814,7 @@
             });
         }
 
-        // --- PĀRĒJĀS FUNKCIJAS (Serviss, Finanses, utt.) ---
-
+        // --- PĀRĒJĀS FUNKCIJAS ---
         function loadRepairs() {
             db.ref('repairs').on('value', s => {
                 let h = '', c = 0;
@@ -875,7 +922,20 @@
         async function startScan(targetId) {
             const r = document.getElementById('reader'); r.classList.remove('hidden');
             if(!scanner) scanner = new Html5Qrcode("reader");
-            scanner.start({facingMode: "environment"}, {fps: 10, qrbox: 250}, text => { document.getElementById(targetId).value = text; scanner.stop(); r.classList.add('hidden'); }).catch(err => { alert("Kameras kļūda!"); r.classList.add('hidden'); });
+            scanner.start({facingMode: "environment"}, {fps: 10, qrbox: 250}, text => { 
+                document.getElementById(targetId).value = text; 
+                // Ja meklējam veikalā, uzreiz izsaucam drawStore()
+                if(targetId === 'q-store') drawStore();
+                scanner.stop(); 
+                r.classList.add('hidden'); 
+            }).catch(err => { alert("Kameras kļūda!"); r.classList.add('hidden'); });
+        }
+
+        function generateEAN(targetId) {
+            const timestamp = Date.now().toString();
+            // Izmantojam prefiksu 200 (iekšējai lietošanai) + unikālu laika daļu
+            const ean = "200" + timestamp.slice(-10);
+            document.getElementById(targetId).value = ean;
         }
     </script>
 </body>
