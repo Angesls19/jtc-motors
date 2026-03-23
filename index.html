@@ -212,12 +212,12 @@
                 <div class="w-8 h-8 rounded-full bg-amber-500 flex items-center justify-center text-slate-900 font-bold text-xs" id="user-badge">?</div>
             </div>
             <nav class="nav-bar">
-                <div onclick="setSec('stock')" id="n-stock" class="nav-link active"><i class="fas fa-boxes"></i><span>Krājumi</span></div>
+                <div onclick="setSec('stock')" id="n-stock" class="nav-link active"><i class="fas fa-boxes"></i><span>Noliktava</span></div>
                 <div onclick="setSec('repairs')" id="n-repairs" class="nav-link"><i class="fas fa-tools"></i><span>Serviss</span></div>
-                <div onclick="setSec('store')" id="n-store" class="nav-link"><i class="fas fa-shopping-cart"></i><span>Veikals</span></div>
+                <div onclick="setSec('store')" id="n-store" class="nav-link"><i class="fas fa-shopping-cart"></i><span>E-Veikals</span></div>
                 <div onclick="setSec('orders')" id="n-orders" class="nav-link"><i class="fas fa-truck-loading"></i><span>Pasūtījumi</span></div>
                 <div onclick="setSec('clients')" id="n-clients" class="nav-link"><i class="fas fa-address-book"></i><span>Klienti</span></div>
-                <div onclick="setSec('fin')" id="n-fin" class="nav-link"><i class="fas fa-chart-line"></i><span>Finanses</span></div>
+                <div onclick="setSec('fin')" id="n-fin" class="nav-link"><i class="fas fa-chart-line"></i><span>Rēķini</span></div>
                 <div onclick="setSec('logs')" id="n-logs" class="nav-link"><i class="fas fa-stream"></i><span>Logs</span></div>
                 <div onclick="auth.signOut()" class="nav-link !text-red-400"><i class="fas fa-sign-out-alt"></i><span>Iziet</span></div>
             </nav>
@@ -275,7 +275,15 @@
                         <button onclick="addStock()" class="btn-jt w-full mt-4 !py-4">Saglabāt Noliktavā</button>
                     </div>
                 </div>
-                <div class="relative mb-4"><i class="fas fa-search absolute left-4 top-4 text-slate-400"></i><input id="q-stock" oninput="drawStock()" placeholder="Meklēt krājumos pēc nosaukuma vai EAN..." class="pl-12 !mb-0 bg-white shadow-sm border-none"></div>
+                
+                <div class="relative mb-4 flex gap-2">
+                    <div class="relative flex-grow">
+                        <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                        <input id="q-stock" oninput="drawStock()" placeholder="Meklēt krājumos pēc nosaukuma vai EAN..." class="!mb-0 pl-12">
+                    </div>
+                    <button onclick="startScan('q-stock')" class="bg-white border border-slate-200 text-slate-600 w-12 h-[50px] rounded-xl flex items-center justify-center shadow-sm"><i class="fas fa-camera"></i></button>
+                </div>
+
                 <div id="stock-list" class="grid gap-3"></div>
             </div>
 
@@ -417,7 +425,7 @@
             </div>
 
             <div id="sec-fin" class="tab-content hidden">
-                <div class="card !p-0 overflow-hidden border-none shadow-xl"><div class="bg-slate-800 p-4 text-white text-center text-xs font-black uppercase tracking-widest">Finanšu pārskats</div><table class="w-full text-sm"><thead class="bg-slate-100 text-slate-500 uppercase text-[10px]"><tr><th class="p-4 text-left">Dati</th><th class="text-left">Auto</th><th class="text-right">Summa</th><th class="p-4 text-right">Drukāt</th></tr></thead><tbody id="fin-table" class="divide-y divide-slate-100"></tbody></table></div>
+                <div class="card !p-0 overflow-hidden border-none shadow-xl"><div class="bg-slate-800 p-4 text-white text-center text-xs font-black uppercase tracking-widest">Finanšu pārskats</div><table class="w-full text-sm"><thead class="bg-slate-100 text-slate-500 uppercase text-[10px]"><tr><th class="p-4 text-left">Dati</th><th class="text-left">Auto</th><th class="text-right">Summa</th><th class="p-4 text-right">Darbības</th></tr></thead><tbody id="fin-table" class="divide-y divide-slate-100"></tbody></table></div>
             </div>
 
             <div id="sec-logs" class="tab-content hidden">
@@ -904,14 +912,34 @@
         function loadFin() {
             db.ref('finances').on('value', s => {
                 let h = '', total = 0;
-                s.forEach(x => { const f = x.val(); total += parseFloat(f.price); h = `<tr class="hover:bg-slate-50"><td class="p-4 text-[10px] font-bold text-slate-400">${f.d}</td><td class="font-black">${f.nr}</td><td class="text-right font-black text-green-600">${parseFloat(f.price).toFixed(2)}€</td><td class="text-right p-4"><i class="fas fa-file-invoice text-slate-300"></i></td></tr>` + h; });
-                document.getElementById('fin-table').innerHTML = h; document.getElementById('s-profit').innerText = total.toFixed(0);
+                s.forEach(x => { 
+                    const f = x.val(); 
+                    const amt = parseFloat(f.price).toFixed(2);
+                    total += parseFloat(f.price); 
+                    h = `<tr class="hover:bg-slate-50">
+                        <td class="p-4 text-[10px] font-bold text-slate-400">${f.d}</td>
+                        <td class="font-black">${f.nr}</td>
+                        <td class="text-right font-black text-green-600">${amt}€</td>
+                        <td class="text-right p-4 flex justify-end gap-2">
+                            <button onclick="sendInvoice('${f.nr}', '${amt}', '${f.cl}')" class="bg-blue-500 text-white text-[10px] font-black px-3 py-1 rounded-lg uppercase shadow-sm hover:bg-blue-600 transition-colors">Sūtīt</button>
+                            <i class="fas fa-file-invoice text-slate-300"></i>
+                        </td>
+                    </tr>` + h; 
+                });
+                document.getElementById('fin-table').innerHTML = h; 
+                document.getElementById('s-profit').innerText = total.toFixed(0);
             });
+        }
+
+        function sendInvoice(nr, amount, client) {
+            const subject = encodeURIComponent(`Rēķins no JT MOTORS - Auto: ${nr}`);
+            const body = encodeURIComponent(`Sveiki!\n\nInformējam, ka darbi pie automašīnas ${nr} ir pabeigti.\nKopējā summa: ${amount}€.\n\nAr cieņu,\nJT MOTORS`);
+            window.location.href = `mailto:?subject=${subject}&body=${body}`;
+            log("Finanses: Sagatavots e-pasts par auto " + nr);
         }
 
         function loadLogs() { db.ref('logs').limitToLast(100).on('value', s => { let h = ''; s.forEach(x => { h = `<div class="border-b border-white/5 pb-1 mb-1"><span class="text-slate-600">[${x.val().t}]</span> <span class="text-amber-500 font-bold">${x.val().u}:</span> ${x.val().i}</div>` + h; }); document.getElementById('logs-box').innerHTML = h; }); }
         
-        // JAUNĀ FUNKCIJA ŽURNĀLA DZĒŠANAI
         function clearLogs() {
             if(confirm("Vai tiešām vēlaties neatgriezeniski dzēst visus sistēmas žurnāla ierakstus?")) {
                 db.ref('logs').remove().then(() => {
@@ -940,6 +968,7 @@
             scanner.start({facingMode: "environment"}, {fps: 10, qrbox: 250}, text => { 
                 document.getElementById(targetId).value = text; 
                 if(targetId === 'q-store') drawStore();
+                if(targetId === 'q-stock') drawStock();
                 scanner.stop(); 
                 r.classList.add('hidden'); 
             }).catch(err => { alert("Kameras kļūda!"); r.classList.add('hidden'); });
