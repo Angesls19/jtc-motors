@@ -219,6 +219,7 @@
             <nav class="nav-bar">
                 <div onclick="setSec('stock')" id="n-stock" class="nav-link active"><i class="fas fa-boxes"></i><span>Noliktava</span></div>
                 <div onclick="setSec('repairs')" id="n-repairs" class="nav-link"><i class="fas fa-tools"></i><span>Serviss</span></div>
+                <div onclick="setSec('history')" id="n-history" class="nav-link"><i class="fas fa-history"></i><span>Vēsture</span></div>
                 <div onclick="setSec('store')" id="n-store" class="nav-link"><i class="fas fa-shopping-cart"></i><span>E-Veikals</span></div>
                 <div onclick="setSec('orders')" id="n-orders" class="nav-link"><i class="fas fa-truck-loading"></i><span>Pasūtījumi</span></div>
                 <div onclick="setSec('clients')" id="n-clients" class="nav-link"><i class="fas fa-address-book"></i><span>Klienti</span></div>
@@ -318,6 +319,22 @@
                     </div>
                 </div>
                 <div id="repair-list" class="grid gap-4"></div>
+            </div>
+
+            <div id="sec-history" class="tab-content hidden">
+                <div class="card !bg-slate-900 border-none shadow-2xl overflow-hidden relative mb-6">
+                    <div class="absolute -right-10 -top-10 text-white opacity-5 rotate-12"><i class="fas fa-history fa-9x"></i></div>
+                    <h3 class="font-black mb-6 flex items-center gap-3 text-white text-xl italic tracking-tighter">
+                        <span class="bg-amber-500 text-slate-900 w-8 h-8 rounded-lg flex items-center justify-center"><i class="fas fa-search"></i></span> MEKLĒT AUTO VĒSTURI
+                    </h3>
+                    <div class="relative z-10 flex gap-2">
+                        <input id="h-search-nr" placeholder="AA-1234" class="!bg-slate-800 !text-white border-none uppercase font-black !mb-0" onkeyup="if(event.key === 'Enter') searchVehicleHistory()">
+                        <button onclick="searchVehicleHistory()" class="btn-jt px-8 !py-0 h-[50px]">Meklēt</button>
+                    </div>
+                </div>
+                <div id="history-results" class="grid gap-4">
+                    <div class="text-center py-10 opacity-20 font-bold italic">Ievadiet numuru, lai redzētu veiktos darbus...</div>
+                </div>
             </div>
 
             <div id="sec-store" class="tab-content hidden">
@@ -936,7 +953,48 @@
             });
         }
 
-        // --- UZLABOTĀ RĒĶINA DRUKĀŠANAS FUNKCIJA (PĀRĒJAIS KODS NAV AIZTIKTS) ---
+        function searchVehicleHistory() {
+            const nr = document.getElementById('h-search-nr').value.toUpperCase().trim();
+            if (!nr) return alert("Ievadiet auto numuru!");
+
+            const resultsDiv = document.getElementById('history-results');
+            resultsDiv.innerHTML = '<div class="text-center py-10 text-amber-500 font-bold animate-pulse">Meklējam arhīvā...</div>';
+
+            db.ref('finances').orderByChild('nr').equalTo(nr).once('value', s => {
+                if (!s.exists()) {
+                    resultsDiv.innerHTML = '<div class="card p-10 text-center opacity-50 font-bold italic">Šim transportlīdzeklim vēsture nav atrasta.</div>';
+                    return;
+                }
+
+                let h = `<div class="bg-amber-500 text-slate-900 p-3 rounded-xl font-black text-center mb-2 uppercase text-xs tracking-widest">Atrasti ${s.numChildren()} ieraksti priekš ${nr}</div>`;
+                let entries = [];
+                s.forEach(x => { entries.unshift({id: x.key, ...x.val()}); });
+
+                entries.forEach(f => {
+                    h += `
+                    <div class="card border-l-4 border-slate-800 hover:border-amber-500 transition-all">
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <span class="text-[10px] font-black bg-slate-100 px-2 py-1 rounded text-slate-500">${f.d}</span>
+                                <h4 class="font-black text-slate-800 mt-2">${f.make || ''} ${f.model || ''}</h4>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-lg font-black text-slate-900">${parseFloat(f.price).toFixed(2)}€</div>
+                            </div>
+                        </div>
+                        <div class="text-xs text-slate-600 bg-slate-50 p-3 rounded-lg italic border border-slate-100">
+                            ${f.task}
+                        </div>
+                        <div class="mt-3 flex justify-between items-center">
+                            <span class="text-[10px] text-slate-400 font-bold uppercase">Klients: ${f.cl || 'Nav norādīts'}</span>
+                            <button onclick="printInvoice('${f.id}')" class="text-[10px] font-black text-amber-600 hover:underline uppercase">Skatīt rēķinu</button>
+                        </div>
+                    </div>`;
+                });
+                resultsDiv.innerHTML = h;
+            });
+        }
+
         function printInvoice(id) {
             db.ref('finances/' + id).once('value', s => {
                 const f = s.val();
@@ -945,19 +1003,14 @@
                 const totalNeto = totalBruto / 1.21;
                 const vatAmount = totalBruto - totalNeto;
 
-                // Aprēķinām apmaksas termiņu (+7 dienas)
                 const today = new Date();
                 const dueDate = new Date(today);
                 dueDate.setDate(today.getDate() + 7);
                 const dueDateStr = dueDate.toLocaleDateString('lv-LV');
 
-                // Meklējam klienta papilddatus
                 db.ref('clients').once('value', cs => {
                     let clientData = { n: f.cl, p: "", addr: "", reg: "" };
-                    cs.forEach(cSnap => {
-                        const c = cSnap.val();
-                        if(c.n === f.cl) { clientData = c; }
-                    });
+                    cs.forEach(cSnap => { if(cSnap.val().n === f.cl) { clientData = cSnap.val(); } });
 
                     const area = document.getElementById('print-area');
                     area.innerHTML = `
@@ -969,93 +1022,39 @@
                                         <strong>SIA "JT MOTORS"</strong><br>
                                         Reģ. nr: 40203595994<br>
                                         Adrese: Krišjāņa Barona iela 136A, Rīga, LV-1012<br>
-                                        <strong>Bankas dati:</strong> AS Swedbank, IBAN: LV21HABA0001234567890<br>
-                                        SWIFT/BIC: HABALV22
+                                        <strong>Bankas dati:</strong> AS Swedbank, IBAN: LV21HABA0001234567890
                                     </div>
                                 </div>
                                 <div style="text-align: right;">
                                     <h2 style="margin:0; font-size: 18px; font-weight: 900; text-transform: uppercase; color: #0f172a;">Rēķins - Faktūra</h2>
                                     <p style="margin:5px 0 0; font-size: 16px; font-weight: 900; color:#fbbf24;">Nr: ${invNr}</p>
-                                    <div style="margin-top: 10px; font-size: 12px; font-weight: 600;">
-                                        Izrakstīts: ${f.d}<br>
-                                        <span style="color: #ef4444;">Apmaksas termiņš: ${dueDateStr}</span>
-                                    </div>
+                                    <div style="margin-top: 10px; font-size: 12px; font-weight: 600;">Izrakstīts: ${f.d}<br><span style="color: #ef4444;">Termiņš: ${dueDateStr}</span></div>
                                 </div>
                             </div>
-
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 40px;">
                                 <div style="border: 1px solid #e2e8f0; padding: 15px; border-radius: 12px;">
                                     <h3 style="font-size: 10px; font-weight: 900; text-transform: uppercase; color: #94a3b8; margin-bottom: 8px;">Maksātājs</h3>
                                     <p style="margin:0; font-size: 15px; font-weight: 900;">${clientData.n}</p>
-                                    <div style="font-size: 12px; margin-top: 5px; color: #475569;">
-                                        ${clientData.reg ? `Reģ. nr: ${clientData.reg}<br>` : ''}
-                                        ${clientData.addr ? `${clientData.addr}<br>` : ''}
-                                        Tālr: ${clientData.p || '-'}
-                                    </div>
+                                    <div style="font-size: 12px; margin-top: 5px; color: #475569;">${clientData.reg ? `Reģ. nr: ${clientData.reg}<br>` : ''}${clientData.addr ? `${clientData.addr}<br>` : ''}Tālr: ${clientData.p || '-'}</div>
                                 </div>
                                 <div style="background: #f8fafc; padding: 15px; border-radius: 12px; border: 1px solid #e2e8f0;">
-                                    <h3 style="font-size: 10px; font-weight: 900; text-transform: uppercase; color: #94a3b8; margin-bottom: 8px;">Transportlīdzeklis</h3>
-                                    <p style="margin:0; font-size: 15px; font-weight: 900; color: #0f172a;">${f.nr}</p>
-                                    <div style="font-size: 12px; margin-top: 5px; color: #475569;">
-                                        Modelis: ${f.make} ${f.model}<br>
-                                        Gads: ${f.year}
-                                    </div>
+                                    <h3 style="font-size: 10px; font-weight: 900; text-transform: uppercase; color: #94a3b8; margin-bottom: 8px;">Auto</h3>
+                                    <p style="margin:0; font-size: 15px; font-weight: 900;">${f.nr}</p>
+                                    <div style="font-size: 12px; margin-top: 5px; color: #475569;">${f.make} ${f.model}<br>Gads: ${f.year}</div>
                                 </div>
                             </div>
-
                             <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
-                                <thead>
-                                    <tr style="background: #0f172a; color: white; font-size: 11px; text-transform: uppercase;">
-                                        <th style="padding: 12px; text-align: left; border-radius: 8px 0 0 8px;">Pakalpojuma / Preces apraksts</th>
-                                        <th style="padding: 12px; text-align: right; border-radius: 0 8px 8px 0; width: 120px;">Summa (EUR)</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr style="border-bottom: 2px solid #f1f5f9;">
-                                        <td style="padding: 25px 12px; font-size: 14px; font-weight: 600; color: #334155; line-height: 1.6;">
-                                            Automobiļa apkope un remontdarbi saskaņā ar darba uzdevumu:<br>
-                                            <span style="font-weight: 400; font-size: 13px; color: #64748b;">${f.task}</span>
-                                        </td>
-                                        <td style="padding: 25px 12px; text-align: right; font-size: 14px; font-weight: 800;">${totalNeto.toFixed(2)}</td>
-                                    </tr>
-                                </tbody>
+                                <thead><tr style="background: #0f172a; color: white; font-size: 11px; text-transform: uppercase;"><th style="padding: 12px; text-align: left;">Pakalpojums</th><th style="padding: 12px; text-align: right; width: 120px;">Summa (EUR)</th></tr></thead>
+                                <tbody><tr><td style="padding: 25px 12px; font-size: 14px; font-weight: 600;">Remontdarbi: <span style="font-weight:400; font-size:13px; color:#64748b;">${f.task}</span></td><td style="padding: 25px 12px; text-align: right; font-weight: 800;">${totalNeto.toFixed(2)}</td></tr></tbody>
                             </table>
-
                             <div style="margin-left: auto; width: 280px; background: #f8fafc; padding: 20px; border-radius: 16px;">
-                                <div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; color: #64748b;">
-                                    <span>Summa bez PVN:</span>
-                                    <span style="font-weight: 700;">${totalNeto.toFixed(2)} €</span>
-                                </div>
-                                <div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; color: #64748b; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 10px;">
-                                    <span>PVN 21%:</span>
-                                    <span style="font-weight: 700;">${vatAmount.toFixed(2)} €</span>
-                                </div>
-                                <div style="display: flex; justify-content: space-between; font-size: 18px; font-weight: 900; color: #0f172a;">
-                                    <span>KOPĀ:</span>
-                                    <span style="color: #f59e0b;">${totalBruto.toFixed(2)} €</span>
-                                </div>
+                                <div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px;"><span>Neto:</span><span>${totalNeto.toFixed(2)} €</span></div>
+                                <div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; border-bottom: 1px solid #e2e8f0; margin-bottom: 10px;"><span>PVN 21%:</span><span>${vatAmount.toFixed(2)} €</span></div>
+                                <div style="display: flex; justify-content: space-between; font-size: 18px; font-weight: 900;"><span>KOPĀ:</span><span style="color: #f59e0b;">${totalBruto.toFixed(2)} €</span></div>
                             </div>
-
-                            <div style="margin-top: 60px; display: grid; grid-template-columns: 1fr 1fr; gap: 40px; font-size: 11px;">
-                                <div style="border-top: 1px solid #e2e8f0; pt-10px; padding-top: 10px; color: #94a3b8;">
-                                    Izsniedza (Vārds, Uzvārds, Paraksts)
-                                </div>
-                                <div style="border-top: 1px solid #e2e8f0; pt-10px; padding-top: 10px; color: #94a3b8;">
-                                    Saņēma (Vārds, Uzvārds, Paraksts)
-                                </div>
-                            </div>
-
-                            <div style="margin-top: 40px; padding: 15px; border: 1px dashed #e2e8f0; border-radius: 8px; font-size: 10px; color: #64748b; text-align: center; line-height: 1.4;">
-                                <p style="margin: 0;"><strong>Piezīme:</strong> Rēķins sagatavots elektroniski un ir derīgs bez paraksta.</p>
-                                <p style="margin: 5px 0 0;"><strong>Garantija:</strong> Veiktajiem darbiem tiek nodrošināta garantija 3 mēneši vai 5000 km no rēķina izrakstīšanas brīža.</p>
-                                <p style="margin: 5px 0 0; font-weight: 800; color: #fbbf24;">Paldies par uzticību!</p>
-                            </div>
+                            <div style="margin-top: 40px; font-size: 10px; color: #64748b; text-align: center;">Paldies par uzticību! Rēķins sagatavots elektroniski.</div>
                         </div>`;
-                    
-                    setTimeout(() => { 
-                        window.print(); 
-                        area.innerHTML = ""; 
-                    }, 500);
+                    setTimeout(() => { window.print(); area.innerHTML = ""; }, 500);
                 });
             });
         }
@@ -1069,13 +1068,7 @@
 
         function loadLogs() { db.ref('logs').limitToLast(100).on('value', s => { let h = ''; s.forEach(x => { h = `<div class="border-b border-white/5 pb-1 mb-1"><span class="text-slate-600">[${x.val().t}]</span> <span class="text-amber-500 font-bold">${x.val().u}:</span> ${x.val().i}</div>` + h; }); document.getElementById('logs-box').innerHTML = h; }); }
         
-        function clearLogs() {
-            if(confirm("Vai tiešām vēlaties neatgriezeniski dzēst visus sistēmas žurnāla ierakstus?")) {
-                db.ref('logs').remove().then(() => {
-                    log("Sistēmas žurnāls tika notīrīts.");
-                });
-            }
-        }
+        function clearLogs() { if(confirm("Nodzēst visu žurnālu?")) { db.ref('logs').remove().then(() => { log("Žurnāls notīrīts."); }); } }
 
         function updatePartSelect() { 
             let h = '<option value="">-- IZVĒLĒTIES DETAĻU --</option>'; 
@@ -1084,7 +1077,7 @@
         }
 
         function printEAN(code, name) {
-            if(!code) return alert("Sistēmā nav reģistrēts svītrkods!");
+            if(!code) return alert("Nav svītrkoda!");
             const area = document.getElementById('print-area');
             area.innerHTML = `<div style="text-align:center; padding:20px; background:white; width: 60mm;"><h2 style="margin:0; font-family:sans-serif; font-size:12px; margin-bottom:5px;">${name}</h2><svg id="barcode-target"></svg></div>`;
             JsBarcode("#barcode-target", code.toString(), {format: "CODE128", width: 2, height: 50, fontSize: 14});
