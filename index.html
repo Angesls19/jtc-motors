@@ -936,7 +936,7 @@
             });
         }
 
-        // --- RĒĶINA DRUKĀŠANAS FUNKCIJA ---
+        // --- UZLABOTĀ RĒĶINA DRUKĀŠANAS FUNKCIJA (PĀRĒJAIS KODS NAV AIZTIKTS) ---
         function printInvoice(id) {
             db.ref('finances/' + id).once('value', s => {
                 const f = s.val();
@@ -944,6 +944,12 @@
                 const totalBruto = parseFloat(f.price);
                 const totalNeto = totalBruto / 1.21;
                 const vatAmount = totalBruto - totalNeto;
+
+                // Aprēķinām apmaksas termiņu (+7 dienas)
+                const today = new Date();
+                const dueDate = new Date(today);
+                dueDate.setDate(today.getDate() + 7);
+                const dueDateStr = dueDate.toLocaleDateString('lv-LV');
 
                 // Meklējam klienta papilddatus
                 db.ref('clients').once('value', cs => {
@@ -955,67 +961,94 @@
 
                     const area = document.getElementById('print-area');
                     area.innerHTML = `
-                        <div style="width: 210mm; min-height: 297mm; padding: 20mm; background: white; font-family: 'Inter', sans-serif; color: #1e293b; box-sizing: border-box;">
-                            <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 4px solid #fbbf24; padding-bottom: 20px; margin-bottom: 40px;">
+                        <div style="width: 210mm; min-height: 280mm; padding: 15mm; background: white; font-family: 'Inter', sans-serif; color: #1e293b; box-sizing: border-box;">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 4px solid #fbbf24; padding-bottom: 20px; margin-bottom: 30px;">
                                 <div>
-                                    <h1 style="margin:0; font-size: 32px; font-weight: 900; font-style: italic;">JT <span style="color:#fbbf24">MOTORS</span></h1>
-                                    <p style="margin:5px 0 0; font-size: 12px; font-weight: 700; color: #64748b;">SIA "JT MOTORS"<br>Reģ. nr: 40203595994<br>Krišjāņa Barona iela 136A, Rīga, LV-101</p>
+                                    <h1 style="margin:0; font-size: 32px; font-weight: 900; font-style: italic; letter-spacing: -1px;">JT <span style="color:#fbbf24">MOTORS</span></h1>
+                                    <div style="margin-top: 10px; font-size: 11px; line-height: 1.5; color: #475569;">
+                                        <strong>SIA "JT MOTORS"</strong><br>
+                                        Reģ. nr: 40203595994<br>
+                                        Adrese: Krišjāņa Barona iela 136A, Rīga, LV-1012<br>
+                                        <strong>Bankas dati:</strong> AS Swedbank, IBAN: LV21HABA0001234567890<br>
+                                        SWIFT/BIC: HABALV22
+                                    </div>
                                 </div>
                                 <div style="text-align: right;">
-                                    <h2 style="margin:0; font-size: 20px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px;">Rēķins Faktūra</h2>
-                                    <p style="margin:5px 0 0; font-size: 14px; font-weight: 800; color:#fbbf24;">Nr: ${invNr}</p>
-                                    <p style="margin:2px 0 0; font-size: 12px; font-weight: 600;">Datums: ${f.d}</p>
+                                    <h2 style="margin:0; font-size: 18px; font-weight: 900; text-transform: uppercase; color: #0f172a;">Rēķins - Faktūra</h2>
+                                    <p style="margin:5px 0 0; font-size: 16px; font-weight: 900; color:#fbbf24;">Nr: ${invNr}</p>
+                                    <div style="margin-top: 10px; font-size: 12px; font-weight: 600;">
+                                        Izrakstīts: ${f.d}<br>
+                                        <span style="color: #ef4444;">Apmaksas termiņš: ${dueDateStr}</span>
+                                    </div>
                                 </div>
                             </div>
 
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-bottom: 50px;">
-                                <div>
-                                    <h3 style="font-size: 10px; font-weight: 900; text-transform: uppercase; color: #94a3b8; margin-bottom: 10px;">Maksātājs</h3>
-                                    <p style="margin:0; font-size: 16px; font-weight: 900;">${clientData.n}</p>
-                                    ${clientData.reg ? `<p style="margin:3px 0; font-size: 13px;">Reģ. nr: ${clientData.reg}</p>` : ''}
-                                    ${clientData.addr ? `<p style="margin:3px 0; font-size: 13px;">${clientData.addr}</p>` : ''}
-                                    <p style="margin:3px 0; font-size: 13px;">Tālr: ${clientData.p || '-'}</p>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 40px;">
+                                <div style="border: 1px solid #e2e8f0; padding: 15px; border-radius: 12px;">
+                                    <h3 style="font-size: 10px; font-weight: 900; text-transform: uppercase; color: #94a3b8; margin-bottom: 8px;">Maksātājs</h3>
+                                    <p style="margin:0; font-size: 15px; font-weight: 900;">${clientData.n}</p>
+                                    <div style="font-size: 12px; margin-top: 5px; color: #475569;">
+                                        ${clientData.reg ? `Reģ. nr: ${clientData.reg}<br>` : ''}
+                                        ${clientData.addr ? `${clientData.addr}<br>` : ''}
+                                        Tālr: ${clientData.p || '-'}
+                                    </div>
                                 </div>
-                                <div style="background: #f8fafc; padding: 15px; border-radius: 10px;">
-                                    <h3 style="font-size: 10px; font-weight: 900; text-transform: uppercase; color: #94a3b8; margin-bottom: 10px;">Informācija</h3>
-                                    <p style="margin:0; font-size: 14px; font-weight: 700;">Automašīna: <span style="font-weight: 900;">${f.nr}</span></p>
-                                    <p style="margin:3px 0; font-size: 13px;">Marka/Modelis: ${f.make} ${f.model}</p>
-                                    <p style="margin:3px 0; font-size: 13px;">Gads: ${f.year}</p>
+                                <div style="background: #f8fafc; padding: 15px; border-radius: 12px; border: 1px solid #e2e8f0;">
+                                    <h3 style="font-size: 10px; font-weight: 900; text-transform: uppercase; color: #94a3b8; margin-bottom: 8px;">Transportlīdzeklis</h3>
+                                    <p style="margin:0; font-size: 15px; font-weight: 900; color: #0f172a;">${f.nr}</p>
+                                    <div style="font-size: 12px; margin-top: 5px; color: #475569;">
+                                        Modelis: ${f.make} ${f.model}<br>
+                                        Gads: ${f.year}
+                                    </div>
                                 </div>
                             </div>
 
-                            <table style="width: 100%; border-collapse: collapse; margin-bottom: 50px;">
+                            <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
                                 <thead>
                                     <tr style="background: #0f172a; color: white; font-size: 11px; text-transform: uppercase;">
                                         <th style="padding: 12px; text-align: left; border-radius: 8px 0 0 8px;">Pakalpojuma / Preces apraksts</th>
-                                        <th style="padding: 12px; text-align: right; border-radius: 0 8px 8px 0;">Summa (EUR)</th>
+                                        <th style="padding: 12px; text-align: right; border-radius: 0 8px 8px 0; width: 120px;">Summa (EUR)</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr style="border-bottom: 1px solid #e2e8f0;">
-                                        <td style="padding: 20px 12px; font-size: 14px; font-weight: 600;">${f.task}</td>
-                                        <td style="padding: 20px 12px; text-align: right; font-size: 14px; font-weight: 900;">${totalNeto.toFixed(2)}</td>
+                                    <tr style="border-bottom: 2px solid #f1f5f9;">
+                                        <td style="padding: 25px 12px; font-size: 14px; font-weight: 600; color: #334155; line-height: 1.6;">
+                                            Automobiļa apkope un remontdarbi saskaņā ar darba uzdevumu:<br>
+                                            <span style="font-weight: 400; font-size: 13px; color: #64748b;">${f.task}</span>
+                                        </td>
+                                        <td style="padding: 25px 12px; text-align: right; font-size: 14px; font-weight: 800;">${totalNeto.toFixed(2)}</td>
                                     </tr>
                                 </tbody>
                             </table>
 
-                            <div style="margin-left: auto; width: 250px;">
-                                <div style="display: flex; justify-content: space-between; padding: 5px 0; font-size: 14px;">
-                                    <span style="color: #64748b;">Kopā bez PVN:</span>
+                            <div style="margin-left: auto; width: 280px; background: #f8fafc; padding: 20px; border-radius: 16px;">
+                                <div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; color: #64748b;">
+                                    <span>Summa bez PVN:</span>
                                     <span style="font-weight: 700;">${totalNeto.toFixed(2)} €</span>
                                 </div>
-                                <div style="display: flex; justify-content: space-between; padding: 5px 0; font-size: 14px;">
-                                    <span style="color: #64748b;">PVN 21%:</span>
+                                <div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; color: #64748b; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 10px;">
+                                    <span>PVN 21%:</span>
                                     <span style="font-weight: 700;">${vatAmount.toFixed(2)} €</span>
                                 </div>
-                                <div style="display: flex; justify-content: space-between; padding: 15px 0; border-top: 2px solid #0f172a; margin-top: 10px; font-size: 20px; font-weight: 900;">
-                                    <span>KOPĀ APMAKSAI:</span>
-                                    <span style="color: #fbbf24;">${totalBruto.toFixed(2)} €</span>
+                                <div style="display: flex; justify-content: space-between; font-size: 18px; font-weight: 900; color: #0f172a;">
+                                    <span>KOPĀ:</span>
+                                    <span style="color: #f59e0b;">${totalBruto.toFixed(2)} €</span>
                                 </div>
                             </div>
 
-                            <div style="margin-top: 100px; font-size: 10px; color: #94a3b8; text-align: center; border-top: 1px dashed #e2e8f0; padding-top: 20px;">
-                                <p>Paldies, ka izvēlējāties JT MOTORS! Rēķins sagatavots elektroniski un ir derīgs bez paraksta.</p>
+                            <div style="margin-top: 60px; display: grid; grid-template-columns: 1fr 1fr; gap: 40px; font-size: 11px;">
+                                <div style="border-top: 1px solid #e2e8f0; pt-10px; padding-top: 10px; color: #94a3b8;">
+                                    Izsniedza (Vārds, Uzvārds, Paraksts)
+                                </div>
+                                <div style="border-top: 1px solid #e2e8f0; pt-10px; padding-top: 10px; color: #94a3b8;">
+                                    Saņēma (Vārds, Uzvārds, Paraksts)
+                                </div>
+                            </div>
+
+                            <div style="margin-top: 40px; padding: 15px; border: 1px dashed #e2e8f0; border-radius: 8px; font-size: 10px; color: #64748b; text-align: center; line-height: 1.4;">
+                                <p style="margin: 0;"><strong>Piezīme:</strong> Rēķins sagatavots elektroniski un ir derīgs bez paraksta.</p>
+                                <p style="margin: 5px 0 0;"><strong>Garantija:</strong> Veiktajiem darbiem tiek nodrošināta garantija 3 mēneši vai 5000 km no rēķina izrakstīšanas brīža.</p>
+                                <p style="margin: 5px 0 0; font-weight: 800; color: #fbbf24;">Paldies par uzticību!</p>
                             </div>
                         </div>`;
                     
