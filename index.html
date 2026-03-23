@@ -421,7 +421,15 @@
             </div>
 
             <div id="sec-logs" class="tab-content hidden">
-                <div class="card bg-slate-950 p-4 border-none"><div class="flex items-center gap-2 text-green-500 mb-3 text-xs font-bold uppercase tracking-widest"><span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span> Sistēmas Logs</div><div class="font-mono text-[11px] h-[60vh] overflow-y-auto space-y-1 text-slate-400" id="logs-box"></div></div>
+                <div class="card bg-slate-950 p-4 border-none">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center gap-2 text-green-500 text-xs font-bold uppercase tracking-widest">
+                            <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span> Sistēmas Logs
+                        </div>
+                        <button onclick="clearLogs()" class="text-[10px] bg-red-500/20 text-red-500 border border-red-500/50 px-3 py-1 rounded-lg font-black uppercase hover:bg-red-500 hover:text-white transition-all">Nodzēst visu</button>
+                    </div>
+                    <div class="font-mono text-[11px] h-[60vh] overflow-y-auto space-y-1 text-slate-400" id="logs-box"></div>
+                </div>
             </div>
 
         </main>
@@ -901,8 +909,17 @@
             });
         }
 
-        function loadLogs() { db.ref('logs').limitToLast(50).on('value', s => { let h = ''; s.forEach(x => { h = `<div class="border-b border-white/5 pb-1 mb-1"><span class="text-slate-600">[${x.val().t}]</span> <span class="text-amber-500 font-bold">${x.val().u}:</span> ${x.val().i}</div>` + h; }); document.getElementById('logs-box').innerHTML = h; }); }
+        function loadLogs() { db.ref('logs').limitToLast(100).on('value', s => { let h = ''; s.forEach(x => { h = `<div class="border-b border-white/5 pb-1 mb-1"><span class="text-slate-600">[${x.val().t}]</span> <span class="text-amber-500 font-bold">${x.val().u}:</span> ${x.val().i}</div>` + h; }); document.getElementById('logs-box').innerHTML = h; }); }
         
+        // JAUNĀ FUNKCIJA ŽURNĀLA DZĒŠANAI
+        function clearLogs() {
+            if(confirm("Vai tiešām vēlaties neatgriezeniski dzēst visus sistēmas žurnāla ierakstus?")) {
+                db.ref('logs').remove().then(() => {
+                    log("Sistēmas žurnāls tika notīrīts.");
+                });
+            }
+        }
+
         function updatePartSelect() { 
             let h = '<option value="">-- IZVĒLĒTIES DETAĻU --</option>'; 
             Object.keys(stock).forEach(id => { h += `<option value="${id}">${stock[id].n.toUpperCase()} (${stock[id].q} GAB)</option>`; }); 
