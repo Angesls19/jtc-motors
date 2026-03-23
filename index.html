@@ -223,7 +223,7 @@
                 <div onclick="setSec('orders')" id="n-orders" class="nav-link"><i class="fas fa-truck-loading"></i><span>Pasūtījumi</span></div>
                 <div onclick="setSec('clients')" id="n-clients" class="nav-link"><i class="fas fa-address-book"></i><span>Klienti</span></div>
                 <div onclick="setSec('fin')" id="n-fin" class="nav-link"><i class="fas fa-chart-line"></i><span>Rēķini</span></div>
-                <div onclick="setSec('logs')" id="n-logs" class="nav-link"><i class="fas fa-stream"></i><span>Logs</span></div>
+                <div onclick="setSec('logs')" id="n-logs" class="nav-link"><i class="fas fa-stream"></i><span>Žurnāls</span></div>
                 <div onclick="auth.signOut()" class="nav-link !text-red-400"><i class="fas fa-sign-out-alt"></i><span>Iziet</span></div>
             </nav>
         </header>
@@ -926,7 +926,7 @@
                         <td class="font-black">${f.nr}</td>
                         <td class="text-right font-black text-green-600">${amt}€</td>
                         <td class="text-right p-4 flex justify-end gap-2">
-                            <button onclick="printInvoice('${x.key}')" class="bg-amber-500 text-slate-900 text-[10px] font-black px-3 py-1 rounded-lg uppercase shadow-sm hover:bg-amber-600 transition-colors">Drukāt A4</button>
+                            <button onclick="printInvoice('${x.key}')" class="bg-amber-500 text-slate-900 text-[10px] font-black px-3 py-1 rounded-lg uppercase shadow-sm hover:bg-amber-600 transition-colors">Drukāt</button>
                             <button onclick="sendInvoice('${f.nr}', '${amt}', '${f.cl}')" class="bg-blue-500 text-white text-[10px] font-black px-3 py-1 rounded-lg uppercase shadow-sm hover:bg-blue-600 transition-colors">Sūtīt</button>
                         </td>
                     </tr>` + h; 
@@ -959,7 +959,7 @@
                             <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 4px solid #fbbf24; padding-bottom: 20px; margin-bottom: 40px;">
                                 <div>
                                     <h1 style="margin:0; font-size: 32px; font-weight: 900; font-style: italic;">JT <span style="color:#fbbf24">MOTORS</span></h1>
-                                    <p style="margin:5px 0 0; font-size: 12px; font-weight: 700; color: #64748b;">SIA "JT MOTORS CORPORATE"<br>Reģ. nr: 40003000000<br>Rīga, Latvija</p>
+                                    <p style="margin:5px 0 0; font-size: 12px; font-weight: 700; color: #64748b;">SIA "JT MOTORS"<br>Reģ. nr: 40203595994<br>Krišjāņa Barona iela 136A, Rīga, LV-101</p>
                                 </div>
                                 <div style="text-align: right;">
                                     <h2 style="margin:0; font-size: 20px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px;">Rēķins Faktūra</h2>
@@ -1009,7 +1009,7 @@
                                     <span style="font-weight: 700;">${vatAmount.toFixed(2)} €</span>
                                 </div>
                                 <div style="display: flex; justify-content: space-between; padding: 15px 0; border-top: 2px solid #0f172a; margin-top: 10px; font-size: 20px; font-weight: 900;">
-                                    <span>KOPĀ:</span>
+                                    <span>KOPĀ APMAKSAI:</span>
                                     <span style="color: #fbbf24;">${totalBruto.toFixed(2)} €</span>
                                 </div>
                             </div>
