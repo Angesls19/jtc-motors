@@ -119,7 +119,12 @@
         .bg-amber-soft { background: #fffbeb; color: #d97706; }
         .bg-green-soft { background: #f0fdf4; color: #16a34a; }
 
-        @media print { body * { visibility: hidden; } #print-area, #print-area * { visibility: visible; } #print-area { position: absolute; left:0; top:0; width:100%; } }
+        @media print { 
+            body * { visibility: hidden; } 
+            #print-area, #print-area * { visibility: visible; } 
+            #print-area { position: absolute; left:0; top:0; width:100%; } 
+            .no-print { display: none !important; }
+        }
         
         .input-group-label { font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 4px; margin-left: 4px; display: block; }
         
@@ -921,13 +926,104 @@
                         <td class="font-black">${f.nr}</td>
                         <td class="text-right font-black text-green-600">${amt}€</td>
                         <td class="text-right p-4 flex justify-end gap-2">
+                            <button onclick="printInvoice('${x.key}')" class="bg-amber-500 text-slate-900 text-[10px] font-black px-3 py-1 rounded-lg uppercase shadow-sm hover:bg-amber-600 transition-colors">Drukāt A4</button>
                             <button onclick="sendInvoice('${f.nr}', '${amt}', '${f.cl}')" class="bg-blue-500 text-white text-[10px] font-black px-3 py-1 rounded-lg uppercase shadow-sm hover:bg-blue-600 transition-colors">Sūtīt</button>
-                            <i class="fas fa-file-invoice text-slate-300"></i>
                         </td>
                     </tr>` + h; 
                 });
                 document.getElementById('fin-table').innerHTML = h; 
                 document.getElementById('s-profit').innerText = total.toFixed(0);
+            });
+        }
+
+        // --- RĒĶINA DRUKĀŠANAS FUNKCIJA ---
+        function printInvoice(id) {
+            db.ref('finances/' + id).once('value', s => {
+                const f = s.val();
+                const invNr = "INV-" + id.slice(-6).toUpperCase();
+                const totalBruto = parseFloat(f.price);
+                const totalNeto = totalBruto / 1.21;
+                const vatAmount = totalBruto - totalNeto;
+
+                // Meklējam klienta papilddatus
+                db.ref('clients').once('value', cs => {
+                    let clientData = { n: f.cl, p: "", addr: "", reg: "" };
+                    cs.forEach(cSnap => {
+                        const c = cSnap.val();
+                        if(c.n === f.cl) { clientData = c; }
+                    });
+
+                    const area = document.getElementById('print-area');
+                    area.innerHTML = `
+                        <div style="width: 210mm; min-height: 297mm; padding: 20mm; background: white; font-family: 'Inter', sans-serif; color: #1e293b; box-sizing: border-box;">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 4px solid #fbbf24; padding-bottom: 20px; margin-bottom: 40px;">
+                                <div>
+                                    <h1 style="margin:0; font-size: 32px; font-weight: 900; font-style: italic;">JT <span style="color:#fbbf24">MOTORS</span></h1>
+                                    <p style="margin:5px 0 0; font-size: 12px; font-weight: 700; color: #64748b;">SIA "JT MOTORS CORPORATE"<br>Reģ. nr: 40003000000<br>Rīga, Latvija</p>
+                                </div>
+                                <div style="text-align: right;">
+                                    <h2 style="margin:0; font-size: 20px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px;">Rēķins Faktūra</h2>
+                                    <p style="margin:5px 0 0; font-size: 14px; font-weight: 800; color:#fbbf24;">Nr: ${invNr}</p>
+                                    <p style="margin:2px 0 0; font-size: 12px; font-weight: 600;">Datums: ${f.d}</p>
+                                </div>
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-bottom: 50px;">
+                                <div>
+                                    <h3 style="font-size: 10px; font-weight: 900; text-transform: uppercase; color: #94a3b8; margin-bottom: 10px;">Maksātājs</h3>
+                                    <p style="margin:0; font-size: 16px; font-weight: 900;">${clientData.n}</p>
+                                    ${clientData.reg ? `<p style="margin:3px 0; font-size: 13px;">Reģ. nr: ${clientData.reg}</p>` : ''}
+                                    ${clientData.addr ? `<p style="margin:3px 0; font-size: 13px;">${clientData.addr}</p>` : ''}
+                                    <p style="margin:3px 0; font-size: 13px;">Tālr: ${clientData.p || '-'}</p>
+                                </div>
+                                <div style="background: #f8fafc; padding: 15px; border-radius: 10px;">
+                                    <h3 style="font-size: 10px; font-weight: 900; text-transform: uppercase; color: #94a3b8; margin-bottom: 10px;">Informācija</h3>
+                                    <p style="margin:0; font-size: 14px; font-weight: 700;">Automašīna: <span style="font-weight: 900;">${f.nr}</span></p>
+                                    <p style="margin:3px 0; font-size: 13px;">Marka/Modelis: ${f.make} ${f.model}</p>
+                                    <p style="margin:3px 0; font-size: 13px;">Gads: ${f.year}</p>
+                                </div>
+                            </div>
+
+                            <table style="width: 100%; border-collapse: collapse; margin-bottom: 50px;">
+                                <thead>
+                                    <tr style="background: #0f172a; color: white; font-size: 11px; text-transform: uppercase;">
+                                        <th style="padding: 12px; text-align: left; border-radius: 8px 0 0 8px;">Pakalpojuma / Preces apraksts</th>
+                                        <th style="padding: 12px; text-align: right; border-radius: 0 8px 8px 0;">Summa (EUR)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr style="border-bottom: 1px solid #e2e8f0;">
+                                        <td style="padding: 20px 12px; font-size: 14px; font-weight: 600;">${f.task}</td>
+                                        <td style="padding: 20px 12px; text-align: right; font-size: 14px; font-weight: 900;">${totalNeto.toFixed(2)}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+
+                            <div style="margin-left: auto; width: 250px;">
+                                <div style="display: flex; justify-content: space-between; padding: 5px 0; font-size: 14px;">
+                                    <span style="color: #64748b;">Kopā bez PVN:</span>
+                                    <span style="font-weight: 700;">${totalNeto.toFixed(2)} €</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; padding: 5px 0; font-size: 14px;">
+                                    <span style="color: #64748b;">PVN 21%:</span>
+                                    <span style="font-weight: 700;">${vatAmount.toFixed(2)} €</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; padding: 15px 0; border-top: 2px solid #0f172a; margin-top: 10px; font-size: 20px; font-weight: 900;">
+                                    <span>KOPĀ:</span>
+                                    <span style="color: #fbbf24;">${totalBruto.toFixed(2)} €</span>
+                                </div>
+                            </div>
+
+                            <div style="margin-top: 100px; font-size: 10px; color: #94a3b8; text-align: center; border-top: 1px dashed #e2e8f0; padding-top: 20px;">
+                                <p>Paldies, ka izvēlējāties JT MOTORS! Rēķins sagatavots elektroniski un ir derīgs bez paraksta.</p>
+                            </div>
+                        </div>`;
+                    
+                    setTimeout(() => { 
+                        window.print(); 
+                        area.innerHTML = ""; 
+                    }, 500);
+                });
             });
         }
 
