@@ -181,6 +181,37 @@
         .store-card-body { padding: 16px; flex-grow: 1; }
 
         #edit-modal { backdrop-filter: blur(5px); }
+
+        /* JAUNAIS LOGO SLIDER STILS */
+        .brands-slider {
+            overflow: hidden;
+            white-space: nowrap;
+            background: white;
+            padding: 12px 0;
+            border-radius: 20px;
+            border: 1px solid #e2e8f0;
+            position: relative;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02);
+        }
+        .brands-track {
+            display: inline-block;
+            animation: scrollBrands 30s linear infinite;
+        }
+        .brand-item {
+            display: inline-block;
+            margin: 0 30px;
+            font-weight: 900;
+            font-style: italic;
+            color: #0f172a;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        .brand-item span { color: #fbbf24; margin-right: 10px; }
+        @keyframes scrollBrands {
+            from { transform: translateX(0); }
+            to { transform: translateX(-50%); }
+        }
     </style>
 </head>
 <body>
@@ -238,26 +269,45 @@
         </header>
 
         <main class="p-4 max-w-5xl mx-auto">
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
-                <div class="stat-card">
-                    <div class="stat-icon bg-blue-soft"><i class="fas fa-warehouse"></i></div>
-                    <p class="text-[11px] font-bold text-slate-400 uppercase">Noliktava</p>
-                    <h2 id="s-val" class="text-xl font-black">0€</h2>
+            
+            <div class="mb-8 mt-4">
+                <div class="text-center mb-6">
+                    <h1 class="text-5xl font-black italic tracking-tighter text-slate-900 leading-none">
+                        JT <span class="text-amber-500">MOTORS</span>
+                    </h1>
+                    <p class="text-[10px] font-black uppercase tracking-[0.5em] text-slate-400 mt-2">Professional Auto Service & Parts</p>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-icon bg-amber-soft"><i class="fas fa-wrench"></i></div>
-                    <p class="text-[11px] font-bold text-slate-400 uppercase">Procesā</p>
-                    <h2 id="s-rep" class="text-xl font-black">0</h2>
+
+                <div class="brands-slider">
+                    <div class="brands-track">
+                        <div class="brand-item"><span>★</span> BMW</div>
+                        <div class="brand-item"><span>★</span> AUDI</div>
+                        <div class="brand-item"><span>★</span> MERCEDES-BENZ</div>
+                        <div class="brand-item"><span>★</span> VOLVO</div>
+                        <div class="brand-item"><span>★</span> VOLKSWAGEN</div>
+                        <div class="brand-item"><span>★</span> PORSCHE</div>
+                        <div class="brand-item"><span>★</span> TOYOTA</div>
+                        <div class="brand-item"><span>★</span> LEXUS</div>
+                        <div class="brand-item"><span>★</span> HONDA</div>
+                        <div class="brand-item"><span>★</span> LAND ROVER</div>
+                        <div class="brand-item"><span>★</span> BMW</div>
+                        <div class="brand-item"><span>★</span> AUDI</div>
+                        <div class="brand-item"><span>★</span> MERCEDES-BENZ</div>
+                        <div class="brand-item"><span>★</span> VOLVO</div>
+                        <div class="brand-item"><span>★</span> VOLKSWAGEN</div>
+                        <div class="brand-item"><span>★</span> PORSCHE</div>
+                        <div class="brand-item"><span>★</span> TOYOTA</div>
+                        <div class="brand-item"><span>★</span> LEXUS</div>
+                        <div class="brand-item"><span>★</span> HONDA</div>
+                        <div class="brand-item"><span>★</span> LAND ROVER</div>
+                    </div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-icon bg-blue-soft"><i class="fas fa-box"></i></div>
-                    <p class="text-[11px] font-bold text-slate-400 uppercase">Gaidām</p>
-                    <h2 id="s-ord" class="text-xl font-black">0</h2>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon bg-green-soft"><i class="fas fa-euro-sign"></i></div>
-                    <p class="text-[11px] font-bold text-slate-400 uppercase">Kopā €</p>
-                    <h2 id="s-profit" class="text-xl font-black text-green-600">0</h2>
+
+                <div style="display:none;">
+                    <span id="s-val">0</span>
+                    <span id="s-rep">0</span>
+                    <span id="s-ord">0</span>
+                    <span id="s-profit">0</span>
                 </div>
             </div>
 
