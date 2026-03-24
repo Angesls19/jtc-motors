@@ -205,7 +205,15 @@
                 <p class="text-slate-500 text-sm mt-2 font-semibold">ULTIMATE MANAGEMENT SYSTEM</p>
             </div>
             <input id="l-email" type="email" placeholder="E-pasts" class="!bg-slate-950 !text-white border-none mb-4">
-            <input id="l-pass" type="password" placeholder="Parole" class="!bg-slate-950 !text-white border-none mb-6">
+            <input id="l-pass" type="password" placeholder="Parole" class="!bg-slate-950 !text-white border-none mb-4">
+            
+            <div class="flex items-center justify-between mb-6 px-2">
+                <label class="flex items-center text-slate-400 text-xs cursor-pointer">
+                    <input type="checkbox" id="l-remember" class="mr-2 w-4 h-4 accent-amber-500 rounded bg-slate-950 border-none"> Atcerēties mani
+                </label>
+                <button onclick="forgotPassword()" class="text-amber-500 text-xs font-bold hover:underline">Aizmirsu paroli?</button>
+            </div>
+
             <button onclick="doLogin()" class="btn-jt w-full">Ienākt Sistēmā</button>
         </div>
     </div>
@@ -512,17 +520,17 @@
         // KONFIGURĀCIJA PIEKĻUVEI
         auth.onAuthStateChanged(user => {
             if(user) {
-                const bossEmail = "janis1talbergs@gmail.com"; // <--- IERAKSTI PRIEKŠNIEKA E-PASTU ŠEIT
+                const bossEmail = "prieksnieks@gmail.com"; 
 
                 if (user.email === "cihmuks@gmail.com") {
                     userRole = "Admin";
                     document.getElementById('n-logs').style.display = 'flex';
                 } else if (user.email === bossEmail) {
                     userRole = "Priekšnieks";
-                    document.getElementById('n-logs').style.display = 'none'; // Paslēpj žurnālu priekšniekam
+                    document.getElementById('n-logs').style.display = 'none'; 
                 } else {
                     userRole = "Meistars";
-                    document.getElementById('n-logs').style.display = 'none'; // Paslēpj žurnālu citiem
+                    document.getElementById('n-logs').style.display = 'none'; 
                 }
                 
                 document.getElementById('user-badge').innerText = userRole[0];
@@ -535,9 +543,36 @@
             }
         });
 
+        // JAUNĀ LOGIN FUNKCIJA AR PERSISTENCI
         async function doLogin() {
-            const e = document.getElementById('l-email').value, p = document.getElementById('l-pass').value;
-            try { await auth.signInWithEmailAndPassword(e, p); } catch(err) { alert("Piekļuve liegta!"); }
+            const e = document.getElementById('l-email').value, 
+                  p = document.getElementById('l-pass').value,
+                  rem = document.getElementById('l-remember').checked;
+
+            if(!e || !p) return alert("Ievadiet datus!");
+
+            try {
+                // Iestatām sesijas ilgumu atkarībā no 'Atcerēties mani'
+                const persistence = rem ? firebase.auth.Auth.Persistence.LOCAL : firebase.auth.Auth.Persistence.SESSION;
+                await auth.setPersistence(persistence);
+                await auth.signInWithEmailAndPassword(e, p); 
+                log("Sistēma: Lietotājs pieslēdzās");
+            } catch(err) { 
+                alert("Piekļuve liegta: " + err.message); 
+            }
+        }
+
+        // JAUNA FUNKCIJA PAROLES ATJAUNOŠANAI
+        async function forgotPassword() {
+            const email = document.getElementById('l-email').value;
+            if (!email) return alert("Lūdzu, ievadiet e-pastu laukā!");
+            try {
+                await auth.sendPasswordResetEmail(email);
+                alert("Paroles atiestatīšanas saite nosūtīta uz " + email);
+                log("Sistēma: Pieprasīta paroles maiņa " + email);
+            } catch (err) {
+                alert("Kļūda: " + err.message);
+            }
         }
 
         function setSec(s) {
