@@ -512,7 +512,13 @@
 
         auth.onAuthStateChanged(user => {
             if(user) {
-                userRole = user.email.includes("ozolins") ? "Admin" : "Meistars";
+                // Konfigurācija lietotājiem
+                if (user.email === "cihmuks@gmail.com") {
+                    userRole = "Admin";
+                } else {
+                    userRole = "Meistars";
+                }
+                
                 document.getElementById('user-badge').innerText = userRole[0];
                 document.getElementById('login-screen').style.display = 'none';
                 document.getElementById('app-ui').style.display = 'block';
