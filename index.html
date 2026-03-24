@@ -497,7 +497,6 @@
             "Nissan": ["Qashqai", "Juke", "X-Trail", "Leaf", "Navara", "Micra"],
             "Opel": ["Astra", "Insignia", "Corsa", "Mokka", "Grandland", "Zafira", "Vivaro"],
             "Peugeot": ["208", "308", "508", "2008", "3008", "5008", "Partner", "Boxer"],
-            "Peugeot": ["208", "308", "508", "2008", "3008", "5008", "Partner", "Boxer"],
             "Porsche": ["911", "Cayenne", "Macan", "Panamera", "Taycan"],
             "Renault": ["Clio", "Megane", "Captur", "Kadjar", "Austral", "Trafic", "Master", "Scenic"],
             "Seat": ["Ibiza", "Leon", "Ateca", "Tarraco", "Alhambra"],
@@ -510,13 +509,20 @@
             "Volvo": ["S40", "S60", "S80", "S90", "V40", "V60", "V70", "V90", "XC40", "XC60", "XC70", "XC90"]
         };
 
+        // KONFIGURĀCIJA PIEKĻUVEI
         auth.onAuthStateChanged(user => {
             if(user) {
-                // Konfigurācija lietotājiem
+                const bossEmail = "janis1talbergs@gmail.com"; // <--- IERAKSTI PRIEKŠNIEKA E-PASTU ŠEIT
+
                 if (user.email === "cihmuks@gmail.com") {
                     userRole = "Admin";
+                    document.getElementById('n-logs').style.display = 'flex';
+                } else if (user.email === bossEmail) {
+                    userRole = "Priekšnieks";
+                    document.getElementById('n-logs').style.display = 'none'; // Paslēpj žurnālu priekšniekam
                 } else {
                     userRole = "Meistars";
+                    document.getElementById('n-logs').style.display = 'none'; // Paslēpj žurnālu citiem
                 }
                 
                 document.getElementById('user-badge').innerText = userRole[0];
@@ -743,7 +749,6 @@
             });
         }
 
-        // --- LABOŠANAS MODĀLĀ LOGA FUNKCIJAS ---
         function openEditModal(title, contentHtml) {
             document.getElementById('edit-modal-title').innerText = title;
             document.getElementById('edit-modal-content').innerHTML = contentHtml;
