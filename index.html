@@ -253,7 +253,7 @@
         <header class="fixed-header">
             <div class="h-[65px] flex items-center justify-between px-6">
                 <div class="text-white font-black italic text-2xl uppercase tracking-tighter">JT <span class="text-amber-500">MOTORS</span></div>
-                <div class="w-8 h-8 rounded-full bg-amber-500 flex items-center justify-center text-slate-900 font-bold text-xs" id="user-badge">?</div>
+                <div class="text-amber-500 font-black text-xs uppercase tracking-widest px-3 py-1 bg-white/5 rounded-full border border-amber-500/20" id="user-badge">Ielādē...</div>
             </div>
             <nav class="nav-bar">
                 <div onclick="setSec('stock')" id="n-stock" class="nav-link active"><i class="fas fa-boxes"></i><span>Noliktava</span></div>
@@ -583,7 +583,8 @@
                     document.getElementById('n-logs').style.display = 'none'; 
                 }
                 
-                document.getElementById('user-badge').innerText = userRole[0];
+                // IZMĀINĪTS: Tagad parāda pilnu lietotāja lomu/vārdu
+                document.getElementById('user-badge').innerText = userRole;
                 document.getElementById('login-screen').style.display = 'none';
                 document.getElementById('app-ui').style.display = 'block';
                 init();
