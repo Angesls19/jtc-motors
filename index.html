@@ -694,8 +694,14 @@
                 if(i.n.toLowerCase().includes(q) || (i.e && i.e.toString().includes(q))) {
                     const priceNeto = parseFloat(i.p).toFixed(2);
                     const priceBruto = (i.p * (i.vat == 21 ? 1.21 : 1)).toFixed(2);
+                    
+                    // BRĪDINĀJUMA LOĢIKA: Ja mazāk par 3, rādām sarkanu fona krāsu un brīdinājuma tekstu
+                    const isLowStock = i.q <= 2;
+                    const lowStockWarning = isLowStock ? `<div class="mt-1 px-2 py-0.5 bg-red-500 text-white text-[9px] font-black rounded uppercase animate-pulse inline-block"><i class="fas fa-exclamation-triangle mr-1"></i>Mazs atlikums!</div>` : '';
+                    const cardStyle = isLowStock ? 'style="background-color: #fff1f2; border-color: #fda4af;"' : '';
+
                     h += `
-                    <div class="stock-item-advanced">
+                    <div class="stock-item-advanced" ${cardStyle}>
                         <div class="flex flex-col items-center gap-1">
                             <div class="shelf-tag">${i.l || '---'}</div>
                             <div class="text-[10px] font-black uppercase text-slate-400">Plaukts</div>
@@ -704,8 +710,9 @@
                             <h4 class="font-bold text-slate-800 truncate text-sm">${i.n}</h4>
                             <div class="flex items-center gap-3 mt-1">
                                 <span class="text-[10px] font-mono text-blue-500 font-bold bg-blue-50 px-1.5 py-0.5 rounded"><i class="fas fa-barcode mr-1"></i>${i.e || '-'}</span>
-                                <span class="text-[10px] font-black uppercase ${i.q < 2 ? 'text-red-500' : 'text-slate-400'}">${i.q} GAB</span>
+                                <span class="text-[10px] font-black uppercase ${i.q < 3 ? 'text-red-600' : 'text-slate-400'}">${i.q} GAB</span>
                             </div>
+                            ${lowStockWarning}
                         </div>
                         <div class="flex items-center gap-4">
                             <div class="text-right">
