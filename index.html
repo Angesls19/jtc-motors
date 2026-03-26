@@ -133,13 +133,21 @@
             border-radius: 18px;
             padding: 12px;
             display: grid;
-            grid-template-columns: auto 1fr auto;
+            grid-template-columns: auto auto 1fr auto;
             align-items: center;
             gap: 15px;
             border: 1px solid #e2e8f0;
             transition: 0.2s;
         }
         .stock-item-advanced:hover { border-color: #fbbf24; transform: scale(1.01); }
+
+        .stock-img-mini {
+            width: 50px;
+            height: 50px;
+            border-radius: 10px;
+            object-fit: cover;
+            background: #f1f5f9;
+        }
 
         .price-badge-neto { font-size: 10px; color: #64748b; font-weight: 600; }
         .price-badge-bruto { font-size: 18px; color: #0f172a; font-weight: 900; line-height: 1; }
@@ -322,6 +330,10 @@
                     <div class="relative z-10">
                         <label class="input-group-label text-slate-400">Produkta nosaukums</label>
                         <input id="st-n" placeholder="Piem. Bremžu kluči BMW E60" class="!bg-slate-800 !text-white !mb-4 border-slate-700">
+                        
+                        <label class="input-group-label text-slate-400">Produkta attēls (Augšupielādēt)</label>
+                        <input id="st-file" type="file" accept="image/*" class="!bg-slate-800 !text-white !mb-4 border-slate-700">
+
                         <div class="grid grid-cols-2 gap-4">
                             <div><label class="input-group-label text-slate-400">Cena bez PVN (€)</label><input id="st-p" type="number" step="0.01" placeholder="0.00" class="!bg-slate-800 !text-white border-slate-700"></div>
                             <div><label class="input-group-label text-slate-400">PVN Likme</label><select id="st-vat" class="!bg-slate-800 !text-white border-slate-700"><option value="21">PVN 21%</option><option value="0">PVN 0%</option></select></div>
@@ -336,7 +348,7 @@
                             <button onclick="generateEAN('st-e')" class="bg-blue-500 text-white w-14 h-[50px] rounded-xl flex items-center justify-center font-black text-xs">GEN</button>
                             <button onclick="startScan('st-e')" class="bg-amber-500 text-slate-900 w-14 h-[50px] rounded-xl flex items-center justify-center shadow-lg shadow-amber-500/20"><i class="fas fa-barcode"></i></button>
                         </div>
-                        <button onclick="addStock()" class="btn-jt w-full mt-4 !py-4">Saglabāt Noliktavā</button>
+                        <button id="btn-add-stock" onclick="addStock()" class="btn-jt w-full mt-4 !py-4">Saglabāt Noliktavā</button>
                     </div>
                 </div>
                 
@@ -695,12 +707,17 @@
                     const lowStockWarning = isLowStock ? `<div class="mt-1 px-2 py-0.5 bg-red-500 text-white text-[9px] font-black rounded uppercase animate-pulse inline-block"><i class="fas fa-exclamation-triangle mr-1"></i>Mazs atlikums!</div>` : '';
                     const cardStyle = isLowStock ? 'style="background-color: #fff1f2; border-color: #fda4af;"' : '';
 
+                    const imgHtml = i.img 
+                        ? `<img src="${i.img}" class="stock-img-mini" alt="${i.n}">` 
+                        : `<div class="stock-img-mini flex items-center justify-center text-slate-300"><i class="fas fa-box"></i></div>`;
+
                     h += `
                     <div class="stock-item-advanced" ${cardStyle}>
                         <div class="flex flex-col items-center gap-1">
                             <div class="shelf-tag">${i.l || '---'}</div>
                             <div class="text-[10px] font-black uppercase text-slate-400">Plaukts</div>
                         </div>
+                        ${imgHtml}
                         <div class="min-w-0">
                             <h4 class="font-bold text-slate-800 truncate text-sm">${i.n}</h4>
                             <div class="flex items-center gap-3 mt-1">
@@ -727,15 +744,47 @@
             document.getElementById('stock-list').innerHTML = h || '<div class="text-center p-10 opacity-20 font-bold italic">Noliktavā nekas nav atrasts...</div>';
         }
 
-        function addStock() {
-            const n = document.getElementById('st-n').value, p = document.getElementById('st-p').value, q = document.getElementById('st-q').value, e = document.getElementById('st-e').value, l = document.getElementById('st-l').value;
-            if(!n || !p) return;
-            db.ref('stock').push({ n, p: parseFloat(p), vat: document.getElementById('st-vat').value, q: parseInt(q || 1), l: l || 'Nav', e: e || Date.now() });
-            document.querySelectorAll('#sec-stock input').forEach(i => i.value = '');
-            log("Noliktava: Pievienota prece " + n);
+        async function addStock() {
+            const n = document.getElementById('st-n').value, 
+                  p = document.getElementById('st-p').value, 
+                  q = document.getElementById('st-q').value, 
+                  e = document.getElementById('st-e').value, 
+                  l = document.getElementById('st-l').value,
+                  fileInput = document.getElementById('st-file'),
+                  btn = document.getElementById('btn-add-stock');
+
+            if(!n || !p) return alert("Aizpildi nosaukumu un cenu!");
+
+            let imageUrl = '';
+            if(fileInput.files.length > 0) {
+                btn.innerText = "AUGŠUPIELĀDĒ ATTĒLU...";
+                btn.disabled = true;
+                const formData = new FormData();
+                formData.append("image", fileInput.files[0]);
+                try {
+                    const response = await fetch("https://api.imgbb.com/1/upload?key=1e5fd5e4f97806bc6b403e42c3d94288", { method: "POST", body: formData });
+                    const result = await response.json();
+                    if(result.success) imageUrl = result.data.url;
+                } catch (err) { alert("Attēla kļūda!"); }
+            }
+
+            db.ref('stock').push({ 
+                n, 
+                p: parseFloat(p), 
+                vat: document.getElementById('st-vat').value, 
+                q: parseInt(q || 1), 
+                l: l || 'Nav', 
+                e: e || Date.now(),
+                img: imageUrl
+            }).then(() => {
+                btn.innerText = "Saglabāt Noliktavā";
+                btn.disabled = false;
+                document.querySelectorAll('#sec-stock input').forEach(i => i.value = '');
+                log("Noliktava: Pievienota prece " + n);
+            });
         }
 
-        // --- LABOTĀ VEIKALA FUNKCIJA ---
+        // VEIKALS
         function loadStore() { db.ref('store_items').on('value', s => { storeItems = s.val() || {}; drawStore(); }); }
 
         async function addStoreItem() {
@@ -751,28 +800,16 @@
             if(!n || !pNeto) return alert("Aizpildi nosaukumu un cenu!");
 
             let imageUrl = '';
-
-            // Augšupielādējam bildi uz ImgBB, ja fails ir izvēlēts
             if(fileInput.files.length > 0) {
                 btn.innerText = "AUGŠUPIELĀDĒ ATTĒLU...";
                 btn.disabled = true;
-                
                 const formData = new FormData();
                 formData.append("image", fileInput.files[0]);
-                
                 try {
-                    const response = await fetch("https://api.imgbb.com/1/upload?key=1e5fd5e4f97806bc6b403e42c3d94288", {
-                        method: "POST",
-                        body: formData
-                    });
+                    const response = await fetch("https://api.imgbb.com/1/upload?key=1e5fd5e4f97806bc6b403e42c3d94288", { method: "POST", body: formData });
                     const result = await response.json();
-                    if(result.success) {
-                        imageUrl = result.data.url;
-                    }
-                } catch (err) {
-                    console.error("Attēla augšupielādes kļūda:", err);
-                    alert("Kļūda augšupielādējot attēlu!");
-                }
+                    if(result.success) imageUrl = result.data.url;
+                } catch (err) { alert("Attēla kļūda!"); }
             }
 
             const finalPriceBruto = (parseFloat(pNeto) * (vat == 21 ? 1.21 : 1)).toFixed(2);
@@ -794,13 +831,11 @@
                 log("Veikals: Pievienota prece " + n);
             });
         }
-        // --- VEIKALA FUNKCIJAS BEIGAS ---
 
         function drawStore() {
             const q = document.getElementById('q-store').value.toLowerCase();
             const container = document.getElementById('store-container');
             container.innerHTML = '';
-
             const categories = [
                 { name: "Eļļas un šķidrumi", keys: ["eļļa", "ella", "oil", "antifriz", "tosol", "škidrums", "skidrums"] },
                 { name: "Filtri", keys: ["filtrs", "filter"] },
@@ -809,10 +844,8 @@
                 { name: "Elektroiekārtas", keys: ["svece", "spuldze", "lukturis", "akumulator", "vads", "sensors"] },
                 { name: "Cits / Dažādi", keys: [] }
             ];
-
             let categorizedData = {};
             categories.forEach(cat => categorizedData[cat.name] = []);
-
             Object.keys(storeItems).forEach(id => {
                 const item = storeItems[id];
                 if (item.n.toLowerCase().includes(q) || (item.e && item.e.toString().includes(q))) {
@@ -820,58 +853,20 @@
                     for (let cat of categories) {
                         if (cat.keys.some(key => item.n.toLowerCase().includes(key))) {
                             categorizedData[cat.name].push({ id, ...item });
-                            found = true;
-                            break;
+                            found = true; break;
                         }
                     }
                     if (!found) categorizedData["Cits / Dažādi"].push({ id, ...item });
                 }
             });
-
             categories.forEach(cat => {
                 const items = categorizedData[cat.name];
                 if (items.length > 0) {
-                    let sectionHtml = `
-                        <div>
-                            <div class="flex items-center gap-4 mb-4 px-2">
-                                <div class="h-px bg-slate-300 flex-grow"></div>
-                                <h3 class="text-xs font-black uppercase tracking-[0.2em] text-slate-500 whitespace-nowrap">${cat.name}</h3>
-                                <div class="h-px bg-slate-300 flex-grow"></div>
-                            </div>
-                            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                    `;
-
+                    let sectionHtml = `<div><div class="flex items-center gap-4 mb-4 px-2"><div class="h-px bg-slate-300 flex-grow"></div><h3 class="text-xs font-black uppercase tracking-[0.2em] text-slate-500 whitespace-nowrap">${cat.name}</h3><div class="h-px bg-slate-300 flex-grow"></div></div><div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">`;
                     items.forEach(i => {
-                        const imgHtml = i.img 
-                            ? `<img src="${i.img}" alt="${i.n}">` 
-                            : `<i class="fas fa-shopping-bag text-slate-200 fa-3x"></i>`;
-
-                        sectionHtml += `
-                            <div class="store-card-v2">
-                                <div class="store-card-header">
-                                    ${imgHtml}
-                                    <div class="absolute top-3 left-3 shelf-tag !bg-white/90 shadow-sm">${i.l || 'V-1'}</div>
-                                    <div class="absolute bottom-2 right-3 text-[10px] font-black text-slate-700 bg-white/90 px-2 py-0.5 rounded-full shadow-sm">${i.q} GAB</div>
-                                </div>
-                                <div class="store-card-body">
-                                    <h3 class="font-bold text-slate-800 text-sm leading-tight h-10 overflow-hidden mb-3">${i.n}</h3>
-                                    <div class="bg-slate-50 p-2 rounded-xl border border-slate-100 flex justify-between items-center">
-                                        <div>
-                                            <div class="text-[9px] text-slate-400 font-bold uppercase">Cena ar PVN</div>
-                                            <div class="text-xl font-black text-slate-900 leading-none">${parseFloat(i.p).toFixed(2)}€</div>
-                                            <div class="text-[10px] text-slate-400 font-medium mt-1">${parseFloat(i.p_neto || 0).toFixed(2)}€ bez PVN</div>
-                                        </div>
-                                        <div class="flex gap-1">
-                                            <button onclick="editStore('${i.id}')" class="w-8 h-8 rounded-full bg-white text-slate-400 shadow-sm flex items-center justify-center hover:text-blue-500"><i class="fas fa-edit text-[10px]"></i></button>
-                                            <button onclick="printEAN('${i.e}', '${i.n}')" class="w-8 h-8 rounded-full bg-white text-slate-400 shadow-sm flex items-center justify-center hover:text-amber-500"><i class="fas fa-print text-[10px]"></i></button>
-                                            <button onclick="if(confirm('Dzēst preci no veikala?')) db.ref('store_items/${i.id}').remove()" class="w-8 h-8 rounded-full bg-white text-slate-200 shadow-sm flex items-center justify-center hover:text-red-500"><i class="fas fa-trash text-[10px]"></i></button>
-                                        </div>
-                                    </div>
-                                    <div class="mt-3 text-[9px] font-mono text-slate-400 text-center">EAN: ${i.e || '-'}</div>
-                                </div>
-                            </div>`;
+                        const imgHtml = i.img ? `<img src="${i.img}" alt="${i.n}">` : `<i class="fas fa-shopping-bag text-slate-200 fa-3x"></i>`;
+                        sectionHtml += `<div class="store-card-v2"><div class="store-card-header">${imgHtml}<div class="absolute top-3 left-3 shelf-tag !bg-white/90 shadow-sm">${i.l || 'V-1'}</div><div class="absolute bottom-2 right-3 text-[10px] font-black text-slate-700 bg-white/90 px-2 py-0.5 rounded-full shadow-sm">${i.q} GAB</div></div><div class="store-card-body"><h3 class="font-bold text-slate-800 text-sm leading-tight h-10 overflow-hidden mb-3">${i.n}</h3><div class="bg-slate-50 p-2 rounded-xl border border-slate-100 flex justify-between items-center"><div><div class="text-[9px] text-slate-400 font-bold uppercase">Cena ar PVN</div><div class="text-xl font-black text-slate-900 leading-none">${parseFloat(i.p).toFixed(2)}€</div><div class="text-[10px] text-slate-400 font-medium mt-1">${parseFloat(i.p_neto || 0).toFixed(2)}€ bez PVN</div></div><div class="flex gap-1"><button onclick="editStore('${i.id}')" class="w-8 h-8 rounded-full bg-white text-slate-400 shadow-sm flex items-center justify-center hover:text-blue-500"><i class="fas fa-edit text-[10px]"></i></button><button onclick="printEAN('${i.e}', '${i.n}')" class="w-8 h-8 rounded-full bg-white text-slate-400 shadow-sm flex items-center justify-center hover:text-amber-500"><i class="fas fa-print text-[10px]"></i></button><button onclick="if(confirm('Dzēst preci no veikala?')) db.ref('store_items/${i.id}').remove()" class="w-8 h-8 rounded-full bg-white text-slate-200 shadow-sm flex items-center justify-center hover:text-red-500"><i class="fas fa-trash text-[10px]"></i></button></div></div><div class="mt-3 text-[9px] font-mono text-slate-400 text-center">EAN: ${i.e || '-'}</div></div></div>`;
                     });
-
                     sectionHtml += `</div></div>`;
                     container.innerHTML += sectionHtml;
                 }
@@ -891,6 +886,8 @@
             const html = `
                 <label class="input-group-label">Preces nosaukums</label>
                 <input id="up-st-n" value="${i.n}">
+                <label class="input-group-label">Attēla URL</label>
+                <input id="up-st-img" value="${i.img || ''}">
                 <label class="input-group-label">Cena bez PVN (€)</label>
                 <input id="up-st-p" type="number" step="0.01" value="${i.p}">
                 <label class="input-group-label">PVN %</label>
@@ -913,7 +910,8 @@
                 vat: document.getElementById('up-st-vat').value,
                 q: parseInt(document.getElementById('up-st-q').value),
                 l: document.getElementById('up-st-l').value,
-                e: document.getElementById('up-st-e').value
+                e: document.getElementById('up-st-e').value,
+                img: document.getElementById('up-st-img').value
             };
             db.ref('stock/' + id).update(updates).then(() => { closeEditModal(); log("Noliktava: Rediģēts " + updates.n); });
         }
@@ -959,20 +957,9 @@
         function editClient(id) {
             db.ref('clients/' + id).once('value', s => {
                 const c = s.val();
-                let fields = `
-                    <label class="input-group-label">Nosaukums / Vārds</label>
-                    <input id="up-cl-n" value="${c.n}">
-                    <label class="input-group-label">Telefons</label>
-                    <input id="up-cl-p" value="${c.p}">
-                `;
-                if(c.type === 'company') {
-                    fields += `
-                        <label class="input-group-label">Reģ. Nr</label><input id="up-cl-reg" value="${c.reg || ''}">
-                        <label class="input-group-label">Adrese</label><input id="up-cl-addr" value="${c.addr || ''}">
-                    `;
-                } else {
-                    fields += `<label class="input-group-label">E-pasts</label><input id="up-cl-e" value="${c.email || ''}">`;
-                }
+                let fields = `<label class="input-group-label">Nosaukums / Vārds</label><input id="up-cl-n" value="${c.n}"><label class="input-group-label">Telefons</label><input id="up-cl-p" value="${c.p}">`;
+                if(c.type === 'company') fields += `<label class="input-group-label">Reģ. Nr</label><input id="up-cl-reg" value="${c.reg || ''}"><label class="input-group-label">Adrese</label><input id="up-cl-addr" value="${c.addr || ''}">`;
+                else fields += `<label class="input-group-label">E-pasts</label><input id="up-cl-e" value="${c.email || ''}">`;
                 fields += `<button onclick="saveClientEdit('${id}')" class="btn-jt w-full mt-4">Saglabāt Izmaiņas</button>`;
                 openEditModal("Labot Klientu", fields);
             });
@@ -982,12 +969,8 @@
             db.ref('clients/' + id).once('value', s => {
                 const c = s.val();
                 const updates = { n: document.getElementById('up-cl-n').value, p: document.getElementById('up-cl-p').value };
-                if(c.type === 'company') {
-                    updates.reg = document.getElementById('up-cl-reg').value;
-                    updates.addr = document.getElementById('up-cl-addr').value;
-                } else {
-                    updates.email = document.getElementById('up-cl-e').value;
-                }
+                if(c.type === 'company') { updates.reg = document.getElementById('up-cl-reg').value; updates.addr = document.getElementById('up-cl-addr').value; }
+                else { updates.email = document.getElementById('up-cl-e').value; }
                 db.ref('clients/' + id).update(updates).then(() => { closeEditModal(); log("Klienti: Rediģēts " + updates.n); });
             });
         }
@@ -1079,131 +1062,40 @@
                     const f = x.val(); 
                     const amt = parseFloat(f.price).toFixed(2);
                     total += parseFloat(f.price); 
-                    h = `<tr class="hover:bg-slate-50">
-                        <td class="p-4 text-[10px] font-bold text-slate-400">${f.d}</td>
-                        <td class="font-black">${f.nr}</td>
-                        <td class="text-right font-black text-green-600">${amt}€</td>
-                        <td class="text-right p-4 flex justify-end gap-2">
-                            <button onclick="printInvoice('${x.key}')" class="bg-amber-500 text-slate-900 text-[10px] font-black px-3 py-1 rounded-lg uppercase shadow-sm hover:bg-amber-600 transition-colors">Drukāt</button>
-                            <button onclick="sendInvoice('${f.nr}', '${amt}', '${f.cl}')" class="bg-blue-500 text-white text-[10px] font-black px-3 py-1 rounded-lg uppercase shadow-sm hover:bg-blue-600 transition-colors">Sūtīt</button>
-                            <button onclick="deleteInvoice('${x.key}', '${f.nr}')" class="bg-red-500 text-white text-[10px] font-black px-3 py-1 rounded-lg uppercase shadow-sm hover:bg-red-600 transition-colors"><i class="fas fa-trash"></i></button>
-                        </td>
-                    </tr>` + h; 
+                    h = `<tr class="hover:bg-slate-50"><td class="p-4 text-[10px] font-bold text-slate-400">${f.d}</td><td class="font-black">${f.nr}</td><td class="text-right font-black text-green-600">${amt}€</td><td class="text-right p-4 flex justify-end gap-2"><button onclick="printInvoice('${x.key}')" class="bg-amber-500 text-slate-900 text-[10px] font-black px-3 py-1 rounded-lg uppercase shadow-sm hover:bg-amber-600 transition-colors">Drukāt</button><button onclick="sendInvoice('${f.nr}', '${amt}', '${f.cl}')" class="bg-blue-500 text-white text-[10px] font-black px-3 py-1 rounded-lg uppercase shadow-sm hover:bg-blue-600 transition-colors">Sūtīt</button><button onclick="deleteInvoice('${x.key}', '${f.nr}')" class="bg-red-500 text-white text-[10px] font-black px-3 py-1 rounded-lg uppercase shadow-sm hover:bg-red-600 transition-colors"><i class="fas fa-trash"></i></button></td></tr>` + h; 
                 });
                 document.getElementById('fin-table').innerHTML = h; 
                 document.getElementById('s-profit').innerText = total.toFixed(0);
             });
         }
 
-        function deleteInvoice(id, nr) {
-            if(confirm("Vai tiešām vēlaties dzēst rēķinu priekš " + nr + "?")) {
-                db.ref('finances/' + id).remove().then(() => {
-                    log("Finanses: Izdzēsts rēķins " + nr);
-                });
-            }
-        }
+        function deleteInvoice(id, nr) { if(confirm("Dzēst rēķinu priekš " + nr + "?")) { db.ref('finances/' + id).remove().then(() => { log("Finanses: Izdzēsts rēķins " + nr); }); } }
 
         function searchVehicleHistory() {
             const nr = document.getElementById('h-search-nr').value.toUpperCase().trim();
             if (!nr) return alert("Ievadiet auto numuru!");
-
             const resultsDiv = document.getElementById('history-results');
             resultsDiv.innerHTML = '<div class="text-center py-10 text-amber-500 font-bold animate-pulse">Meklējam arhīvā...</div>';
-
             db.ref('finances').orderByChild('nr').equalTo(nr).once('value', s => {
-                if (!s.exists()) {
-                    resultsDiv.innerHTML = '<div class="card p-10 text-center opacity-50 font-bold italic">Šim transportlīdzeklim vēsture nav atrasta.</div>';
-                    return;
-                }
-
+                if (!s.exists()) { resultsDiv.innerHTML = '<div class="card p-10 text-center opacity-50 font-bold italic">Šim transportlīdzeklim vēsture nav atrasta.</div>'; return; }
                 let h = `<div class="bg-amber-500 text-slate-900 p-3 rounded-xl font-black text-center mb-2 uppercase text-xs tracking-widest">Atrasti ${s.numChildren()} ieraksti priekš ${nr}</div>`;
-                let entries = [];
-                s.forEach(x => { entries.unshift({id: x.key, ...x.val()}); });
-
-                entries.forEach(f => {
-                    h += `
-                    <div class="card border-l-4 border-slate-800 hover:border-amber-500 transition-all">
-                        <div class="flex justify-between items-start mb-2">
-                            <div>
-                                <span class="text-[10px] font-black bg-slate-100 px-2 py-1 rounded text-slate-500">${f.d}</span>
-                                <h4 class="font-black text-slate-800 mt-2">${f.make || ''} ${f.model || ''}</h4>
-                            </div>
-                            <div class="text-right">
-                                <div class="text-lg font-black text-slate-900">${parseFloat(f.price).toFixed(2)}€</div>
-                            </div>
-                        </div>
-                        <div class="text-xs text-slate-600 bg-slate-50 p-3 rounded-lg italic border border-slate-100">
-                            ${f.task}
-                        </div>
-                        <div class="mt-3 flex justify-between items-center">
-                            <span class="text-[10px] text-slate-400 font-bold uppercase">Klients: ${f.cl || 'Nav norādīts'}</span>
-                            <button onclick="printInvoice('${f.id}')" class="text-[10px] font-black text-amber-600 hover:underline uppercase">Skatīt rēķinu</button>
-                        </div>
-                    </div>`;
-                });
+                let entries = []; s.forEach(x => { entries.unshift({id: x.key, ...x.val()}); });
+                entries.forEach(f => { h += `<div class="card border-l-4 border-slate-800 hover:border-amber-500 transition-all"><div class="flex justify-between items-start mb-2"><div><span class="text-[10px] font-black bg-slate-100 px-2 py-1 rounded text-slate-500">${f.d}</span><h4 class="font-black text-slate-800 mt-2">${f.make || ''} ${f.model || ''}</h4></div><div class="text-right"><div class="text-lg font-black text-slate-900">${parseFloat(f.price).toFixed(2)}€</div></div></div><div class="text-xs text-slate-600 bg-slate-50 p-3 rounded-lg italic border border-slate-100">${f.task}</div><div class="mt-3 flex justify-between items-center"><span class="text-[10px] text-slate-400 font-bold uppercase">Klients: ${f.cl || 'Nav norādīts'}</span><button onclick="printInvoice('${f.id}')" class="text-[10px] font-black text-amber-600 hover:underline uppercase">Skatīt rēķinu</button></div></div>`; });
                 resultsDiv.innerHTML = h;
             });
         }
 
         function printInvoice(id) {
             db.ref('finances/' + id).once('value', s => {
-                const f = s.val();
-                const invNr = "INV-" + id.slice(-6).toUpperCase();
-                const totalBruto = parseFloat(f.price);
-                const totalNeto = totalBruto / 1.21;
-                const vatAmount = totalBruto - totalNeto;
-
-                const today = new Date();
-                const dueDate = new Date(today);
-                dueDate.setDate(today.getDate() + 7);
-                const dueDateStr = dueDate.toLocaleDateString('lv-LV');
-
+                const f = s.val(); const invNr = "INV-" + id.slice(-6).toUpperCase();
+                const totalBruto = parseFloat(f.price); const totalNeto = totalBruto / 1.21;
+                const vatAmount = totalBruto - totalNeto; const today = new Date();
+                const dueDate = new Date(today); dueDate.setDate(today.getDate() + 7);
                 db.ref('clients').once('value', cs => {
                     let clientData = { n: f.cl, p: "", addr: "", reg: "" };
                     cs.forEach(cSnap => { if(cSnap.val().n === f.cl) { clientData = cSnap.val(); } });
-
                     const area = document.getElementById('print-area');
-                    area.innerHTML = `
-                        <div style="width: 210mm; min-height: 280mm; padding: 15mm; background: white; font-family: 'Inter', sans-serif; color: #1e293b; box-sizing: border-box;">
-                            <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 4px solid #fbbf24; padding-bottom: 20px; margin-bottom: 30px;">
-                                <div>
-                                    <h1 style="margin:0; font-size: 32px; font-weight: 900; font-style: italic; letter-spacing: -1px;">JT <span style="color:#fbbf24">MOTORS</span></h1>
-                                    <div style="margin-top: 10px; font-size: 11px; line-height: 1.5; color: #475569;">
-                                        <strong>SIA "JT MOTORS"</strong><br>
-                                        Reģ. nr: 40203595994<br>
-                                        Adrese: Krišjāņa Barona iela 136A, Rīga, LV-1012<br>
-                                        <strong>Bankas dati:</strong> AS Swedbank, IBAN: LV21HABA0001234567890
-                                    </div>
-                                </div>
-                                <div style="text-align: right;">
-                                    <h2 style="margin:0; font-size: 18px; font-weight: 900; text-transform: uppercase; color: #0f172a;">Rēķins - Faktūra</h2>
-                                    <p style="margin:5px 0 0; font-size: 16px; font-weight: 900; color:#fbbf24;">Nr: ${invNr}</p>
-                                    <div style="margin-top: 10px; font-size: 12px; font-weight: 600;">Izrakstīts: ${f.d}<br><span style="color: #ef4444;">Termiņš: ${dueDateStr}</span></div>
-                                </div>
-                            </div>
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 40px;">
-                                <div style="border: 1px solid #e2e8f0; padding: 15px; border-radius: 12px;">
-                                    <h3 style="font-size: 10px; font-weight: 900; text-transform: uppercase; color: #94a3b8; margin-bottom: 8px;">Maksātājs</h3>
-                                    <p style="margin:0; font-size: 15px; font-weight: 900;">${clientData.n}</p>
-                                    <div style="font-size: 12px; margin-top: 5px; color: #475569;">${clientData.reg ? `Reģ. nr: ${clientData.reg}<br>` : ''}${clientData.addr ? `${clientData.addr}<br>` : ''}Tālr: ${clientData.p || '-'}</div>
-                                </div>
-                                <div style="background: #f8fafc; padding: 15px; border-radius: 12px; border: 1px solid #e2e8f0;">
-                                    <h3 style="font-size: 10px; font-weight: 900; text-transform: uppercase; color: #94a3b8; margin-bottom: 8px;">Auto</h3>
-                                    <p style="margin:0; font-size: 15px; font-weight: 900;">${f.nr}</p>
-                                    <div style="font-size: 12px; margin-top: 5px; color: #475569;">${f.make} ${f.model}<br>Gads: ${f.year}</div>
-                                </div>
-                            </div>
-                            <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
-                                <thead><tr style="background: #0f172a; color: white; font-size: 11px; text-transform: uppercase;"><th style="padding: 12px; text-align: left;">Pakalpojums</th><th style="padding: 12px; text-align: right; width: 120px;">Summa (EUR)</th></tr></thead>
-                                <tbody><tr><td style="padding: 25px 12px; font-size: 14px; font-weight: 600;">Remontdarbi: <span style="font-weight:400; font-size:13px; color:#64748b;">${f.task}</span></td><td style="padding: 25px 12px; text-align: right; font-weight: 800;">${totalNeto.toFixed(2)}</td></tr></tbody>
-                            </table>
-                            <div style="margin-left: auto; width: 280px; background: #f8fafc; padding: 20px; border-radius: 16px;">
-                                <div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px;"><span>Neto:</span><span>${totalNeto.toFixed(2)} €</span></div>
-                                <div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; border-bottom: 1px solid #e2e8f0; margin-bottom: 10px;"><span>PVN 21%:</span><span>${vatAmount.toFixed(2)} €</span></div>
-                                <div style="display: flex; justify-content: space-between; font-size: 18px; font-weight: 900;"><span>KOPĀ:</span><span style="color: #f59e0b;">${totalBruto.toFixed(2)} €</span></div>
-                            </div>
-                            <div style="margin-top: 40px; font-size: 10px; color: #64748b; text-align: center;">Paldies par uzticību! Rēķins sagatavots elektroniski.</div>
-                        </div>`;
+                    area.innerHTML = `<div style="width: 210mm; min-height: 280mm; padding: 15mm; background: white; font-family: 'Inter', sans-serif; color: #1e293b; box-sizing: border-box;"><div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 4px solid #fbbf24; padding-bottom: 20px; margin-bottom: 30px;"><div><h1 style="margin:0; font-size: 32px; font-weight: 900; font-style: italic; letter-spacing: -1px;">JT <span style="color:#fbbf24">MOTORS</span></h1><div style="margin-top: 10px; font-size: 11px; line-height: 1.5; color: #475569;"><strong>SIA "JT MOTORS"</strong><br>Reģ. nr: 40203595994<br>Adrese: Krišjāņa Barona iela 136A, Rīga, LV-1012<br><strong>Bankas dati:</strong> AS Swedbank, IBAN: LV21HABA0001234567890</div></div><div style="text-align: right;"><h2 style="margin:0; font-size: 18px; font-weight: 900; text-transform: uppercase; color: #0f172a;">Rēķins - Faktūra</h2><p style="margin:5px 0 0; font-size: 16px; font-weight: 900; color:#fbbf24;">Nr: ${invNr}</p><div style="margin-top: 10px; font-size: 12px; font-weight: 600;">Izrakstīts: ${f.d}<br><span style="color: #ef4444;">Termiņš: ${dueDate.toLocaleDateString('lv-LV')}</span></div></div></div><div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 40px;"><div style="border: 1px solid #e2e8f0; padding: 15px; border-radius: 12px;"><h3 style="font-size: 10px; font-weight: 900; text-transform: uppercase; color: #94a3b8; margin-bottom: 8px;">Maksātājs</h3><p style="margin:0; font-size: 15px; font-weight: 900;">${clientData.n}</p><div style="font-size: 12px; margin-top: 5px; color: #475569;">${clientData.reg ? `Reģ. nr: ${clientData.reg}<br>` : ''}${clientData.addr ? `${clientData.addr}<br>` : ''}Tālr: ${clientData.p || '-'}</div></div><div style="background: #f8fafc; padding: 15px; border-radius: 12px; border: 1px solid #e2e8f0;"><h3 style="font-size: 10px; font-weight: 900; text-transform: uppercase; color: #94a3b8; margin-bottom: 8px;">Auto</h3><p style="margin:0; font-size: 15px; font-weight: 900;">${f.nr}</p><div style="font-size: 12px; margin-top: 5px; color: #475569;">${f.make} ${f.model}<br>Gads: ${f.year}</div></div></div><table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;"><thead><tr style="background: #0f172a; color: white; font-size: 11px; text-transform: uppercase;"><th style="padding: 12px; text-align: left;">Pakalpojums</th><th style="padding: 12px; text-align: right; width: 120px;">Summa (EUR)</th></tr></thead><tbody><tr><td style="padding: 25px 12px; font-size: 14px; font-weight: 600;">Remontdarbi: <span style="font-weight:400; font-size:13px; color:#64748b;">${f.task}</span></td><td style="padding: 25px 12px; text-align: right; font-weight: 800;">${totalNeto.toFixed(2)}</td></tr></tbody></table><div style="margin-left: auto; width: 280px; background: #f8fafc; padding: 20px; border-radius: 16px;"><div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px;"><span>Neto:</span><span>${totalNeto.toFixed(2)} €</span></div><div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; border-bottom: 1px solid #e2e8f0; margin-bottom: 10px;"><span>PVN 21%:</span><span>${vatAmount.toFixed(2)} €</span></div><div style="display: flex; justify-content: space-between; font-size: 18px; font-weight: 900;"><span>KOPĀ:</span><span style="color: #f59e0b;">${totalBruto.toFixed(2)} €</span></div></div><div style="margin-top: 40px; font-size: 10px; color: #64748b; text-align: center;">Paldies par uzticību!</div></div>`;
                     setTimeout(() => { window.print(); area.innerHTML = ""; }, 500);
                 });
             });
@@ -1213,13 +1105,10 @@
             const subject = encodeURIComponent(`Rēķins no JT MOTORS - Auto: ${nr}`);
             const body = encodeURIComponent(`Sveiki!\n\nInformējam, ka darbi pie automašīnas ${nr} ir pabeigti.\nKopējā summa: ${amount}€.\n\nAr cieņu,\nJT MOTORS`);
             window.location.href = `mailto:?subject=${subject}&body=${body}`;
-            log("Finanses: Sagatavots e-pasts par auto " + nr);
         }
 
         function loadLogs() { db.ref('logs').limitToLast(100).on('value', s => { let h = ''; s.forEach(x => { h = `<div class="border-b border-white/5 pb-1 mb-1"><span class="text-slate-600">[${x.val().t}]</span> <span class="text-amber-500 font-bold">${x.val().u}:</span> ${x.val().i}</div>` + h; }); document.getElementById('logs-box').innerHTML = h; }); }
-        
-        function clearLogs() { if(confirm("Nodzēst visu žurnālu?")) { db.ref('logs').remove().then(() => { log("Žurnāls notīrīts."); }); } }
-
+        function clearLogs() { if(confirm("Notīrīt žurnālu?")) { db.ref('logs').remove(); } }
         function updatePartSelect() { 
             let h = '<option value="">-- IZVĒLĒTIES DETAĻU --</option>'; 
             Object.keys(stock).forEach(id => { h += `<option value="${id}">${stock[id].n.toUpperCase()} (${stock[id].q} GAB)</option>`; }); 
@@ -1241,9 +1130,8 @@
                 document.getElementById(targetId).value = text; 
                 if(targetId === 'q-store') drawStore();
                 if(targetId === 'q-stock') drawStock();
-                scanner.stop(); 
-                r.classList.add('hidden'); 
-            }).catch(err => { alert("Kameras kļūda!"); r.classList.add('hidden'); });
+                scanner.stop(); r.classList.add('hidden'); 
+            }).catch(err => { r.classList.add('hidden'); });
         }
 
         function generateEAN(targetId) {
