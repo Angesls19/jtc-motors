@@ -1050,12 +1050,21 @@
                         <td class="text-right p-4 flex justify-end gap-2">
                             <button onclick="printInvoice('${x.key}')" class="bg-amber-500 text-slate-900 text-[10px] font-black px-3 py-1 rounded-lg uppercase shadow-sm hover:bg-amber-600 transition-colors">Drukāt</button>
                             <button onclick="sendInvoice('${f.nr}', '${amt}', '${f.cl}')" class="bg-blue-500 text-white text-[10px] font-black px-3 py-1 rounded-lg uppercase shadow-sm hover:bg-blue-600 transition-colors">Sūtīt</button>
+                            <button onclick="deleteInvoice('${x.key}', '${f.nr}')" class="bg-red-500 text-white text-[10px] font-black px-3 py-1 rounded-lg uppercase shadow-sm hover:bg-red-600 transition-colors"><i class="fas fa-trash"></i></button>
                         </td>
                     </tr>` + h; 
                 });
                 document.getElementById('fin-table').innerHTML = h; 
                 document.getElementById('s-profit').innerText = total.toFixed(0);
             });
+        }
+
+        function deleteInvoice(id, nr) {
+            if(confirm("Vai tiešām vēlaties dzēst rēķinu priekš " + nr + "?")) {
+                db.ref('finances/' + id).remove().then(() => {
+                    log("Finanses: Izdzēsts rēķins " + nr);
+                });
+            }
         }
 
         function searchVehicleHistory() {
@@ -1209,3 +1218,4 @@
     </script>
 </body>
 </html>
+
