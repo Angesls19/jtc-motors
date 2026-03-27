@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>JT MOTORS | ULTIMATE v11.5</title>
+    <title>JT MOTORS | ULTIMATE v1.0</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
@@ -342,13 +342,25 @@
                             <div><label class="input-group-label text-slate-400">Daudzums</label><input id="st-q" type="number" placeholder="1" class="!bg-slate-800 !text-white border-slate-700"></div>
                             <div><label class="input-group-label text-slate-400">Plaukts</label><input id="st-l" placeholder="A-1" class="!bg-slate-800 !text-white border-slate-700 uppercase"></div>
                         </div>
-                        <label class="input-group-label text-slate-400">Svītrkods (EAN)</label>
-                        <div class="flex gap-2">
-                            <input id="st-e" placeholder="Skenēt..." class="!bg-slate-800 !text-white border-slate-700 font-mono">
-                            <button onclick="generateEAN('st-e')" class="bg-blue-500 text-white w-14 h-[50px] rounded-xl flex items-center justify-center font-black text-xs">GEN</button>
-                            <button onclick="startScan('st-e')" class="bg-amber-500 text-slate-900 w-14 h-[50px] rounded-xl flex items-center justify-center shadow-lg shadow-amber-500/20"><i class="fas fa-barcode"></i></button>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="input-group-label text-slate-400">Svītrkods (EAN 1)</label>
+                                <div class="flex gap-2">
+                                    <input id="st-e" placeholder="Skenēt..." class="!bg-slate-800 !text-white border-slate-700 font-mono !mb-0">
+                                    <button onclick="generateEAN('st-e')" class="bg-blue-500 text-white px-3 h-[50px] rounded-xl font-black text-xs">GEN</button>
+                                    <button onclick="startScan('st-e')" class="bg-amber-500 text-slate-900 w-12 h-[50px] rounded-xl flex items-center justify-center"><i class="fas fa-barcode"></i></button>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="input-group-label text-slate-400">Svītrkods (EAN 2)</label>
+                                <div class="flex gap-2">
+                                    <input id="st-e2" placeholder="Skenēt..." class="!bg-slate-800 !text-white border-slate-700 font-mono !mb-0">
+                                    <button onclick="generateEAN('st-e2')" class="bg-blue-500 text-white px-3 h-[50px] rounded-xl font-black text-xs">GEN</button>
+                                    <button onclick="startScan('st-e2')" class="bg-amber-500 text-slate-900 w-12 h-[50px] rounded-xl flex items-center justify-center"><i class="fas fa-barcode"></i></button>
+                                </div>
+                            </div>
                         </div>
-                        <button id="btn-add-stock" onclick="addStock()" class="btn-jt w-full mt-4 !py-4">Saglabāt Noliktavā</button>
+                        <button id="btn-add-stock" onclick="addStock()" class="btn-jt w-full mt-6 !py-4">Saglabāt Noliktavā</button>
                     </div>
                 </div>
                 
@@ -699,7 +711,7 @@
             let h = '';
             Object.keys(stock).forEach(id => {
                 const i = stock[id];
-                if(i.n.toLowerCase().includes(q) || (i.e && i.e.toString().includes(q))) {
+                if(i.n.toLowerCase().includes(q) || (i.e && i.e.toString().includes(q)) || (i.e2 && i.e2.toString().includes(q))) {
                     const priceNeto = parseFloat(i.p).toFixed(2);
                     const priceBruto = (i.p * (i.vat == 21 ? 1.21 : 1)).toFixed(2);
                     
@@ -720,8 +732,9 @@
                         ${imgHtml}
                         <div class="min-w-0">
                             <h4 class="font-bold text-slate-800 truncate text-sm">${i.n}</h4>
-                            <div class="flex items-center gap-3 mt-1">
-                                <span class="text-[10px] font-mono text-blue-500 font-bold bg-blue-50 px-1.5 py-0.5 rounded"><i class="fas fa-barcode mr-1"></i>${i.e || '-'}</span>
+                            <div class="flex flex-wrap items-center gap-2 mt-1">
+                                <span class="text-[10px] font-mono text-blue-500 font-bold bg-blue-50 px-1.5 py-0.5 rounded" title="EAN 1"><i class="fas fa-barcode mr-1"></i>${i.e || '-'}</span>
+                                ${i.e2 ? `<span class="text-[10px] font-mono text-indigo-500 font-bold bg-indigo-50 px-1.5 py-0.5 rounded" title="EAN 2"><i class="fas fa-barcode mr-1"></i>${i.e2}</span>` : ''}
                                 <span class="text-[10px] font-black uppercase ${i.q < 3 ? 'text-red-600' : 'text-slate-400'}">${i.q} GAB</span>
                             </div>
                             ${lowStockWarning}
@@ -749,6 +762,7 @@
                   p = document.getElementById('st-p').value, 
                   q = document.getElementById('st-q').value, 
                   e = document.getElementById('st-e').value, 
+                  e2 = document.getElementById('st-e2').value, 
                   l = document.getElementById('st-l').value,
                   fileInput = document.getElementById('st-file'),
                   btn = document.getElementById('btn-add-stock');
@@ -775,6 +789,7 @@
                 q: parseInt(q || 1), 
                 l: l || 'Nav', 
                 e: e || Date.now(),
+                e2: e2 || '',
                 img: imageUrl
             }).then(() => {
                 btn.innerText = "Saglabāt Noliktavā";
@@ -896,8 +911,10 @@
                 <input id="up-st-q" type="number" value="${i.q}">
                 <label class="input-group-label">Plaukts</label>
                 <input id="up-st-l" value="${i.l}">
-                <label class="input-group-label">EAN</label>
+                <label class="input-group-label">EAN 1</label>
                 <input id="up-st-e" value="${i.e}">
+                <label class="input-group-label">EAN 2</label>
+                <input id="up-st-e2" value="${i.e2 || ''}">
                 <button onclick="saveStockEdit('${id}')" class="btn-jt w-full mt-4">Saglabāt Noliktavā</button>
             `;
             openEditModal("Labot Noliktavu", html);
@@ -911,6 +928,7 @@
                 q: parseInt(document.getElementById('up-st-q').value),
                 l: document.getElementById('up-st-l').value,
                 e: document.getElementById('up-st-e').value,
+                e2: document.getElementById('up-st-e2').value,
                 img: document.getElementById('up-st-img').value
             };
             db.ref('stock/' + id).update(updates).then(() => { closeEditModal(); log("Noliktava: Rediģēts " + updates.n); });
