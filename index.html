@@ -420,9 +420,12 @@
                     <h3 class="font-black mb-6 flex items-center gap-3 text-white text-xl italic tracking-tighter">
                         <span class="bg-amber-500 text-slate-900 w-8 h-8 rounded-lg flex items-center justify-center"><i class="fas fa-search"></i></span> MEKLĒT AUTO VĒSTURI
                     </h3>
-                    <div class="relative z-10 flex gap-2">
-                        <input id="h-search-nr" placeholder="AA-1234" class="!bg-slate-800 !text-white border-none uppercase font-black !mb-0" onkeyup="if(event.key === 'Enter') searchVehicleHistory()">
-                        <button onclick="searchVehicleHistory()" class="btn-jt px-8 !py-0 h-[50px]">Meklēt</button>
+                    <div class="relative z-10 flex flex-col gap-2">
+                        <div class="flex gap-2">
+                            <input id="h-search-nr" placeholder="AA-1234" class="!bg-slate-800 !text-white border-none uppercase font-black !mb-0" onkeyup="if(event.key === 'Enter') searchVehicleHistory()">
+                            <button onclick="searchVehicleHistory()" class="btn-jt px-8 !py-0 h-[50px]">Meklēt</button>
+                        </div>
+                        <button onclick="searchVehicleHistory(true)" class="w-full bg-slate-800 text-slate-400 font-bold py-3 rounded-xl border border-white/5 hover:bg-slate-700 hover:text-white transition-all uppercase text-[10px] tracking-widest">Rādīt visu pabeigto darbu vēsturi</button>
                     </div>
                 </div>
                 <div id="history-results" class="grid gap-4">
@@ -1150,7 +1153,6 @@
             });
         }
 
-        // ŠEIT IR IZMAIŅAS RĒĶINU SADAĻAI
         function loadFin() {
             db.ref('finances').on('value', s => {
                 let h = '', total = 0;
@@ -1191,13 +1193,35 @@
             });
         }
 
-        function searchVehicleHistory() {
+        // LABOTĀ VĒSTURES MEKLĒŠANAS FUNKCIJA
+        function searchVehicleHistory(showAll = false) {
             const nr = document.getElementById('h-search-nr').value.toUpperCase().trim();
-            if (!nr) return alert("Ievadiet numuru!");
-            db.ref('finances').orderByChild('nr').equalTo(nr).once('value', s => {
+            let query = db.ref('finances');
+            
+            if (!showAll && !nr) return alert("Ievadiet numuru vai spiediet 'Rādīt visu'!");
+
+            if (!showAll) {
+                query = query.orderByChild('nr').equalTo(nr);
+            }
+
+            query.once('value', s => {
                 let h = '';
-                s.forEach(x => { const f = x.val(); h += `<div class="card"><h4 class="font-black">${f.d} - ${f.task}</h4><p class="text-sm font-bold text-green-600">${f.price}€</p></div>`; });
-                document.getElementById('history-results').innerHTML = h || '<div class="text-center opacity-30 italic">Nekas nav atrasts</div>';
+                s.forEach(x => { 
+                    const f = x.val(); 
+                    h += `
+                    <div class="card border-l-4 border-amber-500">
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">${f.d}</span>
+                                <h4 class="font-black text-slate-900">${f.nr}</h4>
+                            </div>
+                            <div class="text-right font-black text-green-600">${parseFloat(f.price).toFixed(2)}€</div>
+                        </div>
+                        <p class="text-xs text-slate-600 leading-relaxed font-semibold">${f.task}</p>
+                        <div class="mt-3 text-[9px] text-slate-400 uppercase font-bold italic">Klients: ${f.cl || '---'} | ${f.make || ''} ${f.model || ''}</div>
+                    </div>`; 
+                });
+                document.getElementById('history-results').innerHTML = h || '<div class="text-center py-10 opacity-30 italic font-bold">Vēsturē ieraksti netika atrasti</div>';
             });
         }
 
