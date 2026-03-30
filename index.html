@@ -540,7 +540,7 @@
             </div>
 
             <div id="sec-fin" class="tab-content hidden">
-                <div class="card !p-0 overflow-hidden border-none shadow-xl"><div class="bg-slate-800 p-4 text-white text-center text-xs font-black uppercase tracking-widest">Finanšu pārskats</div><table class="w-full text-sm"><thead class="bg-slate-100 text-slate-500 uppercase text-[10px]"><tr><th class="p-4 text-left">Dati</th><th class="text-left">Auto</th><th class="text-right">Summa</th><th class="p-4 text-right">Darbības</th></tr></thead><tbody id="fin-table" class="divide-y divide-slate-100"></tbody></table></div>
+                <div class="card !p-0 overflow-hidden border-none shadow-xl"><div class="bg-slate-800 p-4 text-white text-center text-xs font-black uppercase tracking-widest">Finanšu pārskats</div><table class="w-full text-sm"><thead class="bg-slate-100 text-slate-500 uppercase text-[10px]"><tr><th class="p-4 text-left">Datums</th><th class="text-left">Auto</th><th class="text-right">Summa</th><th class="p-4 text-right">Darbības</th></tr></thead><tbody id="fin-table" class="divide-y divide-slate-100"></tbody></table></div>
             </div>
 
             <div id="sec-logs" class="tab-content hidden">
@@ -714,7 +714,6 @@
                     try {
                         const response = await fetch("https://api.imgbb.com/1/upload?key=1e5fd5e4f97806bc6b403e42c3d94288", { method: "POST", body: formData });
                         const result = await response.json();
-                        // LABOTS: Lietojam 'display_url' tiešai piekļuvei attēlam
                         if(result.success) urls.push(result.data.display_url);
                     } catch (err) { console.error("Augšupielādes kļūda"); }
                 }
@@ -784,31 +783,19 @@
         function loadStock() {
             db.ref('stock').on('value', s => {
                 stock = s.val() || {};
-                
-                // Ja noliktava ir tukša, pievienojam 10 parauga preces
-                if (Object.keys(stock).length === 0) {
-                    seedInitialStock();
-                }
-
+                if (Object.keys(stock).length === 0) seedInitialStock();
                 drawStock(); updatePartSelect();
                 let v = 0; Object.values(stock).forEach(i => v += (i.q * (i.p * (i.vat == 21 ? 1.21 : 1))));
                 document.getElementById('s-val').innerText = v.toFixed(0) + "€";
             });
         }
 
-        // FUNKCIJA NOLIKTAVAS AIZPILDĪŠANAI
         function seedInitialStock() {
             const demoItems = [
                 { n: "Bremžu kluči Priekšējie (BMW E60)", p: 45.50, vat: 21, q: 4, l: "A-1", e: "5901234567001", imgs: ["https://i.ibb.co/vYm6r8K/pads.jpg"] },
                 { n: "Eļļas filtrs (VW Golf 7 2.0 TDI)", p: 8.90, vat: 21, q: 12, l: "B-2", e: "5901234567002", imgs: ["https://i.ibb.co/mSRp3mY/filter.jpg"] },
                 { n: "Aizdedzes svece NGK Laser Iridium", p: 12.30, vat: 21, q: 24, l: "C-1", e: "5901234567003", imgs: ["https://i.ibb.co/V9z0k9m/spark.jpg"] },
-                { n: "Zobsiksnas komplekts (Audi A4 B8)", p: 125.00, vat: 21, q: 2, l: "D-4", e: "5901234567004", imgs: ["https://i.ibb.co/fN6S6S4/belt.jpg"] },
-                { n: "Amortizators Priekšējais (Volvo XC60)", p: 88.00, vat: 21, q: 4, l: "A-5", e: "5901234567005", imgs: ["https://i.ibb.co/5G7Y7N1/shock.jpg"] },
-                { n: "Gaisa filtrs (Mercedes W212)", p: 15.60, vat: 21, q: 6, l: "B-3", e: "5901234567006", imgs: ["https://i.ibb.co/L5hYhY3/air.jpg"] },
-                { n: "Logu tīrītāju slotiņas Bosch AeroTwin", p: 22.00, vat: 21, q: 10, l: "E-1", e: "5901234567007", imgs: ["https://i.ibb.co/kH9Z9Z1/wipers.jpg"] },
-                { n: "Akumulators VARTA 74Ah 680A", p: 95.00, vat: 21, q: 3, l: "GR-1", e: "5901234567008", imgs: ["https://i.ibb.co/pP8Z8Z1/battery.jpg"] },
-                { n: "Riteņa gultnis (Toyota Avensis)", p: 54.00, vat: 21, q: 5, l: "C-4", e: "5901234567009", imgs: ["https://i.ibb.co/V3Y7Y71/bearing.jpg"] },
-                { n: "Antifrīzs G12+ 5L (Sarkanais)", p: 14.20, vat: 21, q: 15, l: "S-2", e: "5901234567010", imgs: ["https://i.ibb.co/jR6Z6Z1/coolant.jpg"] }
+                { n: "Zobsiksnas komplekts (Audi A4 B8)", p: 125.00, vat: 21, q: 2, l: "D-4", e: "5901234567004", imgs: ["https://i.ibb.co/fN6S6S4/belt.jpg"] }
             ];
             demoItems.forEach(item => db.ref('stock').push(item));
             log("Sistēma: Noliktava inicializēta ar parauga precēm.");
@@ -1066,16 +1053,8 @@
         }
 
         function saveOrderEdit(id) {
-            const updates = {
-                n: document.getElementById('up-o-n').value,
-                cl: document.getElementById('up-o-cl').value,
-                phone: document.getElementById('up-o-p').value,
-                price: parseFloat(document.getElementById('up-o-pr').value)
-            };
-            db.ref('orders/' + id).update(updates).then(() => {
-                closeEditModal();
-                log("Pasūtījumi: Rediģēts pasūtījums " + id);
-            });
+            const updates = { n: document.getElementById('up-o-n').value, cl: document.getElementById('up-o-cl').value, phone: document.getElementById('up-o-p').value, price: parseFloat(document.getElementById('up-o-pr').value) };
+            db.ref('orders/' + id).update(updates).then(() => { closeEditModal(); log("Pasūtījumi: Rediģēts pasūtījums " + id); });
         }
 
         function printOrder(id) {
@@ -1097,8 +1076,7 @@
                         </div>
                         <p style="font-size: 10px; text-align:center; margin-top:50px;">Paldies par pirkumu!</p>
                     </div>`;
-                window.print();
-                area.innerHTML = "";
+                window.print(); area.innerHTML = "";
             });
         }
 
@@ -1113,18 +1091,12 @@
             db.ref('clients').on('value', s => {
                 let h = '';
                 s.forEach(x => {
-                    const c = x.val();
-                    const id = x.key;
-                    const colorBorder = c.type === 'company' ? 'border-blue-500' : 'border-amber-500';
-                    const icon = c.type === 'company' ? 'fa-building' : 'fa-user';
-                    
+                    const c = x.val(), id = x.key, colorBorder = c.type === 'company' ? 'border-blue-500' : 'border-amber-500', icon = c.type === 'company' ? 'fa-building' : 'fa-user';
                     h += `
                     <div class="card !p-5 border-t-4 ${colorBorder} shadow-md flex flex-col justify-between">
                         <div>
                             <div class="flex justify-between items-start mb-2">
-                                <span class="text-[9px] font-black uppercase tracking-widest text-slate-400">
-                                    <i class="fas ${icon} mr-1"></i> ${c.type === 'company' ? 'Uzņēmums' : 'Privātpersona'}
-                                </span>
+                                <span class="text-[9px] font-black uppercase tracking-widest text-slate-400"><i class="fas ${icon} mr-1"></i> ${c.type === 'company' ? 'Uzņēmums' : 'Privātpersona'}</span>
                                 <div class="flex gap-2">
                                     <button onclick="editClient('${id}')" class="text-slate-400 hover:text-blue-500 transition-colors"><i class="fas fa-edit"></i></button>
                                     <button onclick="if(confirm('Dzēst klientu?')) db.ref('clients/${id}').remove()" class="text-slate-400 hover:text-red-500 transition-colors"><i class="fas fa-trash-alt"></i></button>
@@ -1133,14 +1105,9 @@
                             <h4 class="font-black text-slate-800 uppercase text-lg leading-tight mb-1">${c.n}</h4>
                             <p class="text-sm font-bold text-slate-500 mb-4">${c.type === 'company' ? (c.reg || 'Reģ.nr. nav') : (c.email || 'E-pasts nav')}</p>
                         </div>
-                        
                         <div class="flex gap-2 mt-auto">
-                            <a href="tel:${c.p}" class="flex-1 bg-green-500 text-white text-center py-2 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-green-600 transition-all shadow-lg shadow-green-100 flex items-center justify-center gap-2">
-                                <i class="fas fa-phone-alt"></i> ZVANĪT
-                            </a>
-                            <button onclick="editClient('${id}')" class="flex-1 bg-slate-100 text-slate-600 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-200 transition-all flex items-center justify-center gap-2">
-                                <i class="fas fa-info-circle"></i> LABOT
-                            </button>
+                            <a href="tel:${c.p}" class="flex-1 bg-green-500 text-white text-center py-2 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-green-600 transition-all flex items-center justify-center gap-2"><i class="fas fa-phone-alt"></i> ZVANĪT</a>
+                            <button onclick="editClient('${id}')" class="flex-1 bg-slate-100 text-slate-600 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-200 transition-all flex items-center justify-center gap-2"><i class="fas fa-info-circle"></i> LABOT</button>
                         </div>
                     </div>`;
                 });
@@ -1150,26 +1117,13 @@
 
         function editClient(id) {
             db.ref('clients/' + id).once('value', s => {
-                const c = s.val();
-                const isComp = c.type === 'company';
+                const c = s.val(), isComp = c.type === 'company';
                 const html = `
                     <label class="input-group-label">Tips</label>
-                    <select id="up-c-type" class="mb-4">
-                        <option value="private" ${!isComp ? 'selected' : ''}>Privātpersona</option>
-                        <option value="company" ${isComp ? 'selected' : ''}>Uzņēmums</option>
-                    </select>
-                    <label class="input-group-label">${isComp ? 'Nosaukums' : 'Vārds Uzvārds'}</label>
-                    <input id="up-c-n" value="${c.n || ''}">
-                    <label class="input-group-label">Telefons</label>
-                    <input id="up-c-p" value="${c.p || ''}">
-                    <div id="up-c-extra">
-                        ${isComp ? `
-                            <label class="input-group-label">Reģistrācijas Nr.</label><input id="up-c-reg" value="${c.reg || ''}">
-                            <label class="input-group-label">Juridiskā Adrese</label><input id="up-c-addr" value="${c.addr || ''}">
-                        ` : `
-                            <label class="input-group-label">E-pasts</label><input id="up-c-e" value="${c.email || ''}">
-                        `}
-                    </div>
+                    <select id="up-c-type" class="mb-4"><option value="private" ${!isComp ? 'selected' : ''}>Privātpersona</option><option value="company" ${isComp ? 'selected' : ''}>Uzņēmums</option></select>
+                    <label class="input-group-label">${isComp ? 'Nosaukums' : 'Vārds Uzvārds'}</label><input id="up-c-n" value="${c.n || ''}">
+                    <label class="input-group-label">Telefons</label><input id="up-c-p" value="${c.p || ''}">
+                    <div id="up-c-extra">${isComp ? `<label class="input-group-label">Reģistrācijas Nr.</label><input id="up-c-reg" value="${c.reg || ''}"><label class="input-group-label">Juridiskā Adrese</label><input id="up-c-addr" value="${c.addr || ''}">` : `<label class="input-group-label">E-pasts</label><input id="up-c-e" value="${c.email || ''}">`}</div>
                     <button onclick="saveClientEdit('${id}')" class="btn-jt w-full mt-4">Saglabāt Izmaiņas</button>
                 `;
                 openEditModal("Labot Klientu", html);
@@ -1178,21 +1132,10 @@
 
         function saveClientEdit(id) {
             const type = document.getElementById('up-c-type').value;
-            const updates = {
-                type: type,
-                n: document.getElementById('up-c-n').value,
-                p: document.getElementById('up-c-p').value
-            };
-            if(type === 'company') {
-                updates.reg = document.getElementById('up-c-reg').value;
-                updates.addr = document.getElementById('up-c-addr').value;
-            } else {
-                updates.email = document.getElementById('up-c-e').value;
-            }
-            db.ref('clients/' + id).set(updates).then(() => {
-                closeEditModal();
-                log("Klienti: Rediģēts klients " + updates.n);
-            });
+            const updates = { type: type, n: document.getElementById('up-c-n').value, p: document.getElementById('up-c-p').value };
+            if(type === 'company') { updates.reg = document.getElementById('up-c-reg').value; updates.addr = document.getElementById('up-c-addr').value; } 
+            else { updates.email = document.getElementById('up-c-e').value; }
+            db.ref('clients/' + id).set(updates).then(() => { closeEditModal(); log("Klienti: Rediģēts klients " + updates.n); });
         }
 
         function addClient() {
@@ -1207,41 +1150,44 @@
             });
         }
 
+        // ŠEIT IR IZMAIŅAS RĒĶINU SADAĻAI
         function loadFin() {
             db.ref('finances').on('value', s => {
                 let h = '', total = 0;
                 s.forEach(x => { 
-                    const f = x.val(); total += parseFloat(f.price); 
-                    
+                    const f = x.val(), key = x.key; 
+                    total += parseFloat(f.price); 
                     const emailSubject = `JT MOTORS Rēķins: ${f.nr}`;
-                    const emailBody = `Labdien!\n\nInformējam, ka darbs pie automašīnas ${f.nr} ir pabeigts.\nDarbu apraksts: ${f.task || 'Nav norādīts'}\nKopējā summa: ${parseFloat(f.price).toFixed(2)}€\n\nPaldies, ka izvēlējāties JT MOTORS!\nAr cieņu,\nJT MOTORS komanda`;
+                    const emailBody = `Labdien!\n\nInformējam, ka darbs pie automašīnas ${f.nr} ir pabeigts.\nKopējā summa: ${parseFloat(f.price).toFixed(2)}€\nPaldies!`;
 
                     h = `<tr class="hover:bg-slate-50">
                         <td class="p-4 text-[10px] font-bold text-slate-400">${f.d}</td>
                         <td class="font-black">${f.nr}</td>
                         <td class="text-right font-black text-green-600">${parseFloat(f.price).toFixed(2)}€</td>
                         <td class="text-right p-4 flex justify-end gap-2">
-                            <button onclick="sendInvoiceEmail('${f.cl || ''}', '${encodeURIComponent(emailSubject)}', '${encodeURIComponent(emailBody)}')" class="bg-blue-500 text-white px-3 py-1 rounded text-[10px] font-black uppercase"><i class="fas fa-envelope mr-1"></i> E-pasts</button>
-                            <button onclick="printEAN('${f.nr}', 'RĒĶINS')" class="bg-amber-500 px-3 py-1 rounded text-[10px] font-black uppercase">Drukāt</button>
+                            <button onclick="sendInvoiceEmail('${f.cl || ''}', '${encodeURIComponent(emailSubject)}', '${encodeURIComponent(emailBody)}')" class="bg-blue-500 text-white px-3 py-1 rounded text-[10px] font-black uppercase"><i class="fas fa-envelope"></i></button>
+                            <button onclick="printEAN('${f.nr}', 'RĒĶINS')" class="bg-amber-500 px-3 py-1 rounded text-[10px] font-black uppercase"><i class="fas fa-print"></i></button>
+                            <button onclick="deleteInvoice('${key}', '${f.nr}')" class="bg-red-100 text-red-600 px-3 py-1 rounded text-[10px] font-black uppercase hover:bg-red-600 hover:text-white transition-all"><i class="fas fa-trash-alt"></i></button>
                         </td>
                     </tr>` + h; 
                 });
-                document.getElementById('fin-table').innerHTML = h; 
+                document.getElementById('fin-table').innerHTML = h || '<tr><td colspan="4" class="p-10 text-center opacity-20 italic">Nav pabeigtu rēķinu</td></tr>'; 
                 document.getElementById('s-profit').innerText = total.toFixed(0);
             });
+        }
+
+        function deleteInvoice(id, nr) {
+            if(confirm(`Vai tiešām vēlaties neatgriezeniski dzēst rēķinu auto ${nr}?`)) {
+                db.ref('finances/' + id).remove().then(() => { log(`Sistēma: Izdzēsts rēķins auto ${nr}`); });
+            }
         }
 
         function sendInvoiceEmail(clientName, subject, body) {
             db.ref('clients').orderByChild('n').equalTo(clientName).once('value', snapshot => {
                 let clientEmail = "";
                 snapshot.forEach(child => { if(child.val().email) clientEmail = child.val().email; });
-                
-                if(!clientEmail) clientEmail = prompt("Klientam nav e-pasta adreses. Ievadiet manuāli:", "");
-                
-                if(clientEmail) {
-                    window.location.href = `mailto:${clientEmail}?subject=${subject}&body=${body}`;
-                    log("Sistēma: Sagatavots e-pasts klientam " + clientName);
-                }
+                if(!clientEmail) clientEmail = prompt("Ievadiet e-pastu:", "");
+                if(clientEmail) { window.location.href = `mailto:${clientEmail}?subject=${subject}&body=${body}`; }
             });
         }
 
@@ -1274,9 +1220,7 @@
             const r = document.getElementById('reader'); r.classList.remove('hidden');
             if(!scanner) scanner = new Html5Qrcode("reader");
             scanner.start({facingMode: "environment"}, {fps: 10, qrbox: 250}, text => { 
-                // ATSKAŅOT SKAŅU
                 document.getElementById('scan-sound').play().catch(e => console.log("Audio error"));
-                
                 document.getElementById(targetId).value = text; 
                 if(targetId === 'q-store') drawStore();
                 if(targetId === 'q-stock') drawStock();
@@ -1284,50 +1228,28 @@
             }).catch(err => { r.classList.add('hidden'); });
         }
 
-        function generateEAN(targetId) {
-            const ean = "200" + Date.now().toString().slice(-10);
-            document.getElementById(targetId).value = ean;
-        }
+        function generateEAN(targetId) { const ean = "200" + Date.now().toString().slice(-10); document.getElementById(targetId).value = ean; }
 
         async function decodeVIN() {
             const vin = document.getElementById('rep-vin').value.trim();
             if (vin.length !== 17) return alert("VIN numuram jābūt precīzi 17 rakstzīmēm!");
-
-            const btn = event.target;
-            const originalText = btn.innerText;
-            btn.innerText = "...";
-            btn.disabled = true;
-
+            const btn = event.target; btn.innerText = "..."; btn.disabled = true;
             try {
                 const response = await fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/decodevinvalues/${vin}?format=json`);
                 const data = await response.json();
                 const result = data.Results[0];
-
                 if (result && result.Make) {
                     const makeSelect = document.getElementById('rep-make');
                     const foundMake = Object.keys(modelsByMake).find(m => m.toLowerCase() === result.Make.toLowerCase());
-                    
                     if (foundMake) {
-                        makeSelect.value = foundMake;
-                        updateModels(); 
-                        
+                        makeSelect.value = foundMake; updateModels(); 
                         setTimeout(() => {
-                            const modelSelect = document.getElementById('rep-model');
-                            modelSelect.value = result.Model;
+                            document.getElementById('rep-model').value = result.Model;
                             document.getElementById('rep-year').value = result.ModelYear;
                         }, 100);
-                    } else {
-                        alert(`Atrasts: ${result.Make} ${result.Model}. Marka nav sarakstā, ievadiet manuāli.`);
                     }
-                } else {
-                    alert("VIN informācija netika atrasta.");
                 }
-            } catch (error) {
-                alert("Kļūda savienojumā ar VIN datubāzi.");
-            } finally {
-                btn.innerText = originalText;
-                btn.disabled = false;
-            }
+            } catch (error) { alert("Kļūda VIN datubāzē."); } finally { btn.innerText = "DEKODĒT"; btn.disabled = false; }
         }
     </script>
 </body>
