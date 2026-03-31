@@ -1433,21 +1433,66 @@
                 let h = '';
                 s.forEach(x => { 
                     const f = x.val(); 
+                    const id = x.key;
                     h += `
-                    <div class="card border-l-4 border-amber-500">
+                    <div class="card border-l-4 border-amber-500 relative">
+                        <div class="absolute top-4 right-4 flex gap-2">
+                             <button onclick="editHistoryItem('${id}')" class="w-8 h-8 rounded-lg bg-slate-100 text-blue-500 hover:bg-blue-500 hover:text-white flex items-center justify-center transition-all shadow-sm"><i class="fas fa-edit text-xs"></i></button>
+                             <button onclick="deleteHistoryItem('${id}', '${f.nr}')" class="w-8 h-8 rounded-lg bg-slate-100 text-red-400 hover:bg-red-500 hover:text-white flex items-center justify-center transition-all shadow-sm"><i class="fas fa-trash-alt text-xs"></i></button>
+                        </div>
                         <div class="flex justify-between items-start mb-2">
                             <div>
                                 <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">${f.d}</span>
                                 <h4 class="font-black text-slate-900">${f.nr}</h4>
                             </div>
-                            <div class="text-right font-black text-green-600">${parseFloat(f.price).toFixed(2)}€</div>
+                            <div class="text-right font-black text-green-600 pr-12">${parseFloat(f.price).toFixed(2)}€</div>
                         </div>
-                        <p class="text-xs text-slate-600 leading-relaxed font-semibold">${f.task}</p>
+                        <p class="text-xs text-slate-600 leading-relaxed font-semibold pr-12">${f.task}</p>
                         <div class="mt-3 text-[9px] text-slate-400 uppercase font-bold italic">Klients: ${f.cl || '---'} | ${f.make || ''} ${f.model || ''}</div>
                     </div>`; 
                 });
                 document.getElementById('history-results').innerHTML = h || '<div class="text-center py-10 opacity-30 italic font-bold">Vēsturē ieraksti netika atrasti</div>';
             });
+        }
+
+        // --- JAUNAS FUNKCIJAS VĒSTURES LABOŠANAI UN DZĒŠANAI ---
+
+        function editHistoryItem(id) {
+            db.ref('finances/' + id).once('value', s => {
+                const f = s.val();
+                if(!f) return;
+                const html = `
+                    <label class="input-group-label">Auto Numurs</label><input id="up-h-nr" value="${f.nr || ''}" class="uppercase font-black">
+                    <label class="input-group-label">Klients</label><input id="up-h-cl" value="${f.cl || ''}">
+                    <label class="input-group-label">Veiktie darbi</label><textarea id="up-h-task" class="h-32">${f.task || ''}</textarea>
+                    <label class="input-group-label">Cena (€)</label><input id="up-h-price" type="number" step="0.01" value="${f.price || 0}">
+                    <button onclick="saveHistoryEdit('${id}')" class="btn-jt w-full mt-4">Saglabāt Vēsturē</button>
+                `;
+                openEditModal("Labot vēstures ierakstu", html);
+            });
+        }
+
+        function saveHistoryEdit(id) {
+            const updates = {
+                nr: document.getElementById('up-h-nr').value.toUpperCase(),
+                cl: document.getElementById('up-h-cl').value,
+                task: document.getElementById('up-h-task').value,
+                price: parseFloat(document.getElementById('up-h-price').value || 0)
+            };
+            db.ref('finances/' + id).update(updates).then(() => { 
+                closeEditModal(); 
+                log("Vēsture: Rediģēts ieraksts " + updates.nr);
+                searchVehicleHistory(true); // Atsvaidzina sarakstu
+            });
+        }
+
+        function deleteHistoryItem(id, nr) {
+            if(confirm(`Vai tiešām vēlaties neatgriezeniski dzēst vēstures ierakstu auto ${nr}?`)) {
+                db.ref('finances/' + id).remove().then(() => { 
+                    log(`Vēsture: Izdzēsts ieraksts auto ${nr}`);
+                    searchVehicleHistory(true); // Atsvaidzina sarakstu
+                });
+            }
         }
 
         function loadLogs() { db.ref('logs').limitToLast(100).on('value', s => { let h = ''; s.forEach(x => { h = `<div class="border-b border-white/5 pb-1 mb-1"><span class="text-slate-600">[${x.val().t}]</span> <span class="text-amber-500 font-bold">${x.val().u}:</span> ${x.val().i}</div>` + h; }); document.getElementById('logs-box').innerHTML = h; }); }
