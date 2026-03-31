@@ -101,23 +101,28 @@
         }
         input:focus, select:focus, textarea:focus { border-color: var(--jt-yellow); outline: none; background: #fff; }
 
-        .stat-card { 
-            background: white; 
-            padding: 15px; 
-            border-radius: 18px; 
-            text-align: left; 
-            border: 1px solid #f1f5f9;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-        }
-
-        .bg-blue-soft { background: #eff6ff; color: #2563eb; }
-        .bg-amber-soft { background: #fffbeb; color: #d97706; }
-        .bg-green-soft { background: #f0fdf4; color: #16a34a; }
-
+        /* LABOTS PRINT STILS PRECIZAM IZMĒRAM 29x62mm */
         @media print { 
             body * { visibility: hidden; } 
             #print-area, #print-area * { visibility: visible; } 
-            #print-area { position: absolute; left:0; top:0; width:100%; } 
+            #print-area { 
+                position: absolute; 
+                left: 0; 
+                top: 0; 
+                width: 62mm; 
+                height: 29mm; 
+                margin: 0; 
+                padding: 0; 
+                display: flex; 
+                flex-direction: column; 
+                align-items: center; 
+                justify-content: center;
+                background: white;
+            } 
+            @page {
+                size: 62mm 29mm;
+                margin: 0;
+            }
             .no-print { display: none !important; }
         }
         
@@ -1193,7 +1198,6 @@
             });
         }
 
-        // LABOTĀ VĒSTURES MEKLĒŠANAS FUNKCIJA
         function searchVehicleHistory(showAll = false) {
             const nr = document.getElementById('h-search-nr').value.toUpperCase().trim();
             let query = db.ref('finances');
@@ -1232,12 +1236,32 @@
             document.getElementById('rep-parts').innerHTML = h; 
         }
 
+        /* LABOTA PRINT FUNKCIJA OPTIMIZĒTA 29x62mm */
         function printEAN(code, name) {
             if(!code) return alert("Nav koda!");
             const area = document.getElementById('print-area');
-            area.innerHTML = `<div style="text-align:center; padding:20px; background:white; width: 60mm;"><h2 style="margin:0; font-family:sans-serif; font-size:12px; margin-bottom:5px;">${name}</h2><svg id="barcode-target"></svg></div>`;
-            JsBarcode("#barcode-target", code.toString(), {format: "CODE128", width: 2, height: 50, fontSize: 14});
-            setTimeout(() => { window.print(); area.innerHTML = ""; }, 500);
+            
+            // Konteiners ar fiksētu izmēru 62x29mm
+            area.innerHTML = `
+                <div style="width: 62mm; height: 29mm; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; padding: 1mm; box-sizing: border-box;">
+                    <div style="font-family: 'Inter', sans-serif; font-size: 8pt; font-weight: 900; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; text-align: center; margin-bottom: 1mm; color: black;">
+                        ${name}
+                    </div>
+                    <svg id="barcode-target" style="max-width: 58mm; max-height: 18mm;"></svg>
+                </div>
+            `;
+            
+            JsBarcode("#barcode-target", code.toString(), {
+                format: "CODE128", 
+                width: 1.6, 
+                height: 40, 
+                displayValue: true, 
+                fontSize: 12,
+                margin: 0,
+                background: "#ffffff"
+            });
+            
+            setTimeout(() => { window.print(); area.innerHTML = ""; }, 300);
         }
 
         async function startScan(targetId) {
