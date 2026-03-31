@@ -403,14 +403,23 @@
                         </div>
                         <label class="input-group-label text-slate-400">Veicamie darbi</label>
                         <textarea id="rep-task" placeholder="Aprakstiet bojājumus..." class="!bg-slate-800 !text-white border-none h-24"></textarea>
-                        <div class="grid grid-cols-2 gap-4">
-                            <div><label class="input-group-label text-slate-400">Darba cena (€)</label><input id="rep-price" type="number" placeholder="0.00" class="!bg-slate-800 !text-white border-none"></div>
-                            <div><label class="input-group-label text-slate-400">Pievienot detaļu</label><select id="rep-parts" class="!bg-slate-800 !text-white border-none"></select></div>
+                        
+                        <div class="bg-slate-800/50 p-4 rounded-2xl mb-4 border border-white/5">
+                            <label class="input-group-label text-amber-500 font-bold">Pievienot detaļas no noliktavas</label>
+                            <div class="flex gap-2 mb-3">
+                                <select id="rep-parts-select" class="!bg-slate-800 !text-white border-none !mb-0 flex-1"></select>
+                                <button onclick="addPartToRepairList()" class="bg-amber-500 text-slate-900 px-4 rounded-xl font-black text-xs hover:bg-amber-400">PIEVIENOT</button>
+                            </div>
+                            <div id="selected-parts-list" class="space-y-2 mb-2"></div>
                         </div>
-                        <button onclick="addRepair()" class="btn-jt w-full mt-4 !py-4 shadow-xl">Izveidot servisa karti</button>
+
+                        <div class="grid grid-cols-1 gap-4">
+                            <div><label class="input-group-label text-slate-400">Kopējā cena (€) - darbs + detaļas</label><input id="rep-price" type="number" step="0.01" placeholder="0.00" class="!bg-slate-800 !text-white border-none text-xl font-black"></div>
+                        </div>
+                        <button onclick="addRepair()" class="btn-jt w-full mt-4 !py-4 shadow-xl uppercase font-black">Izveidot servisa karti</button>
                     </div>
                 </div>
-                <div id="repair-list" class="grid gap-4"></div>
+                <div id="repair-list" class="grid gap-4 mt-6"></div>
             </div>
 
             <div id="sec-history" class="tab-content hidden">
@@ -566,7 +575,8 @@
         const db = firebase.database(), auth = firebase.auth();
 
         let stock = {}, storeItems = {}, userRole = "", scanner = null;
-        
+        let currentRepairParts = []; // Jauns masīvs pagaidu detaļām
+
         const modelsByMake = {
             "Alfa Romeo": ["Giulia", "Stelvio", "Tonale", "Guilietta", "159"],
             "Audi": ["A1", "A3", "A4", "A5", "A6", "A7", "A8", "Q2", "Q3", "Q4 e-tron", "Q5", "Q7", "Q8", "TT"],
@@ -786,22 +796,11 @@
         function loadStock() {
             db.ref('stock').on('value', s => {
                 stock = s.val() || {};
-                if (Object.keys(stock).length === 0) seedInitialStock();
-                drawStock(); updatePartSelect();
+                drawStock(); 
+                updatePartSelect();
                 let v = 0; Object.values(stock).forEach(i => v += (i.q * (i.p * (i.vat == 21 ? 1.21 : 1))));
                 document.getElementById('s-val').innerText = v.toFixed(0) + "€";
             });
-        }
-
-        function seedInitialStock() {
-            const demoItems = [
-                { n: "Bremžu kluči Priekšējie (BMW E60)", oem: "34116763617", p: 45.50, vat: 21, q: 4, l: "A-1", e: "5901234567001", imgs: ["https://i.ibb.co/vYm6r8K/pads.jpg"] },
-                { n: "Eļļas filtrs (VW Golf 7 2.0 TDI)", oem: "03L115562", p: 8.90, vat: 21, q: 12, l: "B-2", e: "5901234567002", imgs: ["https://i.ibb.co/mSRp3mY/filter.jpg"] },
-                { n: "Aizdedzes svece NGK Laser Iridium", oem: "90048-51188", p: 12.30, vat: 21, q: 24, l: "C-1", e: "5901234567003", imgs: ["https://i.ibb.co/V9z0k9m/spark.jpg"] },
-                { n: "Zobsiksnas komplekts (Audi A4 B8)", oem: "03L198119", p: 125.00, vat: 21, q: 2, l: "D-4", e: "5901234567004", imgs: ["https://i.ibb.co/fN6S6S4/belt.jpg"] }
-            ];
-            demoItems.forEach(item => db.ref('stock').push(item));
-            log("Sistēma: Noliktava inicializēta ar parauga precēm.");
         }
 
         function drawStock() {
@@ -989,6 +988,90 @@
 
         // --- UZLABOTAS SERVISA FUNKCIJAS ---
 
+        function updatePartSelect() { 
+            let h = '<option value="">-- IZVĒLĒTIES DETAĻU --</option>'; 
+            if (stock) {
+                Object.keys(stock).forEach(id => { 
+                    if(stock[id].q > 0) {
+                        const vat = (stock[id].vat == 21) ? 1.21 : 1;
+                        const p = (stock[id].p * vat).toFixed(2);
+                        h += `<option value="${id}">${stock[id].n.toUpperCase()} (${stock[id].q} gab) - ${p}€</option>`; 
+                    }
+                }); 
+            }
+            const el = document.getElementById('rep-parts-select');
+            if(el) el.innerHTML = h; 
+        }
+
+        function addPartToRepairList() {
+            const partId = document.getElementById('rep-parts-select').value;
+            if(!partId) return;
+            
+            const part = stock[partId];
+            const vat = (part.vat == 21) ? 1.21 : 1;
+            const priceWithVat = parseFloat((part.p * vat).toFixed(2));
+            
+            currentRepairParts.push({ id: partId, n: part.n, p: priceWithVat });
+            
+            let currentTotal = parseFloat(document.getElementById('rep-price').value || 0);
+            document.getElementById('rep-price').value = (currentTotal + priceWithVat).toFixed(2);
+            
+            renderCurrentParts();
+        }
+
+        function renderCurrentParts() {
+            let h = '';
+            currentRepairParts.forEach((p, idx) => {
+                h += `
+                <div class="flex justify-between items-center bg-slate-900 p-2 px-3 rounded-lg border border-white/10">
+                    <span class="text-white text-[10px] font-bold uppercase truncate pr-2">${p.n}</span>
+                    <div class="flex items-center gap-3">
+                        <span class="text-amber-500 font-black text-xs">${p.p.toFixed(2)}€</span>
+                        <button onclick="removeRepairPart(${idx})" class="text-red-500 hover:text-red-400"><i class="fas fa-times"></i></button>
+                    </div>
+                </div>`;
+            });
+            document.getElementById('selected-parts-list').innerHTML = h;
+        }
+
+        function removeRepairPart(idx) {
+            const removed = currentRepairParts[idx];
+            let currentTotal = parseFloat(document.getElementById('rep-price').value || 0);
+            document.getElementById('rep-price').value = Math.max(0, currentTotal - removed.p).toFixed(2);
+            currentRepairParts.splice(idx, 1);
+            renderCurrentParts();
+        }
+
+        function addRepair() {
+            const nr = document.getElementById('rep-nr').value.toUpperCase();
+            const finalPrice = document.getElementById('rep-price').value;
+            if(!nr) return alert("Ievadiet auto numuru!");
+
+            currentRepairParts.forEach(item => {
+                if(stock[item.id]) {
+                    db.ref('stock/' + item.id).update({ q: Math.max(0, stock[item.id].q - 1) });
+                }
+            });
+
+            db.ref('repairs').push({ 
+                nr, 
+                cl: document.getElementById('rep-cl').value, 
+                make: document.getElementById('rep-make').value, 
+                model: document.getElementById('rep-model').value, 
+                year: document.getElementById('rep-year').value, 
+                task: document.getElementById('rep-task').value, 
+                price: parseFloat(finalPrice || 0), 
+                vin: document.getElementById('rep-vin').value,
+                used_parts: currentRepairParts,
+                d: new Date().toLocaleDateString('lv-LV') 
+            }).then(() => {
+                document.querySelectorAll('#sec-repairs input, #sec-repairs textarea').forEach(i => i.value = '');
+                currentRepairParts = [];
+                renderCurrentParts();
+                log("Serviss: Izveidots jauns darbs " + nr);
+            });
+        }
+
         function loadRepairs() {
             db.ref('repairs').on('value', s => {
                 let h = '', c = 0;
@@ -1049,10 +1132,18 @@
             db.ref('repairs/' + id).update(updates).then(() => { closeEditModal(); log("Serviss: Rediģēts darbs " + updates.nr); });
         }
 
+        function finishRepair(id) { db.ref('repairs/'+id).once('value', s => { db.ref('finances').push(s.val()); db.ref('repairs/'+id).remove(); log("Pabeidza auto: " + s.val().nr); }); }
+
         function printRepairCard(id) {
             db.ref('repairs/' + id).once('value', s => {
                 const r = s.val();
                 const area = document.getElementById('print-area');
+                let partsHtml = '';
+                if(r.used_parts && r.used_parts.length > 0) {
+                    partsHtml = '<div style="margin-top: 10px; border-top: 1px solid #eee; padding-top: 5px;"><p style="font-size: 8pt; font-weight: bold;">IZMANTOTĀS DETAĻAS:</p>';
+                    r.used_parts.forEach(p => { partsHtml += `<p style="font-size: 8pt; margin: 2px 0;">- ${p.n} (${p.p.toFixed(2)}€)</p>`; });
+                    partsHtml += '</div>';
+                }
                 area.innerHTML = `
                     <div style="padding: 15mm; font-family: sans-serif; color: black; background: white;">
                         <h1 style="text-align:center; font-style:italic;">JT <span style="color:#fbbf24;">MOTORS</span></h1>
@@ -1063,12 +1154,13 @@
                         </div>
                         <p><strong>Klients:</strong> ${r.cl}</p>
                         <p><strong>Auto:</strong> ${r.make} ${r.model} (${r.year || '---'})</p>
-                        <div style="margin-top: 20px; border: 1px solid #000; padding: 10px; min-height: 200px;">
+                        <div style="margin-top: 20px; border: 1px solid #000; padding: 10px; min-height: 150px;">
                             <p style="text-transform: uppercase; font-size: 10pt; font-weight: bold;">Veicamie darbi / Bojājumu apraksts:</p>
                             <p>${r.task.replace(/\n/g, '<br>')}</p>
+                            ${partsHtml}
                         </div>
                         <div style="text-align: right; margin-top: 20px;">
-                            <p style="font-size: 16pt; font-weight: 900;">TĀME: ${parseFloat(r.price).toFixed(2)}€</p>
+                            <p style="font-size: 16pt; font-weight: 900;">KOPĀ: ${parseFloat(r.price).toFixed(2)}€</p>
                         </div>
                         <div style="margin-top: 40px; display: flex; justify-content: space-between;">
                             <p style="border-top: 1px solid #000; width: 40%; text-align: center;">Klients</p>
@@ -1079,32 +1171,6 @@
                 window.print(); area.innerHTML = "";
             });
         }
-
-        function addRepair() {
-            const nr = document.getElementById('rep-nr').value.toUpperCase(), pr = document.getElementById('rep-price').value, partId = document.getElementById('rep-parts').value;
-            if(!nr) return alert("Ievadiet auto numuru!");
-            let finalPrice = parseFloat(pr || 0);
-            if(partId) { 
-                const p = stock[partId]; 
-                finalPrice += (p.p * (p.vat == 21 ? 1.21 : 1)); 
-                db.ref('stock/'+partId).update({q: p.q - 1}); 
-            }
-            db.ref('repairs').push({ 
-                nr, 
-                cl: document.getElementById('rep-cl').value, 
-                make: document.getElementById('rep-make').value, 
-                model: document.getElementById('rep-model').value, 
-                year: document.getElementById('rep-year').value, 
-                task: document.getElementById('rep-task').value, 
-                price: finalPrice, 
-                vin: document.getElementById('rep-vin').value,
-                d: new Date().toLocaleDateString('lv-LV') 
-            });
-            document.querySelectorAll('#sec-repairs input, #sec-repairs textarea, #sec-repairs select').forEach(i => i.value = '');
-            log("Serviss: Jauns darbs " + nr);
-        }
-
-        function finishRepair(id) { db.ref('repairs/'+id).once('value', s => { db.ref('finances').push(s.val()); db.ref('repairs/'+id).remove(); log("Pabeidza auto: " + s.val().nr); }); }
 
         // --- PĀRĒJĀS FUNKCIJAS ---
 
@@ -1325,12 +1391,6 @@
 
         function loadLogs() { db.ref('logs').limitToLast(100).on('value', s => { let h = ''; s.forEach(x => { h = `<div class="border-b border-white/5 pb-1 mb-1"><span class="text-slate-600">[${x.val().t}]</span> <span class="text-amber-500 font-bold">${x.val().u}:</span> ${x.val().i}</div>` + h; }); document.getElementById('logs-box').innerHTML = h; }); }
         
-        function updatePartSelect() { 
-            let h = '<option value="">-- IZVĒLĒTIES DETAĻU --</option>'; 
-            Object.keys(stock).forEach(id => { h += `<option value="${id}">${stock[id].n.toUpperCase()} (${stock[id].q} GAB)</option>`; }); 
-            document.getElementById('rep-parts').innerHTML = h; 
-        }
-
         function printEAN(code, name) {
             if(!code) return alert("Nav koda!");
             const area = document.getElementById('print-area');
