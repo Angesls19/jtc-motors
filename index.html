@@ -1137,38 +1137,99 @@
         function printRepairCard(id) {
             db.ref('repairs/' + id).once('value', s => {
                 const r = s.val();
+                if (!r) return alert("Dati nav atrasti!");
+                
                 const area = document.getElementById('print-area');
+                
+                // Aprēķinām detaļu kopsummu un darba izmaksas
+                let partsTotal = 0;
                 let partsHtml = '';
+                
                 if(r.used_parts && r.used_parts.length > 0) {
-                    partsHtml = '<div style="margin-top: 10px; border-top: 1px solid #eee; padding-top: 5px;"><p style="font-size: 8pt; font-weight: bold;">IZMANTOTĀS DETAĻAS:</p>';
-                    r.used_parts.forEach(p => { partsHtml += `<p style="font-size: 8pt; margin: 2px 0;">- ${p.n} (${p.p.toFixed(2)}€)</p>`; });
-                    partsHtml += '</div>';
+                    r.used_parts.forEach(p => { 
+                        partsTotal += parseFloat(p.p);
+                        partsHtml += `
+                            <tr>
+                                <td style="padding: 8px; border-bottom: 1px solid #eee;">${p.n}</td>
+                                <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: right;">${parseFloat(p.p).toFixed(2)} €</td>
+                            </tr>`;
+                    });
                 }
+
+                const laborCost = Math.max(0, parseFloat(r.price) - partsTotal);
+
                 area.innerHTML = `
-                    <div style="padding: 15mm; font-family: sans-serif; color: black; background: white;">
-                        <h1 style="text-align:center; font-style:italic;">JT <span style="color:#fbbf24;">MOTORS</span></h1>
-                        <h2 style="text-align:center; font-size: 14pt; border-bottom: 2px solid #000; padding-bottom: 5px;">SERVISA DARBA KARTE</h2>
-                        <div style="display: flex; justify-content: space-between; margin-top: 10px;">
-                            <p><strong>Datums:</strong> ${r.d}</p>
-                            <p><strong>Auto Nr:</strong> <span style="font-size: 18pt; font-weight: 900;">${r.nr}</span></p>
+                    <div style="padding: 20mm; font-family: 'Helvetica', sans-serif; color: #333; background: white; min-height: 297mm;">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 4px solid #fbbf24; padding-bottom: 20px; margin-bottom: 30px;">
+                            <div>
+                                <h1 style="margin: 0; font-size: 28pt; font-style: italic; font-weight: 900; color: #0f172a;">JT <span style="color:#fbbf24;">MOTORS</span></h1>
+                                <p style="margin: 5px 0 0 0; font-size: 10pt; text-transform: uppercase; letter-spacing: 2px; color: #64748b;">Professional Auto Service</p>
+                            </div>
+                            <div style="text-align: right;">
+                                <h2 style="margin: 0; font-size: 16pt; font-weight: 900; color: #0f172a;">DARBU TĀME</h2>
+                                <p style="margin: 5px 0 0 0; font-size: 10pt; color: #64748b;">Nr. SER-${id.slice(-5).toUpperCase()}</p>
+                            </div>
                         </div>
-                        <p><strong>Klients:</strong> ${r.cl}</p>
-                        <p><strong>Auto:</strong> ${r.make} ${r.model} (${r.year || '---'})</p>
-                        <div style="margin-top: 20px; border: 1px solid #000; padding: 10px; min-height: 150px;">
-                            <p style="text-transform: uppercase; font-size: 10pt; font-weight: bold;">Veicamie darbi / Bojājumu apraksts:</p>
-                            <p>${r.task.replace(/\n/g, '<br>')}</p>
-                            ${partsHtml}
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-bottom: 40px;">
+                            <div>
+                                <h3 style="font-size: 10pt; text-transform: uppercase; color: #fbbf24; margin-bottom: 10px; border-bottom: 1px solid #fbbf24;">Transportlīdzeklis</h3>
+                                <p style="margin: 4px 0;"><strong>Valsts numurs:</strong> <span style="font-size: 14pt;">${r.nr}</span></p>
+                                <p style="margin: 4px 0;"><strong>Auto:</strong> ${r.make} ${r.model} (${r.year || '---'})</p>
+                                <p style="margin: 4px 0; font-size: 9pt; color: #64748b;"><strong>VIN:</strong> ${r.vin || '---'}</p>
+                            </div>
+                            <div>
+                                <h3 style="font-size: 10pt; text-transform: uppercase; color: #fbbf24; margin-bottom: 10px; border-bottom: 1px solid #fbbf24;">Klients / Datums</h3>
+                                <p style="margin: 4px 0;"><strong>Vārds:</strong> ${r.cl || '---'}</p>
+                                <p style="margin: 4px 0;"><strong>Datums:</strong> ${r.d}</p>
+                            </div>
                         </div>
-                        <div style="text-align: right; margin-top: 20px;">
-                            <p style="font-size: 16pt; font-weight: 900;">KOPĀ: ${parseFloat(r.price).toFixed(2)}€</p>
+
+                        <div style="margin-bottom: 30px;">
+                            <h3 style="font-size: 10pt; text-transform: uppercase; color: #0f172a; margin-bottom: 10px; background: #f8fafc; padding: 8px;">Veiktie darbi</h3>
+                            <div style="padding: 10px; border: 1px solid #f1f5f9; min-height: 100px; white-space: pre-wrap; font-size: 11pt;">${r.task}</div>
                         </div>
-                        <div style="margin-top: 40px; display: flex; justify-content: space-between;">
-                            <p style="border-top: 1px solid #000; width: 40%; text-align: center;">Klients</p>
-                            <p style="border-top: 1px solid #000; width: 40%; text-align: center;">Meistars</p>
+
+                        <table style="width: 100%; border-collapse: collapse; margin-bottom: 40px;">
+                            <thead>
+                                <tr style="background: #0f172a; color: white;">
+                                    <th style="padding: 12px; text-align: left; font-size: 10pt; text-transform: uppercase;">Pozīcija</th>
+                                    <th style="padding: 12px; text-align: right; font-size: 10pt; text-transform: uppercase;">Summa</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td style="padding: 12px; border-bottom: 1px solid #eee;">Remontdarbi un servisa pakalpojumi</td>
+                                    <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: right;">${laborCost.toFixed(2)} €</td>
+                                </tr>
+                                ${partsHtml}
+                                <tr style="background: #f8fafc;">
+                                    <td style="padding: 15px; font-weight: 900; font-size: 14pt; color: #0f172a;">KOPĀ APMAKSAI:</td>
+                                    <td style="padding: 15px; font-weight: 900; font-size: 14pt; text-align: right; color: #fbbf24;">${parseFloat(r.price).toFixed(2)} €</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <div style="margin-top: 80px; display: grid; grid-template-columns: 1fr 1fr; gap: 60px;">
+                            <div style="text-align: center;">
+                                <div style="border-top: 1px solid #333; padding-top: 10px; font-size: 10pt;">Klients</div>
+                            </div>
+                            <div style="text-align: center;">
+                                <div style="border-top: 1px solid #333; padding-top: 10px; font-size: 10pt;">Servisa pārstāvis / Z.v.</div>
+                            </div>
+                        </div>
+
+                        <div style="margin-top: 50px; text-align: center; font-size: 8pt; color: #94a3b8; border-top: 1px solid #f1f5f9; padding-top: 20px;">
+                            Paldies, ka izvēlējāties JT MOTORS! Šī tāme ir sagatavota elektroniski un ir derīga bez paraksta.
                         </div>
                     </div>
                 `;
-                window.print(); area.innerHTML = "";
+                
+                // Veicam izdruku
+                setTimeout(() => { 
+                    window.print(); 
+                    area.innerHTML = ""; 
+                }, 500);
             });
         }
 
