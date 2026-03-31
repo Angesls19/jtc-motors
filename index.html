@@ -108,20 +108,12 @@
                 position: absolute; 
                 left: 0; 
                 top: 0; 
-                width: 62mm; 
-                height: 29mm; 
+                width: 100%; 
                 margin: 0; 
                 padding: 0; 
-                display: flex; 
-                flex-direction: column; 
-                align-items: center; 
-                justify-content: center;
+                display: block;
                 background: white;
             } 
-            @page {
-                size: 62mm 29mm;
-                margin: 0;
-            }
             .no-print { display: none !important; }
         }
         
@@ -413,7 +405,7 @@
                         <textarea id="rep-task" placeholder="Aprakstiet bojājumus..." class="!bg-slate-800 !text-white border-none h-24"></textarea>
                         <div class="grid grid-cols-2 gap-4">
                             <div><label class="input-group-label text-slate-400">Darba cena (€)</label><input id="rep-price" type="number" placeholder="0.00" class="!bg-slate-800 !text-white border-none"></div>
-                            <div><label class="input-group-label text-slate-400">Detaļas</label><select id="rep-parts" class="!bg-slate-800 !text-white border-none"></select></div>
+                            <div><label class="input-group-label text-slate-400">Pievienot detaļu</label><select id="rep-parts" class="!bg-slate-800 !text-white border-none"></select></div>
                         </div>
                         <button onclick="addRepair()" class="btn-jt w-full mt-4 !py-4 shadow-xl">Izveidot servisa karti</button>
                     </div>
@@ -995,15 +987,96 @@
             });
         }
 
+        // --- UZLABOTAS SERVISA FUNKCIJAS ---
+
         function loadRepairs() {
             db.ref('repairs').on('value', s => {
                 let h = '', c = 0;
                 s.forEach(x => {
-                    const r = x.val(); c++;
-                    h += `<div class="card border-l-[10px] border-amber-500 !p-5 shadow-lg"><div class="flex justify-between items-start mb-3"><div><span class="bg-slate-100 text-slate-600 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider">${r.d || '---'}</span><h2 class="text-2xl font-black mt-2 tracking-tighter text-slate-900">${r.nr}</h2><p class="font-bold text-amber-600 text-sm italic">${r.make || ''} ${r.model || ''}</p><p class="text-xs text-slate-400 font-bold">${r.cl}</p></div><div class="text-right"><div class="text-2xl font-black text-slate-900">${parseFloat(r.price).toFixed(2)}€</div></div></div><button onclick="finishRepair('${x.key}')" class="w-full bg-slate-900 text-white font-bold py-3 rounded-xl">PABEIGT DARBU</button></div>`;
+                    const r = x.val(); const id = x.key; c++;
+                    h += `
+                    <div class="card border-l-[10px] border-amber-500 !p-5 shadow-lg bg-white">
+                        <div class="flex justify-between items-start mb-3">
+                            <div>
+                                <span class="bg-slate-100 text-slate-600 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider">${r.d || '---'}</span>
+                                <h2 class="text-2xl font-black mt-2 tracking-tighter text-slate-900">${r.nr}</h2>
+                                <p class="font-bold text-amber-600 text-sm italic">${r.make || ''} ${r.model || ''}</p>
+                                <p class="text-xs text-slate-400 font-bold">${r.cl}</p>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-2xl font-black text-slate-900">${parseFloat(r.price).toFixed(2)}€</div>
+                            </div>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="finishRepair('${id}')" class="flex-[2] bg-slate-900 text-white font-bold py-3 rounded-xl uppercase text-[10px]">PABEIGT</button>
+                            <button onclick="editRepair('${id}')" class="flex-1 bg-blue-50 text-blue-600 font-bold py-3 rounded-xl uppercase text-[10px] hover:bg-blue-600 hover:text-white transition-all"><i class="fas fa-edit"></i></button>
+                            <button onclick="printRepairCard('${id}')" class="flex-1 bg-amber-50 text-amber-600 font-bold py-3 rounded-xl uppercase text-[10px] hover:bg-amber-500 hover:text-white transition-all"><i class="fas fa-print"></i></button>
+                        </div>
+                    </div>`;
                 });
                 document.getElementById('repair-list').innerHTML = h || '<div class="text-center p-10 opacity-20">Nav aktīvu darbu</div>';
                 document.getElementById('s-rep').innerText = c;
+            });
+        }
+
+        function editRepair(id) {
+            db.ref('repairs/' + id).once('value', s => {
+                const r = s.val();
+                const html = `
+                    <label class="input-group-label">Auto Numurs</label><input id="up-r-nr" value="${r.nr}" class="uppercase font-black">
+                    <label class="input-group-label">Klients</label><input id="up-r-cl" value="${r.cl || ''}">
+                    <div class="grid grid-cols-2 gap-2">
+                        <div><label class="input-group-label">Marka</label><input id="up-r-make" value="${r.make || ''}"></div>
+                        <div><label class="input-group-label">Modelis</label><input id="up-r-model" value="${r.model || ''}"></div>
+                    </div>
+                    <label class="input-group-label">Veicamie darbi</label><textarea id="up-r-task" class="h-24">${r.task || ''}</textarea>
+                    <label class="input-group-label">Cena (€)</label><input id="up-r-price" type="number" step="0.01" value="${r.price || 0}">
+                    <button onclick="saveRepairEdit('${id}')" class="btn-jt w-full mt-4">Saglabāt Izmaiņas</button>
+                `;
+                openEditModal("Labot Darbu", html);
+            });
+        }
+
+        function saveRepairEdit(id) {
+            const updates = {
+                nr: document.getElementById('up-r-nr').value.toUpperCase(),
+                cl: document.getElementById('up-r-cl').value,
+                make: document.getElementById('up-r-make').value,
+                model: document.getElementById('up-r-model').value,
+                task: document.getElementById('up-r-task').value,
+                price: parseFloat(document.getElementById('up-r-price').value || 0)
+            };
+            db.ref('repairs/' + id).update(updates).then(() => { closeEditModal(); log("Serviss: Rediģēts darbs " + updates.nr); });
+        }
+
+        function printRepairCard(id) {
+            db.ref('repairs/' + id).once('value', s => {
+                const r = s.val();
+                const area = document.getElementById('print-area');
+                area.innerHTML = `
+                    <div style="padding: 15mm; font-family: sans-serif; color: black; background: white;">
+                        <h1 style="text-align:center; font-style:italic;">JT <span style="color:#fbbf24;">MOTORS</span></h1>
+                        <h2 style="text-align:center; font-size: 14pt; border-bottom: 2px solid #000; padding-bottom: 5px;">SERVISA DARBA KARTE</h2>
+                        <div style="display: flex; justify-content: space-between; margin-top: 10px;">
+                            <p><strong>Datums:</strong> ${r.d}</p>
+                            <p><strong>Auto Nr:</strong> <span style="font-size: 18pt; font-weight: 900;">${r.nr}</span></p>
+                        </div>
+                        <p><strong>Klients:</strong> ${r.cl}</p>
+                        <p><strong>Auto:</strong> ${r.make} ${r.model} (${r.year || '---'})</p>
+                        <div style="margin-top: 20px; border: 1px solid #000; padding: 10px; min-height: 200px;">
+                            <p style="text-transform: uppercase; font-size: 10pt; font-weight: bold;">Veicamie darbi / Bojājumu apraksts:</p>
+                            <p>${r.task.replace(/\n/g, '<br>')}</p>
+                        </div>
+                        <div style="text-align: right; margin-top: 20px;">
+                            <p style="font-size: 16pt; font-weight: 900;">TĀME: ${parseFloat(r.price).toFixed(2)}€</p>
+                        </div>
+                        <div style="margin-top: 40px; display: flex; justify-content: space-between;">
+                            <p style="border-top: 1px solid #000; width: 40%; text-align: center;">Klients</p>
+                            <p style="border-top: 1px solid #000; width: 40%; text-align: center;">Meistars</p>
+                        </div>
+                    </div>
+                `;
+                window.print(); area.innerHTML = "";
             });
         }
 
@@ -1011,13 +1084,29 @@
             const nr = document.getElementById('rep-nr').value.toUpperCase(), pr = document.getElementById('rep-price').value, partId = document.getElementById('rep-parts').value;
             if(!nr) return alert("Ievadiet auto numuru!");
             let finalPrice = parseFloat(pr || 0);
-            if(partId) { const p = stock[partId]; finalPrice += (p.p * (p.vat == 21 ? 1.21 : 1)); db.ref('stock/'+partId).update({q: p.q - 1}); }
-            db.ref('repairs').push({ nr, cl: document.getElementById('rep-cl').value, make: document.getElementById('rep-make').value, model: document.getElementById('rep-model').value, year: document.getElementById('rep-year').value, task: document.getElementById('rep-task').value, price: finalPrice, d: new Date().toLocaleDateString('lv-LV') });
+            if(partId) { 
+                const p = stock[partId]; 
+                finalPrice += (p.p * (p.vat == 21 ? 1.21 : 1)); 
+                db.ref('stock/'+partId).update({q: p.q - 1}); 
+            }
+            db.ref('repairs').push({ 
+                nr, 
+                cl: document.getElementById('rep-cl').value, 
+                make: document.getElementById('rep-make').value, 
+                model: document.getElementById('rep-model').value, 
+                year: document.getElementById('rep-year').value, 
+                task: document.getElementById('rep-task').value, 
+                price: finalPrice, 
+                vin: document.getElementById('rep-vin').value,
+                d: new Date().toLocaleDateString('lv-LV') 
+            });
             document.querySelectorAll('#sec-repairs input, #sec-repairs textarea, #sec-repairs select').forEach(i => i.value = '');
             log("Serviss: Jauns darbs " + nr);
         }
 
         function finishRepair(id) { db.ref('repairs/'+id).once('value', s => { db.ref('finances').push(s.val()); db.ref('repairs/'+id).remove(); log("Pabeidza auto: " + s.val().nr); }); }
+
+        // --- PĀRĒJĀS FUNKCIJAS ---
 
         function loadOrders() {
             db.ref('orders').on('value', s => {
@@ -1235,6 +1324,7 @@
         }
 
         function loadLogs() { db.ref('logs').limitToLast(100).on('value', s => { let h = ''; s.forEach(x => { h = `<div class="border-b border-white/5 pb-1 mb-1"><span class="text-slate-600">[${x.val().t}]</span> <span class="text-amber-500 font-bold">${x.val().u}:</span> ${x.val().i}</div>` + h; }); document.getElementById('logs-box').innerHTML = h; }); }
+        
         function updatePartSelect() { 
             let h = '<option value="">-- IZVĒLĒTIES DETAĻU --</option>'; 
             Object.keys(stock).forEach(id => { h += `<option value="${id}">${stock[id].n.toUpperCase()} (${stock[id].q} GAB)</option>`; }); 
