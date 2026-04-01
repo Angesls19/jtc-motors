@@ -281,6 +281,7 @@
                 <div onclick="setSec('orders')" id="n-orders" class="nav-link"><i class="fas fa-truck-loading"></i><span>Pasūtījumi</span></div>
                 <div onclick="setSec('clients')" id="n-clients" class="nav-link"><i class="fas fa-address-book"></i><span>Klienti</span></div>
                 <div onclick="setSec('fin')" id="n-fin" class="nav-link"><i class="fas fa-chart-line"></i><span>Rēķini</span></div>
+                <div onclick="setSec('sold')" id="n-sold" class="nav-link"><i class="fas fa-hand-holding-usd"></i><span>Realizācija</span></div>
                 <div onclick="setSec('logs')" id="n-logs" class="nav-link"><i class="fas fa-stream"></i><span>Žurnāls</span></div>
                 <div onclick="auth.signOut()" class="nav-link !text-red-400"><i class="fas fa-sign-out-alt"></i><span>Iziet</span></div>
             </nav>
@@ -378,6 +379,29 @@
                 <div id="stock-list" class="grid gap-3"></div>
             </div>
 
+            <div id="sec-sold" class="tab-content hidden">
+                <div class="flex justify-between items-center mb-6 px-2">
+                    <h2 class="text-2xl font-black italic uppercase tracking-tighter">NOLIKTAVAS <span class="text-red-500">REALIZĀCIJA</span></h2>
+                    <button onclick="clearSoldHistory()" class="bg-red-500 text-white text-[10px] font-black px-4 py-2 rounded-xl uppercase tracking-widest hover:bg-red-600">Notīrīt vēsturi</button>
+                </div>
+                <div class="card !p-0 overflow-hidden border-none shadow-xl">
+                    <table class="w-full text-sm">
+                        <thead class="bg-slate-900 text-white uppercase text-[10px]">
+                            <tr>
+                                <th class="p-4 text-left">Datums</th>
+                                <th class="p-4 text-left">Prece / OEM</th>
+                                <th class="p-4 text-center">Statuss</th>
+                                <th class="p-4 text-right">Summa (ar PVN)</th>
+                                <th class="p-4 text-center">Darbība</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sold-list-body" class="divide-y divide-slate-100 bg-white">
+                            <tr><td colspan="5" class="p-10 text-center opacity-20 italic font-bold">Vēsture ir tukša</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
             <div id="sec-repairs" class="tab-content hidden">
                 <div class="card !bg-slate-900 border-none shadow-2xl overflow-hidden relative">
                     <div class="absolute -right-10 -top-10 text-white opacity-5 rotate-12"><i class="fas fa-tools fa-9x"></i></div>
@@ -431,7 +455,7 @@
                     <div class="relative z-10 flex flex-col gap-2">
                         <div class="flex gap-2">
                             <input id="h-search-nr" placeholder="AA-1234" class="!bg-slate-800 !text-white border-none uppercase font-black !mb-0" onkeyup="if(event.key === 'Enter') searchVehicleHistory()">
-                            <button onclick="searchVehicleHistory()" class="btn-jt px-8 !py-0 h-[50px]">Meklēt</button>
+                            <button onclick="searchVehicleHistory()" class="btn-jt px-8 !py-0 h-[50px]">Mek lēt</button>
                         </div>
                         <button onclick="searchVehicleHistory(true)" class="w-full bg-slate-800 text-slate-400 font-bold py-3 rounded-xl border border-white/5 hover:bg-slate-700 hover:text-white transition-all uppercase text-[10px] tracking-widest">Rādīt visu pabeigto darbu vēsturi</button>
                     </div>
@@ -551,7 +575,7 @@
             </div>
 
             <div id="sec-fin" class="tab-content hidden">
-                <div class="card !p-0 overflow-hidden border-none shadow-xl"><div class="bg-slate-800 p-4 text-white text-center text-xs font-black uppercase tracking-widest">Finanšu pārskats</div><table class="w-full text-sm"><thead class="bg-slate-100 text-slate-500 uppercase text-[10px]"><tr><th class="p-4 text-left">Datums</th><th class="text-left">Auto</th><th class="text-right">Summa</th><th class="p-4 text-right">Darbības</th></tr></thead><tbody id="fin-table" class="divide-y divide-slate-100"></tbody></table></div>
+                <div class="card !p-0 overflow-hidden border-none shadow-xl"><div class="bg-slate-800 p-4 text-white text-center text-xs font-black uppercase tracking-widest">Finanšu pārskats</div><table class="w-full text-sm"><thead class="bg-slate-100 text-slate-500 uppercase text-[10px]"><tr><th class="p-4 text-left">Datums</th><th class="text-left">Auto / Prece</th><th class="text-right">Summa</th><th class="p-4 text-right">Darbības</th></tr></thead><tbody id="fin-table" class="divide-y divide-slate-100"></tbody></table></div>
             </div>
 
             <div id="sec-logs" class="tab-content hidden">
@@ -575,7 +599,7 @@
         const db = firebase.database(), auth = firebase.auth();
 
         let stock = {}, storeItems = {}, userRole = "", scanner = null;
-        let currentRepairParts = []; // Jauns masīvs pagaidu detaļām
+        let currentRepairParts = []; 
 
         const modelsByMake = {
             "Alfa Romeo": ["Giulia", "Stelvio", "Tonale", "Guilietta", "159"],
@@ -678,7 +702,7 @@
         }
 
         function init() {
-            loadStock(); loadRepairs(); loadOrders(); loadClients(); loadFin(); loadLogs(); loadStore();
+            loadStock(); loadRepairs(); loadOrders(); loadClients(); loadFin(); loadLogs(); loadStore(); loadSoldHistory();
             fillMakes(); fillYears();
         }
 
@@ -840,9 +864,10 @@
                                 <div class="price-badge-bruto text-amber-600">${priceBruto}€</div>
                             </div>
                             <div class="flex flex-col gap-1">
+                                <button onclick="sellStockItem('${id}')" class="w-8 h-8 flex items-center justify-center rounded-lg bg-green-100 text-green-600 hover:bg-green-500 hover:text-white transition-all" title="Pārdot preci"><i class="fas fa-shopping-cart text-xs"></i></button>
                                 <button onclick="printEAN('${i.e}', '${i.n}')" class="w-8 h-8 flex items-center justify-center rounded-lg bg-amber-100 text-amber-600 hover:bg-amber-500 hover:text-white transition-all" title="Drukāt EAN uzlīmi"><i class="fas fa-print text-xs"></i></button>
                                 <button onclick="editStock('${id}')" class="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-100 text-slate-400 hover:bg-blue-500 hover:text-white transition-all"><i class="fas fa-edit text-xs"></i></button>
-                                <button onclick="if(confirm('Dzēst preci no noliktavas?')) db.ref('stock/${id}').remove()" class="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-100 text-slate-300 hover:bg-red-500 hover:text-white transition-all"><i class="fas fa-trash-alt text-xs"></i></button>
+                                <button onclick="deleteStockItem('${id}')" class="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-100 text-slate-300 hover:bg-red-500 hover:text-white transition-all"><i class="fas fa-trash-alt text-xs"></i></button>
                             </div>
                         </div>
                     </div>`;
@@ -861,6 +886,124 @@
                 document.querySelectorAll('#sec-stock input').forEach(i => i.value = '');
                 log("Noliktava: Pievienota prece " + n);
             });
+        }
+
+        function deleteStockItem(id) {
+            const item = stock[id];
+            if(!confirm(`Vai tiešām vēlaties dzēst "${item.n}"? Prece tiks pārvietota uz Realizācijas sadaļu kā Dzēsta.`)) return;
+            
+            const priceBruto = (item.p * (item.vat == 21 ? 1.21 : 1)).toFixed(2);
+            db.ref('sold_history').push({
+                n: item.n,
+                oem: item.oem || '---',
+                p: priceBruto,
+                status: 'DZĒSTS',
+                d: new Date().toLocaleString('lv-LV')
+            });
+
+            db.ref('stock/' + id).remove().then(() => {
+                log(`Noliktava: Prece "${item.n}" tika dzēsta un fiksēta vēsturē.`);
+            });
+        }
+
+        function sellStockItem(id) {
+            const item = stock[id];
+            if (!item || item.q <= 0) return alert("Prece nav atlikumā!");
+
+            if (confirm(`Pārdot 1 gab. "${item.n}" par ${ (item.p * (item.vat == 21 ? 1.21 : 1)).toFixed(2) }€?`)) {
+                const newQty = item.q - 1;
+                const priceBruto = (item.p * (item.vat == 21 ? 1.21 : 1)).toFixed(2);
+                
+                db.ref('stock/' + id).update({ q: newQty });
+
+                db.ref('sold_history').push({
+                    n: item.n,
+                    oem: item.oem || '---',
+                    p: priceBruto,
+                    status: 'PĀRDOTS',
+                    d: new Date().toLocaleString('lv-LV')
+                });
+
+                db.ref('finances').push({
+                    nr: "PĀRDOŠANA: " + item.n,
+                    cl: "Mazumtirdzniecība",
+                    task: `Tiešā pārdošana no noliktavas. (OEM: ${item.oem || '---'})`,
+                    price: parseFloat(priceBruto),
+                    d: new Date().toLocaleDateString('lv-LV')
+                });
+
+                log(`Noliktava: Pārdots "${item.n}" (Atlikums: ${newQty})`);
+                document.getElementById('scan-sound').play().catch(e => {});
+            }
+        }
+
+        function loadSoldHistory() {
+            db.ref('sold_history').on('value', s => {
+                const data = s.val();
+                const container = document.getElementById('sold-list-body');
+                if(!data) {
+                    container.innerHTML = '<tr><td colspan="5" class="p-10 text-center opacity-20 italic font-bold">Vēsture ir tukša</td></tr>';
+                    return;
+                }
+                let h = '';
+                Object.keys(data).reverse().forEach(id => {
+                    const i = data[id];
+                    let statusColor = 'bg-green-100 text-green-600';
+                    if(i.status === 'DZĒSTS') statusColor = 'bg-red-100 text-red-600';
+                    if(i.status === 'SERVISS') statusColor = 'bg-blue-100 text-blue-600';
+
+                    h += `
+                    <tr class="hover:bg-slate-50 transition-colors">
+                        <td class="p-4 font-mono text-[10px] text-slate-500">${i.d}</td>
+                        <td class="p-4">
+                            <div class="font-bold text-slate-900">${i.n}</div>
+                            <div class="text-[10px] text-amber-600 font-black uppercase">OEM: ${i.oem} ${i.car_nr ? '| AUTO: ' + i.car_nr : ''}</div>
+                        </td>
+                        <td class="p-4 text-center">
+                            <span class="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${statusColor}">${i.status}</span>
+                        </td>
+                        <td class="p-4 text-right font-black text-slate-900">${i.p}€</td>
+                        <td class="p-4 text-center">
+                            <button onclick="returnItemToStock('${id}')" class="bg-amber-500 hover:bg-amber-600 text-white text-[10px] font-black px-3 py-1 rounded-lg uppercase tracking-wider transition-all" title="Atgriezt noliktavā">Atgriezt</button>
+                        </td>
+                    </tr>`;
+                });
+                container.innerHTML = h;
+            });
+        }
+
+        function returnItemToStock(historyId) {
+            db.ref('sold_history/' + historyId).once('value', s => {
+                const soldItem = s.val();
+                if (!soldItem) return;
+
+                if (confirm(`Vai tiešām atgriezt preci "${soldItem.n}" noliktavā?`)) {
+                    // Meklējam preci noliktavā pēc nosaukuma un OEM
+                    let foundKey = null;
+                    Object.keys(stock).forEach(key => {
+                        if (stock[key].n === soldItem.n && stock[key].oem === soldItem.oem) {
+                            foundKey = key;
+                        }
+                    });
+
+                    if (foundKey) {
+                        const newQty = (stock[foundKey].q || 0) + 1;
+                        db.ref('stock/' + foundKey).update({ q: newQty }).then(() => {
+                            db.ref('sold_history/' + historyId).remove();
+                            log(`Sistēma: Prece "${soldItem.n}" atgriezta noliktavā. Jaunais atlikums: ${newQty}`);
+                            alert("Prece veiksmīgi atgriezta noliktavā!");
+                        });
+                    } else {
+                        alert("Kļūda: Šī prece vairs neeksistē noliktavas sarakstā (tika izdzēsta). Atgriešana nav iespējama bez manuālas pievienošanas.");
+                    }
+                }
+            });
+        }
+
+        function clearSoldHistory() {
+            if(confirm("Vai tiešām vēlaties izdzēst VISU realizācijas vēsturi?")) {
+                db.ref('sold_history').remove().then(() => log("Sistēma: Realizācijas vēsture notīrīta."));
+            }
         }
 
         function loadStore() { db.ref('store_items').on('value', s => { storeItems = s.val() || {}; drawStore(); }); }
@@ -986,8 +1129,6 @@
             });
         }
 
-        // --- UZLABOTAS SERVISA FUNKCIJAS ---
-
         function updatePartSelect() { 
             let h = '<option value="">-- IZVĒLĒTIES DETAĻU --</option>'; 
             if (stock) {
@@ -1011,7 +1152,12 @@
             const vat = (part.vat == 21) ? 1.21 : 1;
             const priceWithVat = parseFloat((part.p * vat).toFixed(2));
             
-            currentRepairParts.push({ id: partId, n: part.n, p: priceWithVat });
+            currentRepairParts.push({ 
+                id: partId, 
+                n: part.n, 
+                p: priceWithVat, 
+                oem: part.oem || '---' 
+            });
             
             let currentTotal = parseFloat(document.getElementById('rep-price').value || 0);
             document.getElementById('rep-price').value = (currentTotal + priceWithVat).toFixed(2);
@@ -1047,9 +1193,21 @@
             const finalPrice = document.getElementById('rep-price').value;
             if(!nr) return alert("Ievadiet auto numuru!");
 
+            // Preču norakstīšana un pievienošana Realizācijai
             currentRepairParts.forEach(item => {
                 if(stock[item.id]) {
-                    db.ref('stock/' + item.id).update({ q: Math.max(0, stock[item.id].q - 1) });
+                    const newQty = Math.max(0, stock[item.id].q - 1);
+                    db.ref('stock/' + item.id).update({ q: newQty });
+
+                    // Pievieno detaļu Realizācijas sarakstam
+                    db.ref('sold_history').push({
+                        n: item.n,
+                        oem: item.oem || '---',
+                        p: item.p.toFixed(2),
+                        status: 'SERVISS',
+                        car_nr: nr,
+                        d: new Date().toLocaleString('lv-LV')
+                    });
                 }
             });
 
@@ -1069,6 +1227,7 @@
                 currentRepairParts = [];
                 renderCurrentParts();
                 log("Serviss: Izveidots jauns darbs " + nr);
+                alert("Servisa karte izveidota un detaļas fiksētas realizācijā!");
             });
         }
 
@@ -1138,102 +1297,36 @@
             db.ref('repairs/' + id).once('value', s => {
                 const r = s.val();
                 if (!r) return alert("Dati nav atrasti!");
-                
                 const area = document.getElementById('print-area');
-                
-                // Aprēķinām detaļu kopsummu un darba izmaksas
-                let partsTotal = 0;
-                let partsHtml = '';
-                
+                let partsTotal = 0; let partsHtml = '';
                 if(r.used_parts && r.used_parts.length > 0) {
                     r.used_parts.forEach(p => { 
                         partsTotal += parseFloat(p.p);
-                        partsHtml += `
-                            <tr>
-                                <td style="padding: 8px; border-bottom: 1px solid #eee;">${p.n}</td>
-                                <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: right;">${parseFloat(p.p).toFixed(2)} €</td>
-                            </tr>`;
+                        partsHtml += `<tr><td style="padding: 8px; border-bottom: 1px solid #eee;">${p.n}</td><td style="padding: 8px; border-bottom: 1px solid #eee; text-align: right;">${parseFloat(p.p).toFixed(2)} €</td></tr>`;
                     });
                 }
-
                 const laborCost = Math.max(0, parseFloat(r.price) - partsTotal);
-
                 area.innerHTML = `
                     <div style="padding: 20mm; font-family: 'Helvetica', sans-serif; color: #333; background: white; min-height: 297mm;">
                         <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 4px solid #fbbf24; padding-bottom: 20px; margin-bottom: 30px;">
-                            <div>
-                                <h1 style="margin: 0; font-size: 28pt; font-style: italic; font-weight: 900; color: #0f172a;">JT <span style="color:#fbbf24;">MOTORS</span></h1>
-                                <p style="margin: 5px 0 0 0; font-size: 10pt; text-transform: uppercase; letter-spacing: 2px; color: #64748b;">Professional Auto Service</p>
-                            </div>
-                            <div style="text-align: right;">
-                                <h2 style="margin: 0; font-size: 16pt; font-weight: 900; color: #0f172a;">DARBU TĀME</h2>
-                                <p style="margin: 5px 0 0 0; font-size: 10pt; color: #64748b;">Nr. SER-${id.slice(-5).toUpperCase()}</p>
-                            </div>
+                            <div><h1 style="margin: 0; font-size: 28pt; font-style: italic; font-weight: 900; color: #0f172a;">JT <span style="color:#fbbf24;">MOTORS</span></h1><p style="margin: 5px 0 0 0; font-size: 10pt; text-transform: uppercase; letter-spacing: 2px; color: #64748b;">Professional Auto Service</p></div>
+                            <div style="text-align: right;"><h2 style="margin: 0; font-size: 16pt; font-weight: 900; color: #0f172a;">DARBU TĀME</h2><p style="margin: 5px 0 0 0; font-size: 10pt; color: #64748b;">Nr. SER-${id.slice(-5).toUpperCase()}</p></div>
                         </div>
-
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-bottom: 40px;">
-                            <div>
-                                <h3 style="font-size: 10pt; text-transform: uppercase; color: #fbbf24; margin-bottom: 10px; border-bottom: 1px solid #fbbf24;">Transportlīdzeklis</h3>
-                                <p style="margin: 4px 0;"><strong>Valsts numurs:</strong> <span style="font-size: 14pt;">${r.nr}</span></p>
-                                <p style="margin: 4px 0;"><strong>Auto:</strong> ${r.make} ${r.model} (${r.year || '---'})</p>
-                                <p style="margin: 4px 0; font-size: 9pt; color: #64748b;"><strong>VIN:</strong> ${r.vin || '---'}</p>
-                            </div>
-                            <div>
-                                <h3 style="font-size: 10pt; text-transform: uppercase; color: #fbbf24; margin-bottom: 10px; border-bottom: 1px solid #fbbf24;">Klients / Datums</h3>
-                                <p style="margin: 4px 0;"><strong>Vārds:</strong> ${r.cl || '---'}</p>
-                                <p style="margin: 4px 0;"><strong>Datums:</strong> ${r.d}</p>
-                            </div>
+                            <div><h3 style="font-size: 10pt; text-transform: uppercase; color: #fbbf24; margin-bottom: 10px; border-bottom: 1px solid #fbbf24;">Transportlīdzeklis</h3><p style="margin: 4px 0;"><strong>Valsts numurs:</strong> <span style="font-size: 14pt;">${r.nr}</span></p><p style="margin: 4px 0;"><strong>Auto:</strong> ${r.make} ${r.model} (${r.year || '---'})</p><p style="margin: 4px 0; font-size: 9pt; color: #64748b;"><strong>VIN:</strong> ${r.vin || '---'}</p></div>
+                            <div><h3 style="font-size: 10pt; text-transform: uppercase; color: #fbbf24; margin-bottom: 10px; border-bottom: 1px solid #fbbf24;">Klients / Datums</h3><p style="margin: 4px 0;"><strong>Vārds:</strong> ${r.cl || '---'}</p><p style="margin: 4px 0;"><strong>Datums:</strong> ${r.d}</p></div>
                         </div>
-
-                        <div style="margin-bottom: 30px;">
-                            <h3 style="font-size: 10pt; text-transform: uppercase; color: #0f172a; margin-bottom: 10px; background: #f8fafc; padding: 8px;">Veiktie darbi</h3>
-                            <div style="padding: 10px; border: 1px solid #f1f5f9; min-height: 100px; white-space: pre-wrap; font-size: 11pt;">${r.task}</div>
-                        </div>
-
+                        <div style="margin-bottom: 30px;"><h3 style="font-size: 10pt; text-transform: uppercase; color: #0f172a; margin-bottom: 10px; background: #f8fafc; padding: 8px;">Veiktie darbi</h3><div style="padding: 10px; border: 1px solid #f1f5f9; min-height: 100px; white-space: pre-wrap; font-size: 11pt;">${r.task}</div></div>
                         <table style="width: 100%; border-collapse: collapse; margin-bottom: 40px;">
-                            <thead>
-                                <tr style="background: #0f172a; color: white;">
-                                    <th style="padding: 12px; text-align: left; font-size: 10pt; text-transform: uppercase;">Pozīcija</th>
-                                    <th style="padding: 12px; text-align: right; font-size: 10pt; text-transform: uppercase;">Summa</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td style="padding: 12px; border-bottom: 1px solid #eee;">Remontdarbi un servisa pakalpojumi</td>
-                                    <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: right;">${laborCost.toFixed(2)} €</td>
-                                </tr>
-                                ${partsHtml}
-                                <tr style="background: #f8fafc;">
-                                    <td style="padding: 15px; font-weight: 900; font-size: 14pt; color: #0f172a;">KOPĀ APMAKSAI:</td>
-                                    <td style="padding: 15px; font-weight: 900; font-size: 14pt; text-align: right; color: #fbbf24;">${parseFloat(r.price).toFixed(2)} €</td>
-                                </tr>
-                            </tbody>
+                            <thead><tr style="background: #0f172a; color: white;"><th style="padding: 12px; text-align: left; font-size: 10pt; text-transform: uppercase;">Pozīcija</th><th style="padding: 12px; text-align: right; font-size: 10pt; text-transform: uppercase;">Summa</th></tr></thead>
+                            <tbody><tr><td style="padding: 12px; border-bottom: 1px solid #eee;">Remontdarbi un servisa pakalpojumi</td><td style="padding: 12px; border-bottom: 1px solid #eee; text-align: right;">${laborCost.toFixed(2)} €</td></tr>${partsHtml}<tr style="background: #f8fafc;"><td style="padding: 15px; font-weight: 900; font-size: 14pt; color: #0f172a;">KOPĀ APMAKSAI:</td><td style="padding: 15px; font-weight: 900; font-size: 14pt; text-align: right; color: #fbbf24;">${parseFloat(r.price).toFixed(2)} €</td></tr></tbody>
                         </table>
-
-                        <div style="margin-top: 80px; display: grid; grid-template-columns: 1fr 1fr; gap: 60px;">
-                            <div style="text-align: center;">
-                                <div style="border-top: 1px solid #333; padding-top: 10px; font-size: 10pt;">Klients</div>
-                            </div>
-                            <div style="text-align: center;">
-                                <div style="border-top: 1px solid #333; padding-top: 10px; font-size: 10pt;">Servisa pārstāvis / Z.v.</div>
-                            </div>
-                        </div>
-
-                        <div style="margin-top: 50px; text-align: center; font-size: 8pt; color: #94a3b8; border-top: 1px solid #f1f5f9; padding-top: 20px;">
-                            Paldies, ka izvēlējāties JT MOTORS! Šī tāme ir sagatavota elektroniski un ir derīga bez paraksta.
-                        </div>
-                    </div>
-                `;
-                
-                // Veicam izdruku
-                setTimeout(() => { 
-                    window.print(); 
-                    area.innerHTML = ""; 
-                }, 500);
+                        <div style="margin-top: 80px; display: grid; grid-template-columns: 1fr 1fr; gap: 60px;"><div style="text-align: center;"><div style="border-top: 1px solid #333; padding-top: 10px; font-size: 10pt;">Klients</div></div><div style="text-align: center;"><div style="border-top: 1px solid #333; padding-top: 10px; font-size: 10pt;">Servisa pārstāvis / Z.v.</div></div></div>
+                        <div style="margin-top: 50px; text-align: center; font-size: 8pt; color: #94a3b8; border-top: 1px solid #f1f5f9; padding-top: 20px;">Paldies, ka izvēlējāties JT MOTORS!</div>
+                    </div>`;
+                setTimeout(() => { window.print(); area.innerHTML = ""; }, 500);
             });
         }
-
-        // --- PĀRĒJĀS FUNKCIJAS ---
 
         function loadOrders() {
             db.ref('orders').on('value', s => {
@@ -1242,70 +1335,11 @@
                     const o = x.val(); 
                     if(o.status === 'Web-Order') { 
                         c++; 
-                        h += `
-                        <div class="card p-5 border-l-4 border-blue-600 shadow-md">
-                            <div class="flex justify-between items-start mb-4">
-                                <div>
-                                    <h3 class="font-black text-slate-900">${o.n || 'Nezināma Prece'}</h3>
-                                    <p class="text-sm font-bold text-slate-500">${o.cl || 'Klients'} | <span class="text-blue-600">${o.phone || ''}</span></p>
-                                    <p class="text-[10px] text-slate-400 font-mono mt-1">ID: ${x.key}</p>
-                                </div>
-                                <div class="text-right">
-                                    <div class="text-lg font-black text-slate-900">${parseFloat(o.price || 0).toFixed(2)}€</div>
-                                </div>
-                            </div>
-                            <div class="flex gap-2">
-                                <button onclick="editOrder('${x.key}')" class="flex-1 bg-slate-100 text-slate-600 font-black py-2 rounded-lg text-[10px] uppercase tracking-widest hover:bg-blue-500 hover:text-white transition-all"><i class="fas fa-edit mr-1"></i> Labot</button>
-                                <button onclick="printOrder('${x.key}')" class="flex-1 bg-slate-100 text-slate-600 font-black py-2 rounded-lg text-[10px] uppercase tracking-widest hover:bg-amber-500 hover:text-white transition-all"><i class="fas fa-print mr-1"></i> Drukāt</button>
-                                <button onclick="if(confirm('Dzēst pasūtījumu?')) db.ref('orders/${x.key}').remove()" class="bg-red-50 text-red-500 w-10 h-10 rounded-lg flex items-center justify-center hover:bg-red-500 hover:text-white transition-all"><i class="fas fa-trash-alt"></i></button>
-                            </div>
-                        </div>`; 
+                        h += `<div class="card p-5 border-l-4 border-blue-600 shadow-md"><div class="flex justify-between items-start mb-4"><div><h3 class="font-black text-slate-900">${o.n || 'Nezināma Prece'}</h3><p class="text-sm font-bold text-slate-500">${o.cl || 'Klients'} | <span class="text-blue-600">${o.phone || ''}</span></p></div><div class="text-right"><div class="text-lg font-black text-slate-900">${parseFloat(o.price || 0).toFixed(2)}€</div></div></div><div class="flex gap-2"><button onclick="editOrder('${x.key}')" class="flex-1 bg-slate-100 text-slate-600 font-black py-2 rounded-lg text-[10px] uppercase hover:bg-blue-500 hover:text-white"><i class="fas fa-edit mr-1"></i> Labot</button><button onclick="printOrder('${x.key}')" class="flex-1 bg-slate-100 text-slate-600 font-black py-2 rounded-lg text-[10px] uppercase hover:bg-amber-500 hover:text-white"><i class="fas fa-print mr-1"></i> Drukāt</button><button onclick="if(confirm('Dzēst pasūtījumu?')) db.ref('orders/${x.key}').remove()" class="bg-red-50 text-red-500 w-10 h-10 rounded-lg flex items-center justify-center hover:bg-red-500 hover:text-white"><i class="fas fa-trash-alt"></i></button></div></div>`; 
                     } 
                 });
                 document.getElementById('orders-list').innerHTML = h || '<div class="text-center py-10 opacity-20 font-bold italic">Nav jaunu pasūtījumu</div>';
                 document.getElementById('s-ord').innerText = c;
-            });
-        }
-
-        function editOrder(id) {
-            db.ref('orders/' + id).once('value', s => {
-                const o = s.val();
-                const html = `
-                    <label class="input-group-label">Preces nosaukums</label><input id="up-o-n" value="${o.n || ''}">
-                    <label class="input-group-label">Klients</label><input id="up-o-cl" value="${o.cl || ''}">
-                    <label class="input-group-label">Telefons</label><input id="up-o-p" value="${o.phone || ''}">
-                    <label class="input-group-label">Cena (€)</label><input id="up-o-pr" type="number" step="0.01" value="${o.price || 0}">
-                    <button onclick="saveOrderEdit('${id}')" class="btn-jt w-full mt-4">Saglabāt Izmaiņas</button>
-                `;
-                openEditModal("Labot Pasūtījumu", html);
-            });
-        }
-
-        function saveOrderEdit(id) {
-            const updates = { n: document.getElementById('up-o-n').value, cl: document.getElementById('up-o-cl').value, phone: document.getElementById('up-o-p').value, price: parseFloat(document.getElementById('up-o-pr').value) };
-            db.ref('orders/' + id).update(updates).then(() => { closeEditModal(); log("Pasūtījumi: Rediģēts pasūtījums " + id); });
-        }
-
-        function printOrder(id) {
-            db.ref('orders/' + id).once('value', s => {
-                const o = s.val();
-                const area = document.getElementById('print-area');
-                area.innerHTML = `
-                    <div style="padding: 40px; font-family: sans-serif; background:white; color:black;">
-                        <h1 style="text-align:center; font-style:italic;">JT <span style="color:#f59e0b;">MOTORS</span></h1>
-                        <hr style="border:1px solid #eee;">
-                        <div style="margin-top:20px;">
-                            <p><strong>PASŪTĪJUMA NR:</strong> ${id.slice(-6).toUpperCase()}</p>
-                            <p><strong>KLIENTS:</strong> ${o.cl || '---'}</p>
-                            <p><strong>TEL:</strong> ${o.phone || '---'}</p>
-                            <div style="margin: 30px 0; border: 2px solid #000; padding: 20px;">
-                                <h3 style="margin:0;">PRECE: ${o.n}</h3>
-                                <h2 style="margin: 10px 0 0 0;">SUMMA: ${parseFloat(o.price || 0).toFixed(2)}€</h2>
-                            </div>
-                        </div>
-                        <p style="font-size: 10px; text-align:center; margin-top:50px;">Paldies par pirkumu!</p>
-                    </div>`;
-                window.print(); area.innerHTML = "";
             });
         }
 
@@ -1321,61 +1355,9 @@
                 let h = '';
                 s.forEach(x => {
                     const c = x.val(), id = x.key, colorBorder = c.type === 'company' ? 'border-blue-500' : 'border-amber-500', icon = c.type === 'company' ? 'fa-building' : 'fa-user';
-                    h += `
-                    <div class="card !p-5 border-t-4 ${colorBorder} shadow-md flex flex-col justify-between">
-                        <div>
-                            <div class="flex justify-between items-start mb-2">
-                                <span class="text-[9px] font-black uppercase tracking-widest text-slate-400"><i class="fas ${icon} mr-1"></i> ${c.type === 'company' ? 'Uzņēmums' : 'Privātpersona'}</span>
-                                <div class="flex gap-2">
-                                    <button onclick="editClient('${id}')" class="text-slate-400 hover:text-blue-500 transition-colors"><i class="fas fa-edit"></i></button>
-                                    <button onclick="if(confirm('Dzēst klientu?')) db.ref('clients/${id}').remove()" class="text-slate-400 hover:text-red-500 transition-colors"><i class="fas fa-trash-alt"></i></button>
-                                </div>
-                            </div>
-                            <h4 class="font-black text-slate-800 uppercase text-lg leading-tight mb-1">${c.n}</h4>
-                            <p class="text-sm font-bold text-slate-500 mb-4">${c.type === 'company' ? (c.reg || 'Reģ.nr. nav') : (c.email || 'E-pasts nav')}</p>
-                        </div>
-                        <div class="flex gap-2 mt-auto">
-                            <a href="tel:${c.p}" class="flex-1 bg-green-500 text-white text-center py-2 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-green-600 transition-all flex items-center justify-center gap-2"><i class="fas fa-phone-alt"></i> ZVANĪT</a>
-                            <button onclick="editClient('${id}')" class="flex-1 bg-slate-100 text-slate-600 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-200 transition-all flex items-center justify-center gap-2"><i class="fas fa-info-circle"></i> LABOT</button>
-                        </div>
-                    </div>`;
+                    h += `<div class="card !p-5 border-t-4 ${colorBorder} shadow-md flex flex-col justify-between"><div><div class="flex justify-between items-start mb-2"><span class="text-[9px] font-black uppercase tracking-widest text-slate-400"><i class="fas ${icon} mr-1"></i> ${c.type === 'company' ? 'Uzņēmums' : 'Privātpersona'}</span><div class="flex gap-2"><button onclick="editClient('${id}')" class="text-slate-400 hover:text-blue-500"><i class="fas fa-edit"></i></button><button onclick="if(confirm('Dzēst klientu?')) db.ref('clients/${id}').remove()" class="text-slate-400 hover:text-red-500"><i class="fas fa-trash-alt"></i></button></div></div><h4 class="font-black text-slate-800 uppercase text-lg leading-tight mb-1">${c.n}</h4><p class="text-sm font-bold text-slate-500 mb-4">${c.type === 'company' ? (c.reg || 'Reģ.nr. nav') : (c.email || 'E-pasts nav')}</p></div><div class="flex gap-2 mt-auto"><a href="tel:${c.p}" class="flex-1 bg-green-500 text-white text-center py-2 rounded-xl font-black text-[10px] uppercase flex items-center justify-center gap-2"><i class="fas fa-phone-alt"></i> ZVANĪT</a><button onclick="editClient('${id}')" class="flex-1 bg-slate-100 text-slate-600 py-2 rounded-xl font-black text-[10px] uppercase flex items-center justify-center gap-2"><i class="fas fa-info-circle"></i> LABOT</button></div></div>`;
                 });
                 document.getElementById('client-list').innerHTML = h || '<div class="col-span-full text-center py-10 opacity-20 font-bold italic">Saraksts tukšs</div>';
-            });
-        }
-
-        function editClient(id) {
-            db.ref('clients/' + id).once('value', s => {
-                const c = s.val(), isComp = c.type === 'company';
-                const html = `
-                    <label class="input-group-label">Tips</label>
-                    <select id="up-c-type" class="mb-4"><option value="private" ${!isComp ? 'selected' : ''}>Privātpersona</option><option value="company" ${isComp ? 'selected' : ''}>Uzņēmums</option></select>
-                    <label class="input-group-label">${isComp ? 'Nosaukums' : 'Vārds Uzvārds'}</label><input id="up-c-n" value="${c.n || ''}">
-                    <label class="input-group-label">Telefons</label><input id="up-c-p" value="${c.p || ''}">
-                    <div id="up-c-extra">${isComp ? `<label class="input-group-label">Reģistrācijas Nr.</label><input id="up-c-reg" value="${c.reg || ''}"><label class="input-group-label">Juridiskā Adrese</label><input id="up-c-addr" value="${c.addr || ''}">` : `<label class="input-group-label">E-pasts</label><input id="up-c-e" value="${c.email || ''}">`}</div>
-                    <button onclick="saveClientEdit('${id}')" class="btn-jt w-full mt-4">Saglabāt Izmaiņas</button>
-                `;
-                openEditModal("Labot Klientu", html);
-            });
-        }
-
-        function saveClientEdit(id) {
-            const type = document.getElementById('up-c-type').value;
-            const updates = { type: type, n: document.getElementById('up-c-n').value, p: document.getElementById('up-c-p').value };
-            if(type === 'company') { updates.reg = document.getElementById('up-c-reg').value; updates.addr = document.getElementById('up-c-addr').value; } 
-            else { updates.email = document.getElementById('up-c-e').value; }
-            db.ref('clients/' + id).set(updates).then(() => { closeEditModal(); log("Klienti: Rediģēts klients " + updates.n); });
-        }
-
-        function addClient() {
-            const type = document.getElementById('c-type').value, n = document.getElementById('c-n').value, p = document.getElementById('c-p').value;
-            if(!n || !p) return alert("Vārds un telefons ir obligāti!");
-            let data = { type, n, p, timestamp: Date.now() };
-            if (type === 'company') { data.reg = document.getElementById('c-reg').value; data.addr = document.getElementById('c-addr').value; } 
-            else { data.email = document.getElementById('c-e').value; }
-            db.ref('clients').push(data).then(() => {
-                document.querySelectorAll('#sec-clients input').forEach(i => i.value = '');
-                log("Klienti: Pievienots " + n);
             });
         }
 
@@ -1385,19 +1367,7 @@
                 s.forEach(x => { 
                     const f = x.val(), key = x.key; 
                     total += parseFloat(f.price); 
-                    const emailSubject = `JT MOTORS Rēķins: ${f.nr}`;
-                    const emailBody = `Labdien!\n\nInformējam, ka darbs pie automašīnas ${f.nr} ir pabeigts.\nKopējā summa: ${parseFloat(f.price).toFixed(2)}€\nPaldies!`;
-
-                    h = `<tr class="hover:bg-slate-50">
-                        <td class="p-4 text-[10px] font-bold text-slate-400">${f.d}</td>
-                        <td class="font-black">${f.nr}</td>
-                        <td class="text-right font-black text-green-600">${parseFloat(f.price).toFixed(2)}€</td>
-                        <td class="text-right p-4 flex justify-end gap-2">
-                            <button onclick="sendInvoiceEmail('${f.cl || ''}', '${encodeURIComponent(emailSubject)}', '${encodeURIComponent(emailBody)}')" class="bg-blue-500 text-white px-3 py-1 rounded text-[10px] font-black uppercase"><i class="fas fa-envelope"></i></button>
-                            <button onclick="printEAN('${f.nr}', 'RĒĶINS')" class="bg-amber-500 px-3 py-1 rounded text-[10px] font-black uppercase"><i class="fas fa-print"></i></button>
-                            <button onclick="deleteInvoice('${key}', '${f.nr}')" class="bg-red-100 text-red-600 px-3 py-1 rounded text-[10px] font-black uppercase hover:bg-red-600 hover:text-white transition-all"><i class="fas fa-trash-alt"></i></button>
-                        </td>
-                    </tr>` + h; 
+                    h = `<tr class="hover:bg-slate-50"><td class="p-4 text-[10px] font-bold text-slate-400">${f.d}</td><td class="font-black">${f.nr}</td><td class="text-right font-black text-green-600">${parseFloat(f.price).toFixed(2)}€</td><td class="text-right p-4 flex justify-end gap-2"><button onclick="printEAN('${f.nr}', 'RĒĶINS')" class="bg-amber-500 px-3 py-1 rounded text-[10px] font-black uppercase"><i class="fas fa-print"></i></button><button onclick="deleteInvoice('${key}', '${f.nr}')" class="bg-red-100 text-red-600 px-3 py-1 rounded text-[10px] font-black uppercase hover:bg-red-600 hover:text-white transition-all"><i class="fas fa-trash-alt"></i></button></td></tr>` + h; 
                 });
                 document.getElementById('fin-table').innerHTML = h || '<tr><td colspan="4" class="p-10 text-center opacity-20 italic">Nav pabeigtu rēķinu</td></tr>'; 
                 document.getElementById('s-profit').innerText = total.toFixed(0);
@@ -1405,98 +1375,8 @@
         }
 
         function deleteInvoice(id, nr) {
-            if(confirm(`Vai tiešām vēlaties neatgriezeniski dzēst rēķinu auto ${nr}?`)) {
-                db.ref('finances/' + id).remove().then(() => { log(`Sistēma: Izdzēsts rēķins auto ${nr}`); });
-            }
-        }
-
-        function sendInvoiceEmail(clientName, subject, body) {
-            db.ref('clients').orderByChild('n').equalTo(clientName).once('value', snapshot => {
-                let clientEmail = "";
-                snapshot.forEach(child => { if(child.val().email) clientEmail = child.val().email; });
-                if(!clientEmail) clientEmail = prompt("Ievadiet e-pastu:", "");
-                if(clientEmail) { window.location.href = `mailto:${clientEmail}?subject=${subject}&body=${body}`; }
-            });
-        }
-
-        function searchVehicleHistory(showAll = false) {
-            const nr = document.getElementById('h-search-nr').value.toUpperCase().trim();
-            let query = db.ref('finances');
-            
-            if (!showAll && !nr) return alert("Ievadiet numuru vai spiediet 'Rādīt visu'!");
-
-            if (!showAll) {
-                query = query.orderByChild('nr').equalTo(nr);
-            }
-
-            query.once('value', s => {
-                let h = '';
-                s.forEach(x => { 
-                    const f = x.val(); 
-                    const id = x.key;
-                    h += `
-                    <div class="card border-l-4 border-amber-500 relative" style="padding-right: 20px;">
-                        <div class="absolute top-4 right-4 flex flex-col gap-2 z-10">
-                             <button onclick="editHistoryItem('${id}')" class="w-8 h-8 rounded-lg bg-slate-100 text-blue-500 hover:bg-blue-500 hover:text-white flex items-center justify-center transition-all shadow-sm"><i class="fas fa-edit text-xs"></i></button>
-                             <button onclick="deleteHistoryItem('${id}', '${f.nr}')" class="w-8 h-8 rounded-lg bg-slate-100 text-red-400 hover:bg-red-500 hover:text-white flex items-center justify-center transition-all shadow-sm"><i class="fas fa-trash-alt text-xs"></i></button>
-                        </div>
-
-                        <div style="padding-right: 45px;">
-                            <div class="flex justify-between items-start mb-2">
-                                <div>
-                                    <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">${f.d}</span>
-                                    <h4 class="font-black text-slate-900 text-lg">${f.nr}</h4>
-                                </div>
-                                <div class="text-right font-black text-green-600 text-lg">${parseFloat(f.price).toFixed(2)}€</div>
-                            </div>
-                            <p class="text-xs text-slate-600 leading-relaxed font-semibold mb-2">${f.task}</p>
-                            <div class="text-[9px] text-slate-400 uppercase font-bold italic border-t border-slate-50 pt-2">
-                                Klients: ${f.cl || '---'} | Auto: ${f.make || ''} ${f.model || ''}
-                            </div>
-                        </div>
-                    </div>`; 
-                });
-                document.getElementById('history-results').innerHTML = h || '<div class="text-center py-10 opacity-30 italic font-bold">Vēsturē ieraksti netika atrasti</div>';
-            });
-        }
-
-        // --- JAUNAS FUNKCIJAS VĒSTURES LABOŠANAI UN DZĒŠANAI ---
-
-        function editHistoryItem(id) {
-            db.ref('finances/' + id).once('value', s => {
-                const f = s.val();
-                if(!f) return;
-                const html = `
-                    <label class="input-group-label">Auto Numurs</label><input id="up-h-nr" value="${f.nr || ''}" class="uppercase font-black">
-                    <label class="input-group-label">Klients</label><input id="up-h-cl" value="${f.cl || ''}">
-                    <label class="input-group-label">Veiktie darbi</label><textarea id="up-h-task" class="h-32">${f.task || ''}</textarea>
-                    <label class="input-group-label">Cena (€)</label><input id="up-h-price" type="number" step="0.01" value="${f.price || 0}">
-                    <button onclick="saveHistoryEdit('${id}')" class="btn-jt w-full mt-4">Saglabāt Vēsturē</button>
-                `;
-                openEditModal("Labot vēstures ierakstu", html);
-            });
-        }
-
-        function saveHistoryEdit(id) {
-            const updates = {
-                nr: document.getElementById('up-h-nr').value.toUpperCase(),
-                cl: document.getElementById('up-h-cl').value,
-                task: document.getElementById('up-h-task').value,
-                price: parseFloat(document.getElementById('up-h-price').value || 0)
-            };
-            db.ref('finances/' + id).update(updates).then(() => { 
-                closeEditModal(); 
-                log("Vēsture: Rediģēts ieraksts " + updates.nr);
-                searchVehicleHistory(true); // Atsvaidzina sarakstu
-            });
-        }
-
-        function deleteHistoryItem(id, nr) {
-            if(confirm(`Vai tiešām vēlaties neatgriezeniski dzēst vēstures ierakstu auto ${nr}?`)) {
-                db.ref('finances/' + id).remove().then(() => { 
-                    log(`Vēsture: Izdzēsts ieraksts auto ${nr}`);
-                    searchVehicleHistory(true); // Atsvaidzina sarakstu
-                });
+            if(confirm(`Vai tiešām vēlaties dzēst rēķinu auto ${nr}?`)) {
+                db.ref('finances/' + id).remove().then(() => log(`Sistēma: Izdzēsts rēķins auto ${nr}`));
             }
         }
 
@@ -1505,26 +1385,8 @@
         function printEAN(code, name) {
             if(!code) return alert("Nav koda!");
             const area = document.getElementById('print-area');
-            
-            area.innerHTML = `
-                <div style="width: 62mm; height: 29mm; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; padding: 1mm; box-sizing: border-box;">
-                    <div style="font-family: 'Inter', sans-serif; font-size: 8pt; font-weight: 900; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; text-align: center; margin-bottom: 1mm; color: black;">
-                        ${name}
-                    </div>
-                    <svg id="barcode-target" style="max-width: 58mm; max-height: 18mm;"></svg>
-                </div>
-            `;
-            
-            JsBarcode("#barcode-target", code.toString(), {
-                format: "CODE128", 
-                width: 1.6, 
-                height: 40, 
-                displayValue: true, 
-                fontSize: 12,
-                margin: 0,
-                background: "#ffffff"
-            });
-            
+            area.innerHTML = `<div style="width: 62mm; height: 29mm; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; padding: 1mm; box-sizing: border-box;"><div style="font-family: 'Inter', sans-serif; font-size: 8pt; font-weight: 900; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; text-align: center; margin-bottom: 1mm; color: black;">${name}</div><svg id="barcode-target" style="max-width: 58mm; max-height: 18mm;"></svg></div>`;
+            JsBarcode("#barcode-target", code.toString(), { format: "CODE128", width: 1.6, height: 40, displayValue: true, fontSize: 12, margin: 0, background: "#ffffff" });
             setTimeout(() => { window.print(); area.innerHTML = ""; }, 300);
         }
 
