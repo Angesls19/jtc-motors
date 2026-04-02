@@ -830,7 +830,11 @@
         function drawStock() {
             const q = document.getElementById('q-stock').value.toLowerCase();
             let h = '';
-            Object.keys(stock).forEach(id => {
+            
+            // Pārveidojam objektu masīvā un sakārtojam apgrieztā secībā (jaunākais augšā)
+            const sortedKeys = Object.keys(stock).sort().reverse();
+
+            sortedKeys.forEach(id => {
                 const i = stock[id];
                 if(i.n.toLowerCase().includes(q) || (i.e && i.e.toString().includes(q)) || (i.e2 && i.e2.toString().includes(q)) || (i.oem && i.oem.toLowerCase().includes(q))) {
                     const priceNeto = parseFloat(i.p).toFixed(2);
@@ -978,7 +982,6 @@
                 if (!soldItem) return;
 
                 if (confirm(`Vai tiešām atgriezt preci "${soldItem.n}" noliktavā?`)) {
-                    // Meklējam preci noliktavā pēc nosaukuma un OEM
                     let foundKey = null;
                     Object.keys(stock).forEach(key => {
                         if (stock[key].n === soldItem.n && stock[key].oem === soldItem.oem) {
@@ -1033,7 +1036,7 @@
 
             if (itemsToDraw.length > 0) {
                 let h = '<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">';
-                itemsToDraw.forEach(i => {
+                itemsToDraw.reverse().forEach(i => {
                     let imgHtml = '<i class="fas fa-shopping-bag text-slate-200 fa-3x"></i>';
                     if(i.imgs && i.imgs.length > 0) {
                         imgHtml = `<img src="${i.imgs[0]}" alt="${i.n}">${i.imgs.length > 1 ? `<div class="absolute top-2 right-2 bg-amber-500 text-[10px] font-black px-2 py-0.5 rounded-full">+${i.imgs.length}</div>` : ''}`;
@@ -1193,13 +1196,11 @@
             const finalPrice = document.getElementById('rep-price').value;
             if(!nr) return alert("Ievadiet auto numuru!");
 
-            // Preču norakstīšana un pievienošana Realizācijai
             currentRepairParts.forEach(item => {
                 if(stock[item.id]) {
                     const newQty = Math.max(0, stock[item.id].q - 1);
                     db.ref('stock/' + item.id).update({ q: newQty });
 
-                    // Pievieno detaļu Realizācijas sarakstam
                     db.ref('sold_history').push({
                         n: item.n,
                         oem: item.oem || '---',
