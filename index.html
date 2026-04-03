@@ -420,9 +420,15 @@
                             <div><label class="input-group-label text-slate-400">Valsts numurs</label><input id="rep-nr" placeholder="AA-1234" class="!bg-slate-800 !text-white border-none uppercase font-black"></div>
                             <div><label class="input-group-label text-slate-400">Klients</label><input id="rep-cl" placeholder="Vārds / Uzņēmums" class="!bg-slate-800 !text-white border-none"></div>
                         </div>
-                        <div class="grid grid-cols-3 gap-4">
-                            <div><label class="input-group-label text-slate-400">Marka</label><select id="rep-make" onchange="updateModels()" class="!bg-slate-800 !text-white border-none"></select></div>
-                            <div><label class="input-group-label text-slate-400">Modelis</label><select id="rep-model" class="!bg-slate-800 !text-white border-none"></select></div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div id="make-container">
+                                <label class="input-group-label text-slate-400 flex justify-between">Marka <button onclick="enableManualInput('rep-make', 'make-container', 'Piem. BMW')" class="text-amber-500 text-[9px] underline">CITI</button></label>
+                                <select id="rep-make" onchange="updateModels()" class="!bg-slate-800 !text-white border-none"></select>
+                            </div>
+                            <div id="model-container">
+                                <label class="input-group-label text-slate-400 flex justify-between">Modelis <button onclick="enableManualInput('rep-model', 'model-container', 'Piem. E60')" class="text-amber-500 text-[9px] underline">CITI</button></label>
+                                <select id="rep-model" class="!bg-slate-800 !text-white border-none"></select>
+                            </div>
                             <div><label class="input-group-label text-slate-400">Gads</label><select id="rep-year" class="!bg-slate-800 !text-white border-none"></select></div>
                         </div>
                         <label class="input-group-label text-slate-400">Veicamie darbi</label>
@@ -1529,6 +1535,16 @@
                     }
                 }
             } catch (error) { alert("Kļūda VIN datubāzē."); } finally { btn.innerText = "DEKODĒT"; btn.disabled = false; }
+        }
+
+        // JAUNA FUNKCIJA MANUĀLAI IEVADEI
+        function enableManualInput(id, containerId, placeholder) {
+            const container = document.getElementById(containerId);
+            const labelText = id.includes('make') ? 'Marka' : 'Modelis';
+            container.innerHTML = `
+                <label class="input-group-label text-slate-400 flex justify-between">${labelText} <span class="text-amber-500 text-[9px]">MANUĀLI</span></label>
+                <input id="${id}" placeholder="${placeholder}" class="!bg-slate-800 !text-white border-none uppercase">
+            `;
         }
     </script>
 </body>
