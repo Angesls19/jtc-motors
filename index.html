@@ -575,7 +575,20 @@
             </div>
 
             <div id="sec-fin" class="tab-content hidden">
-                <div class="card !p-0 overflow-hidden border-none shadow-xl"><div class="bg-slate-800 p-4 text-white text-center text-xs font-black uppercase tracking-widest">Finanšu pārskats</div><table class="w-full text-sm"><thead class="bg-slate-100 text-slate-500 uppercase text-[10px]"><tr><th class="p-4 text-left">Datums</th><th class="text-left">Auto / Prece</th><th class="text-right">Summa</th><th class="p-4 text-right">Darbības</th></tr></thead><tbody id="fin-table" class="divide-y divide-slate-100"></tbody></table></div>
+                <div class="card !p-0 overflow-hidden border-none shadow-xl">
+                    <div class="bg-slate-800 p-4 text-white text-center text-xs font-black uppercase tracking-widest">Finanšu pārskats / Rēķini</div>
+                    <table class="w-full text-sm">
+                        <thead class="bg-slate-100 text-slate-500 uppercase text-[10px]">
+                            <tr>
+                                <th class="p-4 text-left">Datums</th>
+                                <th class="text-left">Auto / Klients</th>
+                                <th class="text-right">Summa</th>
+                                <th class="p-4 text-right">Darbības</th>
+                            </tr>
+                        </thead>
+                        <tbody id="fin-table" class="divide-y divide-slate-100"></tbody>
+                    </table>
+                </div>
             </div>
 
             <div id="sec-logs" class="tab-content hidden">
@@ -830,8 +843,6 @@
         function drawStock() {
             const q = document.getElementById('q-stock').value.toLowerCase();
             let h = '';
-            
-            // Pārveidojam objektu masīvā un sakārtojam apgrieztā secībā (jaunākais augšā)
             const sortedKeys = Object.keys(stock).sort().reverse();
 
             sortedKeys.forEach(id => {
@@ -1362,16 +1373,109 @@
             });
         }
 
+        // ==========================================
+        // RĒĶINU SEKCIJAS ATJAUNOTĀS FUNKCIJAS
+        // ==========================================
+
         function loadFin() {
             db.ref('finances').on('value', s => {
                 let h = '', total = 0;
                 s.forEach(x => { 
                     const f = x.val(), key = x.key; 
-                    total += parseFloat(f.price); 
-                    h = `<tr class="hover:bg-slate-50"><td class="p-4 text-[10px] font-bold text-slate-400">${f.d}</td><td class="font-black">${f.nr}</td><td class="text-right font-black text-green-600">${parseFloat(f.price).toFixed(2)}€</td><td class="text-right p-4 flex justify-end gap-2"><button onclick="printEAN('${f.nr}', 'RĒĶINS')" class="bg-amber-500 px-3 py-1 rounded text-[10px] font-black uppercase"><i class="fas fa-print"></i></button><button onclick="deleteInvoice('${key}', '${f.nr}')" class="bg-red-100 text-red-600 px-3 py-1 rounded text-[10px] font-black uppercase hover:bg-red-600 hover:text-white transition-all"><i class="fas fa-trash-alt"></i></button></td></tr>` + h; 
+                    total += parseFloat(f.price || 0); 
+                    h = `
+                    <tr class="hover:bg-slate-50 transition-colors">
+                        <td class="p-4 text-[10px] font-bold text-slate-400">${f.d || '---'}</td>
+                        <td class="py-4">
+                            <div class="font-black text-slate-900">${f.nr}</div>
+                            <div class="text-[10px] text-slate-400 font-bold uppercase">${f.cl || 'Klients'}</div>
+                        </td>
+                        <td class="text-right font-black text-green-600">${parseFloat(f.price || 0).toFixed(2)}€</td>
+                        <td class="text-right p-4">
+                            <div class="flex justify-end gap-1">
+                                <button onclick="sendInvoiceEmail('${key}')" class="bg-blue-500 text-white w-8 h-8 rounded-lg flex items-center justify-center hover:bg-blue-600" title="Sūtīt e-pastā"><i class="fas fa-envelope text-[10px]"></i></button>
+                                <button onclick="printInvoice('${key}')" class="bg-amber-500 text-slate-900 w-8 h-8 rounded-lg flex items-center justify-center hover:bg-amber-600" title="Drukāt rēķinu"><i class="fas fa-print text-[10px]"></i></button>
+                                <button onclick="deleteInvoice('${key}', '${f.nr}')" class="bg-red-100 text-red-500 w-8 h-8 rounded-lg flex items-center justify-center hover:bg-red-500 hover:text-white" title="Dzēst"><i class="fas fa-trash-alt text-[10px]"></i></button>
+                            </div>
+                        </td>
+                    </tr>` + h; 
                 });
                 document.getElementById('fin-table').innerHTML = h || '<tr><td colspan="4" class="p-10 text-center opacity-20 italic">Nav pabeigtu rēķinu</td></tr>'; 
                 document.getElementById('s-profit').innerText = total.toFixed(0);
+            });
+        }
+
+        function printInvoice(id) {
+            db.ref('finances/' + id).once('value', s => {
+                const f = s.val();
+                if (!f) return alert("Kļūda: Rēķins nav atrasts!");
+                
+                const area = document.getElementById('print-area');
+                let partsHtml = '';
+                if(f.used_parts && f.used_parts.length > 0) {
+                    f.used_parts.forEach(p => {
+                        partsHtml += `<tr><td style="padding:10px; border-bottom:1px solid #eee;">${p.n} (OEM: ${p.oem})</td><td style="padding:10px; border-bottom:1px solid #eee; text-align:right;">${parseFloat(p.p).toFixed(2)} €</td></tr>`;
+                    });
+                }
+
+                area.innerHTML = `
+                <div style="padding: 20mm; font-family: 'Inter', sans-serif; background: white; color: #1e293b;">
+                    <div style="display:flex; justify-content:space-between; border-bottom:5px solid #fbbf24; padding-bottom:20px; margin-bottom:30px;">
+                        <div>
+                            <h1 style="margin:0; font-size:32pt; font-weight:900; font-style:italic;">JT <span style="color:#fbbf24;">MOTORS</span></h1>
+                            <p style="margin:5px 0; font-weight:bold; font-size:10pt; color:#64748b;">REĢ. NR: 40203300000 | TĀLR: +371 20000000</p>
+                        </div>
+                        <div style="text-align:right;">
+                            <h2 style="margin:0; font-size:18pt; font-weight:900;">RĒĶINS</h2>
+                            <p style="margin:5px 0; font-weight:bold; color:#64748b;">Nr. INV-${id.slice(-6).toUpperCase()}</p>
+                            <p style="margin:0; font-size:9pt;">Datums: ${f.d}</p>
+                        </div>
+                    </div>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:50px; margin-bottom:40px;">
+                        <div style="background:#f8fafc; padding:20px; border-radius:10px;">
+                            <h4 style="margin:0 0 10px 0; color:#fbbf24; text-transform:uppercase; font-size:9pt;">Maksātājs</h4>
+                            <p style="margin:0; font-size:12pt; font-weight:900;">${f.cl || 'Privātpersona'}</p>
+                            <p style="margin:5px 0 0 0; font-size:10pt; color:#64748b;">Auto: ${f.nr} (${f.make || ''} ${f.model || ''})</p>
+                        </div>
+                        <div style="padding:20px;">
+                            <h4 style="margin:0 0 10px 0; color:#fbbf24; text-transform:uppercase; font-size:9pt;">Informācija</h4>
+                            <p style="margin:0; font-size:10pt;">Apmaksas veids: Pārskaitījums / Skaidra nauda</p>
+                            <p style="margin:5px 0 0 0; font-size:10pt;">Izpildes vieta: Rīga, Latvija</p>
+                        </div>
+                    </div>
+                    <table style="width:100%; border-collapse:collapse; margin-bottom:30px;">
+                        <thead style="background:#0f172a; color:white;">
+                            <tr><th style="padding:15px; text-align:left;">PAKALPOJUMA / PRECES APRAKSTS</th><th style="padding:15px; text-align:right;">SUMMA</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td style="padding:15px; border-bottom:1px solid #eee;"><strong>Remontdarbi:</strong><br><span style="font-size:9pt; color:#64748b;">${f.task || 'Auto apkope'}</span></td><td style="padding:15px; border-bottom:1px solid #eee; text-align:right;">${(parseFloat(f.price || 0) - (f.used_parts ? f.used_parts.reduce((a, b) => a + b.p, 0) : 0)).toFixed(2)} €</td></tr>
+                            ${partsHtml}
+                        </tbody>
+                        <tfoot>
+                            <tr style="background:#fbbf24; color:#0f172a;">
+                                <td style="padding:20px; font-size:16pt; font-weight:900;">KOPĀ APMAKSAI (EUR):</td>
+                                <td style="padding:20px; font-size:20pt; font-weight:900; text-align:right;">${parseFloat(f.price || 0).toFixed(2)} €</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                    <div style="margin-top:100px; display:flex; justify-content:space-between; font-size:9pt;">
+                        <div style="width:200px; border-top:1px solid #000; text-align:center; padding-top:10px;">Izsniedza (Paraksts)</div>
+                        <div style="width:200px; border-top:1px solid #000; text-align:center; padding-top:10px;">Saņēma (Paraksts)</div>
+                    </div>
+                    <p style="text-align:center; margin-top:50px; font-size:8pt; color:#94a3b8;">Šis dokuments ir sagatavots elektroniski un ir derīgs bez paraksta.</p>
+                </div>`;
+                
+                setTimeout(() => { window.print(); area.innerHTML = ""; }, 500);
+            });
+        }
+
+        function sendInvoiceEmail(id) {
+            db.ref('finances/' + id).once('value', s => {
+                const f = s.val();
+                if (!f) return;
+                const subject = encodeURIComponent(`JT MOTORS Rēķins - ${f.nr}`);
+                const body = encodeURIComponent(`Labdien!\n\nInformējam, ka Jūsu auto (${f.nr}) remontdarbi ir pabeigti.\n\nKopējā rēķina summa: ${parseFloat(f.price || 0).toFixed(2)} EUR.\n\nVeiktie darbi: ${f.task}\n\nAr cieņu,\nJT MOTORS Serviss`);
+                window.location.href = `mailto:?subject=${subject}&body=${body}`;
             });
         }
 
