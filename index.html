@@ -1239,6 +1239,7 @@
                 price: parseFloat(finalPrice || 0), 
                 vin: document.getElementById('rep-vin').value,
                 used_parts: currentRepairParts,
+                status: 'Procesā', // NOKLUSĒTAIS STATUSS
                 d: new Date().toLocaleDateString('lv-LV') 
             }).then(() => {
                 document.querySelectorAll('#sec-repairs input, #sec-repairs textarea').forEach(i => i.value = '');
@@ -1254,21 +1255,40 @@
                 let h = '', c = 0;
                 s.forEach(x => {
                     const r = x.val(); const id = x.key; c++;
+                    const status = r.status || 'Procesā';
+                    
+                    // Statusu krāsas un progress
+                    let barColor = 'bg-blue-500', barWidth = '50%', statusIcon = 'fa-spinner fa-spin';
+                    if(status === 'Gaida detaļu') { barColor = 'bg-red-500'; barWidth = '20%'; statusIcon = 'fa-clock'; }
+                    if(status === 'Gatavs') { barColor = 'bg-green-500'; barWidth = '100%'; statusIcon = 'fa-check-circle'; }
+
                     h += `
-                    <div class="card border-l-[10px] border-amber-500 !p-5 shadow-lg bg-white">
-                        <div class="flex justify-between items-start mb-3">
+                    <div class="card border-l-[10px] border-amber-500 !p-5 shadow-lg bg-white relative overflow-hidden">
+                        <div class="flex justify-between items-start mb-3 relative z-10">
                             <div>
                                 <span class="bg-slate-100 text-slate-600 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider">${r.d || '---'}</span>
                                 <h2 class="text-2xl font-black mt-2 tracking-tighter text-slate-900">${r.nr}</h2>
                                 <p class="font-bold text-amber-600 text-sm italic">${r.make || ''} ${r.model || ''}</p>
-                                <p class="text-xs text-slate-400 font-bold">${r.cl}</p>
+                                <div class="flex items-center gap-2 mt-2">
+                                    <select onchange="updateRepairStatus('${id}', this.value)" class="!bg-slate-100 !mb-0 !py-1 !px-3 !w-auto !text-[10px] !font-black !rounded-full uppercase tracking-tighter cursor-pointer">
+                                        <option value="Procesā" ${status === 'Procesā' ? 'selected' : ''}>🔄 Procesā</option>
+                                        <option value="Gaida detaļu" ${status === 'Gaida detaļu' ? 'selected' : ''}>⏳ Gaida detaļu</option>
+                                        <option value="Gatavs" ${status === 'Gatavs' ? 'selected' : ''}>✅ Gatavs</option>
+                                    </select>
+                                </div>
                             </div>
                             <div class="text-right">
                                 <div class="text-2xl font-black text-slate-900">${parseFloat(r.price).toFixed(2)}€</div>
+                                <div class="text-[9px] text-slate-400 font-bold uppercase mt-1">${r.cl}</div>
                             </div>
                         </div>
-                        <div class="flex gap-2">
-                            <button onclick="finishRepair('${id}')" class="flex-[2] bg-slate-900 text-white font-bold py-3 rounded-xl uppercase text-[10px]">PABEIGT</button>
+                        
+                        <div class="w-full bg-slate-100 h-1.5 rounded-full my-4 overflow-hidden">
+                            <div class="${barColor} h-full transition-all duration-500" style="width: ${barWidth}"></div>
+                        </div>
+
+                        <div class="flex gap-2 relative z-10">
+                            <button onclick="finishRepair('${id}')" class="flex-[2] bg-slate-900 text-white font-bold py-3 rounded-xl uppercase text-[10px] hover:bg-black transition-all">PABEIGT DARBU</button>
                             <button onclick="editRepair('${id}')" class="flex-1 bg-blue-50 text-blue-600 font-bold py-3 rounded-xl uppercase text-[10px] hover:bg-blue-600 hover:text-white transition-all"><i class="fas fa-edit"></i></button>
                             <button onclick="printRepairCard('${id}')" class="flex-1 bg-amber-50 text-amber-600 font-bold py-3 rounded-xl uppercase text-[10px] hover:bg-amber-500 hover:text-white transition-all"><i class="fas fa-print"></i></button>
                         </div>
@@ -1276,6 +1296,13 @@
                 });
                 document.getElementById('repair-list').innerHTML = h || '<div class="text-center p-10 opacity-20">Nav aktīvu darbu</div>';
                 document.getElementById('s-rep').innerText = c;
+            });
+        }
+
+        // JAUNA FUNKCIJA STATUSA ATJAUNINĀŠANAI
+        function updateRepairStatus(id, newStatus) {
+            db.ref('repairs/' + id).update({ status: newStatus }).then(() => {
+                log(`Serviss: Darbam ${id} mainīts statuss uz ${newStatus}`);
             });
         }
 
