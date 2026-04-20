@@ -461,7 +461,7 @@
                     <div class="relative z-10 flex flex-col gap-2">
                         <div class="flex gap-2">
                             <input id="h-search-nr" placeholder="AA-1234" class="!bg-slate-800 !text-white border-none uppercase font-black !mb-0" onkeyup="if(event.key === 'Enter') searchVehicleHistory()">
-                            <button onclick="searchVehicleHistory()" class="btn-jt px-8 !py-0 h-[50px]">Mek lēt</button>
+                            <button onclick="searchVehicleHistory()" class="btn-jt px-8 !py-0 h-[50px]">Meklēt</button>
                         </div>
                         <button onclick="searchVehicleHistory(true)" class="w-full bg-slate-800 text-slate-400 font-bold py-3 rounded-xl border border-white/5 hover:bg-slate-700 hover:text-white transition-all uppercase text-[10px] tracking-widest">Rādīt visu pabeigto darbu vēsturi</button>
                     </div>
@@ -573,10 +573,10 @@
                                 </div>
                             </div>
                         </div>
-
                         <button onclick="addClient()" class="btn-jt w-full mt-4 !py-4">Saglabāt Klientu</button>
                     </div>
                 </div>
+
                 <div id="client-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
             </div>
 
@@ -608,17 +608,20 @@
                     <div class="font-mono text-[11px] h-[60vh] overflow-y-auto space-y-1 text-slate-400" id="logs-box"></div>
                 </div>
             </div>
-
         </main>
     </div>
 
     <script>
-        const firebaseConfig = { apiKey: "AIzaSyBK20atH4pmEORbuHLCTAXaSCPUBfz9190", databaseURL: "https://jtc-motors-default-rtdb.europe-west1.firebasedatabase.app" };
+        // ORIĢINĀLĀ KONFIGURĀCIJA ATJAUNOTA
+        const firebaseConfig = {
+            apiKey: "AIzaSyBK20atH4pmEORbuHLCTAXaSCPUBfz9190",
+            databaseURL: "https://jtc-motors-default-rtdb.europe-west1.firebasedatabase.app"
+        };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database(), auth = firebase.auth();
 
         let stock = {}, storeItems = {}, userRole = "", scanner = null;
-        let currentRepairParts = []; 
+        let currentRepairParts = [];
 
         const modelsByMake = {
             "Alfa Romeo": ["Giulia", "Stelvio", "Tonale", "Guilietta", "159"],
@@ -631,921 +634,865 @@
             "Fiat": ["500", "Panda", "Tipo", "Ducato", "Doblo"],
             "Ford": ["Focus", "Mondeo", "Fiesta", "Transit", "Puma", "Kuga", "Ranger", "Mustang", "Explorer"],
             "Honda": ["Civic", "CR-V", "HR-V", "Jazz", "Accord"],
-            "Hyundai": ["i10", "i20", "i30", "Tucson", "Santa Fe", "Ioniq 5", "Kona"],
-            "Infiniti": ["Q30", "Q50", "QX70"],
-            "Jaguar": ["XF", "XJ", "F-Pace", "E-Pace", "I-Pace"],
-            "Jeep": ["Grand Cherokee", "Wrangler", "Compass", "Renegade"],
-            "Kia": ["Ceed", "Sportage", "Sorento", "Rio", "Niro", "EV6", "Stinger"],
-            "Land Rover": ["Range Rover", "Defender", "Discovery", "Evoque", "Velar"],
-            "Lexus": ["IS", "GS", "LS", "RX", "NX", "UX", "ES"],
-            "Mazda": ["Mazda 2", "Mazda 3", "Mazda 6", "CX-3", "CX-30", "CX-5", "CX-60", "MX-5"],
-            "Mercedes-Benz": ["A-Class", "B-Class", "C-Class", "E-Class", "S-Class", "CLA", "CLS", "GLA", "GLB", "GLC", "GLE", "GLS", "G-Class", "Sprinter", "Vito"],
-            "Mini": ["Cooper", "Countryman", "Clubman"],
-            "Mitsubishi": ["Outlander", "L200", "ASX", "Eclipse Cross", "Pajero"],
-            "Nissan": ["Qashqai", "Juke", "X-Trail", "Leaf", "Navara", "Micra"],
-            "Opel": ["Astra", "Insignia", "Corsa", "Mokka", "Grandland", "Zafira", "Vivaro"],
-            "Peugeot": ["208", "308", "508", "2008", "3008", "5008", "Partner", "Boxer"],
+            "Hyundai": ["i10", "i20", "i30", "Tucson", "Santa Fe", "IONIQ 5", "IONIQ 6", "Bayon", "Kona"],
+            "Jaguar": ["XE", "XF", "XJ", "E-Pace", "F-Pace", "I-Pace"],
+            "Jeep": ["Renegade", "Compass", "Grand Cherokee", "Wrangler"],
+            "Kia": ["Ceed", "Sportage", "Sorento", "Niro", "EV6", "Stinger", "Picanto"],
+            "Land Rover": ["Defender", "Discovery", "Discovery Sport", "Range Rover", "Range Rover Sport", "Evoque", "Velar"],
+            "Lexus": ["RX", "NX", "UX", "ES", "LS", "LC"],
+            "Mazda": ["2", "3", "6", "CX-30", "CX-5", "CX-60", "MX-5"],
+            "Mercedes-Benz": ["A-Klase", "B-Klase", "C-Klase", "E-Klase", "S-Klase", "CLA", "CLS", "GLA", "GLB", "GLC", "GLE", "GLS", "EQE", "EQS", "V-Klase", "Sprinter"],
+            "MINI": ["Cooper", "Countryman", "Clubman"],
+            "Mitsubishi": ["ASX", "Eclipse Cross", "Outlander", "L200"],
+            "Nissan": ["Juke", "Qashqai", "X-Trail", "Leaf", "Ariya", "Navara"],
+            "Opel": ["Corsa", "Astra", "Insignia", "Mokka", "Grandland", "Combo", "Vivaro"],
+            "Peugeot": ["208", "308", "508", "2008", "3008", "5008", "Partner", "Expert"],
             "Porsche": ["911", "Cayenne", "Macan", "Panamera", "Taycan"],
-            "Renault": ["Clio", "Megane", "Captur", "Kadjar", "Austral", "Trafic", "Master", "Scenic"],
-            "Seat": ["Ibiza", "Leon", "Ateca", "Tarraco", "Alhambra"],
-            "Skoda": ["Octavia", "Superb", "Fabia", "Kodiaq", "Karoq", "Kamiq", "Enyaq"],
-            "Subaru": ["Outback", "Forester", "XV", "Impreza"],
-            "Suzuki": ["Vitara", "Swift", "Jimny", "SX4 S-Cross"],
-            "Tesla": ["Model 3", "Model S", "Model X", "Model Y"],
-            "Toyota": ["Corolla", "Avensis", "Yaris", "RAV4", "Land Cruiser", "Hilux", "C-HR", "Camry", "Proace"],
-            "Volkswagen": ["Golf", "Passat", "Tiguan", "Touareg", "Transporter", "Caddy", "Arteon", "ID.3", "ID.4", "ID.5", "Polo", "Crafter"],
-            "Volvo": ["S40", "S60", "S80", "S90", "V40", "V60", "V70", "V90", "XC40", "XC60", "XC70", "XC90"]
+            "Renault": ["Clio", "Megane", "Captur", "Austral", "Arkana", "Espace", "Master", "Traffic"],
+            "Skoda": ["Fabia", "Scala", "Octavia", "Superb", "Kamiq", "Karoq", "Kodiaq", "Enyaq"],
+            "Subaru": ["Outback", "Forester", "XV", "Solterra"],
+            "Suzuki": ["Swift", "Vitara", "S-Cross", "Jimny"],
+            "Toyota": ["Yaris", "Corolla", "Camry", "C-HR", "RAV4", "Highlander", "Land Cruiser", "Hilux", "Proace"],
+            "Volkswagen": ["Golf", "Passat", "Polo", "Tiguan", "Touareg", "Arteon", "T-Roc", "Taigo", "ID.3", "ID.4", "ID.5", "ID. Buzz", "Transporter", "Crafter"],
+            "Volvo": ["S60", "S90", "V60", "V90", "XC40", "XC60", "XC90"]
         };
 
-        auth.onAuthStateChanged(user => {
-            if(user) {
-                const bossEmail = "prieksnieks@gmail.com"; 
+        function populateMakes() {
+            const makeSelect = document.getElementById('rep-make');
+            if(!makeSelect) return;
+            makeSelect.innerHTML = '<option value="">Izvēlieties marku</option>';
+            Object.keys(modelsByMake).sort().forEach(make => {
+                const opt = document.createElement('option');
+                opt.value = make; opt.innerText = make;
+                makeSelect.appendChild(opt);
+            });
+        }
 
-                if (user.email === "cihmuks@gmail.com") {
-                    userRole = "Admin";
-                    document.getElementById('n-logs').style.display = 'flex';
-                } else if (user.email === bossEmail) {
-                    userRole = "Priekšnieks";
-                    document.getElementById('n-logs').style.display = 'none'; 
-                } else {
-                    userRole = "Jānis Tālbergs-Priekšnieks";
-                    document.getElementById('n-logs').style.display = 'none'; 
-                }
-                
-                document.getElementById('user-badge').innerText = userRole;
+        function updateModels() {
+            const make = document.getElementById('rep-make').value;
+            const modelSelect = document.getElementById('rep-model');
+            modelSelect.innerHTML = '<option value="">Visi modeļi</option>';
+            if(modelsByMake[make]) {
+                modelsByMake[make].forEach(model => {
+                    const opt = document.createElement('option');
+                    opt.value = model; opt.innerText = model;
+                    modelSelect.appendChild(opt);
+                });
+            }
+        }
+
+        function populateYears() {
+            const yearSelect = document.getElementById('rep-year');
+            if(!yearSelect) return;
+            yearSelect.innerHTML = '<option value="">Gads</option>';
+            for(let y = new Date().getFullYear(); y >= 1990; y--) {
+                const opt = document.createElement('option');
+                opt.value = y; opt.innerText = y;
+                yearSelect.appendChild(opt);
+            }
+        }
+
+        auth.onAuthStateChanged(user => {
+            if (user) {
                 document.getElementById('login-screen').style.display = 'none';
                 document.getElementById('app-ui').style.display = 'block';
-                init();
+                document.getElementById('user-badge').innerText = user.email.split('@')[0].toUpperCase();
+                addLog("Lietotājs autorizēts: " + user.email);
+                
+                db.ref('stock').on('value', s => { stock = s.val() || {}; drawStock(); updateRepPartsSelect(); });
+                db.ref('repairs').on('value', s => { drawRepairs(s.val()); });
+                db.ref('store').on('value', s => { storeItems = s.val() || {}; drawStore(); });
+                db.ref('orders').on('value', s => { drawOrders(s.val()); });
+                db.ref('clients').on('value', s => { drawClients(s.val()); });
+                db.ref('sold_history').on('value', s => { drawSoldHistory(s.val()); });
+                db.ref('logs').limitToLast(50).on('value', s => { 
+                    const logsBox = document.getElementById('logs-box');
+                    logsBox.innerHTML = "";
+                    const data = s.val() || {};
+                    Object.values(data).reverse().forEach(log => {
+                        const div = document.createElement('div');
+                        div.className = "flex gap-2 border-b border-white/5 pb-1";
+                        div.innerHTML = `<span class="text-slate-600">[${log.time}]</span> <span class="text-slate-300">${log.msg}</span>`;
+                        logsBox.appendChild(div);
+                    });
+                });
+                populateMakes(); populateYears();
             } else {
                 document.getElementById('login-screen').style.display = 'flex';
                 document.getElementById('app-ui').style.display = 'none';
             }
         });
 
-        async function doLogin() {
-            const e = document.getElementById('l-email').value, 
-                  p = document.getElementById('l-pass').value,
-                  rem = document.getElementById('l-remember').checked;
-
-            if(!e || !p) return alert("Ievadiet datus!");
-
-            try {
-                const persistence = rem ? firebase.auth.Auth.Persistence.LOCAL : firebase.auth.Auth.Persistence.SESSION;
-                await auth.setPersistence(persistence);
-                await auth.signInWithEmailAndPassword(e, p); 
-                log("Sistēma: Lietotājs pieslēdzās");
-            } catch(err) { 
-                alert("Piekļuve liegta: " + err.message); 
-            }
+        function doLogin() {
+            const e = document.getElementById('l-email').value, p = document.getElementById('l-pass').value;
+            auth.signInWithEmailAndPassword(e, p).catch(err => alert("Kļūda: " + err.message));
         }
 
-        async function forgotPassword() {
-            const email = document.getElementById('l-email').value;
-            if (!email) return alert("Lūdzu, ievadiet e-pastu laukā!");
-            try {
-                await auth.sendPasswordResetEmail(email);
-                alert("Paroles atiestatīšanas saite nosūtīta uz " + email);
-                log("Sistēma: Pieprasīta paroles maiņa " + email);
-            } catch (err) {
-                alert("Kļūda: " + err.message);
-            }
-        }
-
-        function setSec(s) {
-            document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
+        function setSec(id) {
+            document.querySelectorAll('.tab-content').forEach(s => s.classList.add('hidden'));
+            document.getElementById('sec-' + id).classList.remove('hidden');
             document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-            const target = document.getElementById('sec-' + s);
-            if(target) target.classList.remove('hidden');
-            const nav = document.getElementById('n-' + s);
-            if(nav) nav.classList.add('active');
-        }
-
-        function init() {
-            loadStock(); loadRepairs(); loadOrders(); loadClients(); loadFin(); loadLogs(); loadStore(); loadSoldHistory();
-            fillMakes(); fillYears();
-        }
-
-        function fillMakes() {
-            let h = '<option value="">Izvēlies...</option>';
-            Object.keys(modelsByMake).sort().forEach(m => h += `<option value="${m}">${m}</option>`);
-            document.getElementById('rep-make').innerHTML = h;
-        }
-
-        function fillYears() {
-            let h = '<option value="">---</option>';
-            for(let y = 2026; y >= 1990; y--) h += `<option value="${y}">${y}</option>`;
-            document.getElementById('rep-year').innerHTML = h;
-        }
-
-        function updateModels() {
-            const make = document.getElementById('rep-make').value;
-            let h = '<option value="">Izvēlies...</option>';
-            if(modelsByMake[make]) {
-                modelsByMake[make].forEach(m => h += `<option value="${m}">${m}</option>`);
-            }
-            document.getElementById('rep-model').innerHTML = h;
-        }
-
-        function log(msg) { db.ref('logs').push({t: new Date().toLocaleString('lv-LV'), u: userRole, i: msg}); }
-
-        function clearLogs() {
-            if(confirm("Vai tiešām vēlaties dzēst VISUS ierakstus no žurnāla? Šī darbība ir neatgriezeniska.")) {
-                db.ref('logs').remove()
-                    .then(() => {
-                        log("Sistēma: Žurnāls tika pilnībā notīrīts.");
-                    })
-                    .catch(error => {
-                        alert("Kļūda dzēšot žurnālu: " + error.message);
-                    });
-            }
-        }
-
-        async function uploadImages(fileInput) {
-            const urls = [];
-            if(fileInput && fileInput.files.length > 0) {
-                for(let file of fileInput.files) {
-                    const formData = new FormData();
-                    formData.append("image", file);
-                    try {
-                        const response = await fetch("https://api.imgbb.com/1/upload?key=1e5fd5e4f97806bc6b403e42c3d94288", { method: "POST", body: formData });
-                        const result = await response.json();
-                        if(result.success) urls.push(result.data.display_url);
-                    } catch (err) { console.error("Augšupielādes kļūda"); }
-                }
-            }
-            return urls;
-        }
-
-        function openDetailModal(id, type) {
-            const i = type === 'stock' ? stock[id] : storeItems[id];
-            const imgs = i.imgs || (i.img ? [i.img] : []);
-            const priceBruto = (type === 'stock' ? (i.p * (i.vat == 21 ? 1.21 : 1)) : i.p).toFixed(2);
-            
-            let imgsHtml = '<div class="detail-img-scroll">';
-            if(imgs.length > 0) {
-                imgs.forEach(url => { imgsHtml += `<img src="${url}" onclick="window.open('${url}')" class="cursor-zoom-in">`; });
-            } else {
-                imgsHtml += `<div class="bg-slate-100 w-full h-32 flex items-center justify-center rounded-xl text-slate-400 font-bold uppercase italic text-xs tracking-widest">Nav attēlu</div>`;
-            }
-            imgsHtml += '</div>';
-
-            const html = `
-                <div class="space-y-6">
-                    ${imgsHtml}
-                    <div>
-                        <h2 class="text-2xl font-black text-slate-900 leading-tight mb-2">${i.n}</h2>
-                        ${i.oem ? `<div class="text-amber-600 font-black text-xs uppercase tracking-widest mb-2">OEM: ${i.oem}</div>` : ''}
-                        <div class="flex flex-wrap gap-2">
-                            <span class="bg-amber-500 text-slate-900 px-3 py-1 rounded-full font-black text-xs uppercase italic tracking-tighter">PLAUKTS: ${i.l || '---'}</span>
-                            <span class="bg-slate-900 text-white px-3 py-1 rounded-full font-black text-xs uppercase italic tracking-tighter">ATLIKUMS: ${i.q} GAB</span>
-                        </div>
-                    </div>
-                    
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                            <div class="text-[10px] text-slate-400 font-black uppercase tracking-widest">Cena bez PVN</div>
-                            <div class="text-xl font-black text-slate-900">${(type === 'stock' ? i.p : (i.p_neto || 0)).toFixed(2)}€</div>
-                        </div>
-                        <div class="bg-amber-50 p-4 rounded-2xl border border-amber-100">
-                            <div class="text-[10px] text-amber-600 font-black uppercase tracking-widest">Cena ar PVN (${i.vat}%)</div>
-                            <div class="text-2xl font-black text-amber-600">${priceBruto}€</div>
-                        </div>
-                    </div>
-
-                    <div class="space-y-3">
-                        <div class="bg-slate-900 p-4 rounded-2xl">
-                             <div class="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-1">EAN Svītrkods 1</div>
-                             <div class="text-white font-mono font-bold">${i.e || '---'}</div>
-                        </div>
-                        ${(i.e2 && type === 'stock') ? `
-                        <div class="bg-slate-900 p-4 rounded-2xl">
-                             <div class="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-1">EAN Svītrkods 2</div>
-                             <div class="text-white font-mono font-bold">${i.e2}</div>
-                        </div>` : ''}
-                    </div>
-
-                    <div class="flex gap-3">
-                         <button onclick="closeDetailModal(); ${type === 'stock' ? `editStock('${id}')` : `editStore('${id}')`}" class="flex-1 bg-slate-100 text-slate-900 font-black py-4 rounded-2xl uppercase text-xs tracking-widest shadow-sm hover:bg-slate-200">Labot informāciju</button>
-                         <button onclick="printEAN('${i.e}', '${i.n}')" class="bg-amber-500 text-slate-900 font-black px-6 py-4 rounded-2xl uppercase text-xs tracking-widest shadow-lg shadow-amber-200"><i class="fas fa-print"></i></button>
-                    </div>
-                </div>
-            `;
-            document.getElementById('detail-modal-content').innerHTML = html;
-            document.getElementById('product-detail-modal').classList.remove('hidden');
-        }
-
-        function closeDetailModal() { document.getElementById('product-detail-modal').classList.add('hidden'); }
-
-        function loadStock() {
-            db.ref('stock').on('value', s => {
-                stock = s.val() || {};
-                drawStock(); 
-                updatePartSelect();
-                let v = 0; Object.values(stock).forEach(i => v += (i.q * (i.p * (i.vat == 21 ? 1.21 : 1))));
-                document.getElementById('s-val').innerText = v.toFixed(0) + "€";
-            });
-        }
-
-        function drawStock() {
-            const q = document.getElementById('q-stock').value.toLowerCase();
-            let h = '';
-            const sortedKeys = Object.keys(stock).sort().reverse();
-
-            sortedKeys.forEach(id => {
-                const i = stock[id];
-                if(i.n.toLowerCase().includes(q) || (i.e && i.e.toString().includes(q)) || (i.e2 && i.e2.toString().includes(q)) || (i.oem && i.oem.toLowerCase().includes(q))) {
-                    const priceNeto = parseFloat(i.p).toFixed(2);
-                    const priceBruto = (i.p * (i.vat == 21 ? 1.21 : 1)).toFixed(2);
-                    const isLowStock = i.q <= 2;
-                    const cardStyle = isLowStock ? 'style="background-color: #fff1f2; border-color: #fda4af;"' : '';
-
-                    let mainImg = '<div class="stock-img-mini flex items-center justify-center text-slate-300" onclick="openDetailModal(\''+id+'\', \'stock\')"><i class="fas fa-box"></i></div>';
-                    if(i.imgs && i.imgs.length > 0) {
-                        mainImg = `<div class="relative" onclick="openDetailModal('${id}', 'stock')"><img src="${i.imgs[0]}" class="stock-img-mini" alt="${i.n}">${i.imgs.length > 1 ? `<span class="absolute -bottom-1 -right-1 bg-amber-500 text-black text-[8px] px-1 rounded font-bold">+${i.imgs.length - 1}</span>` : ''}</div>`;
-                    }
-
-                    h += `
-                    <div class="stock-item-advanced" ${cardStyle}>
-                        <div class="flex flex-col items-center gap-1">
-                            <div class="shelf-tag">${i.l || '---'}</div>
-                            <div class="text-[10px] font-black uppercase text-slate-400">Plaukts</div>
-                        </div>
-                        ${mainImg}
-                        <div class="min-w-0" onclick="openDetailModal('${id}', 'stock')" style="cursor:pointer;">
-                            <h4 class="font-bold text-slate-800 truncate text-sm">${i.n}</h4>
-                            ${i.oem ? `<div class="text-[10px] text-amber-600 font-black uppercase tracking-widest -mt-1 mb-1">OEM: ${i.oem}</div>` : ''}
-                            <div class="flex flex-wrap items-center gap-2 mt-1">
-                                <span class="text-[10px] font-mono text-blue-500 font-bold bg-blue-50 px-1.5 py-0.5 rounded"><i class="fas fa-barcode mr-1"></i>${i.e || '-'}</span>
-                                <span class="text-[10px] font-black uppercase ${i.q < 3 ? 'text-red-600' : 'text-slate-400'}">${i.q} GAB</span>
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-4">
-                            <div class="text-right">
-                                <div class="price-badge-neto">${priceNeto}€ <span class="text-[8px] opacity-50">Neto</span></div>
-                                <div class="price-badge-bruto text-amber-600">${priceBruto}€</div>
-                            </div>
-                            <div class="flex flex-col gap-1">
-                                <button onclick="sellStockItem('${id}')" class="w-8 h-8 flex items-center justify-center rounded-lg bg-green-100 text-green-600 hover:bg-green-500 hover:text-white transition-all" title="Pārdot preci"><i class="fas fa-shopping-cart text-xs"></i></button>
-                                <button onclick="printEAN('${i.e}', '${i.n}')" class="w-8 h-8 flex items-center justify-center rounded-lg bg-amber-100 text-amber-600 hover:bg-amber-500 hover:text-white transition-all" title="Drukāt EAN uzlīmi"><i class="fas fa-print text-xs"></i></button>
-                                <button onclick="editStock('${id}')" class="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-100 text-slate-400 hover:bg-blue-500 hover:text-white transition-all"><i class="fas fa-edit text-xs"></i></button>
-                                <button onclick="deleteStockItem('${id}')" class="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-100 text-slate-300 hover:bg-red-500 hover:text-white transition-all"><i class="fas fa-trash-alt text-xs"></i></button>
-                            </div>
-                        </div>
-                    </div>`;
-                }
-            });
-            document.getElementById('stock-list').innerHTML = h || '<div class="text-center p-10 opacity-20 font-bold italic">Noliktavā nekas nav atrasts...</div>';
+            document.getElementById('n-' + id).classList.add('active');
+            window.scrollTo(0,0);
         }
 
         async function addStock() {
-            const n = document.getElementById('st-n').value, oem = document.getElementById('st-oem').value, p = document.getElementById('st-p').value, q = document.getElementById('st-q').value, e = document.getElementById('st-e').value, e2 = document.getElementById('st-e2').value, l = document.getElementById('st-l').value, fileInput = document.getElementById('st-file'), btn = document.getElementById('btn-add-stock');
-            if(!n || !p) return alert("Aizpildi nosaukumu un cenu!");
-            btn.innerText = "AUGŠUPIELĀDĒ ATTĒLUS..."; btn.disabled = true;
-            const imageUrls = await uploadImages(fileInput);
-            db.ref('stock').push({ n, oem: oem || '', p: parseFloat(p), vat: document.getElementById('st-vat').value, q: parseInt(q || 1), l: l || 'Nav', e: e || Date.now(), e2: e2 || '', imgs: imageUrls }).then(() => {
-                btn.innerText = "Saglabāt Noliktavā"; btn.disabled = false;
-                document.querySelectorAll('#sec-stock input').forEach(i => i.value = '');
-                log("Noliktava: Pievienota prece " + n);
+            const n = document.getElementById('st-n').value, 
+                  oem = document.getElementById('st-oem').value,
+                  p = parseFloat(document.getElementById('st-p').value) || 0,
+                  v = parseInt(document.getElementById('st-vat').value),
+                  q = parseInt(document.getElementById('st-q').value) || 0,
+                  l = document.getElementById('st-l').value.toUpperCase(),
+                  e1 = document.getElementById('st-e').value,
+                  e2 = document.getElementById('st-e2').value,
+                  files = document.getElementById('st-file').files;
+
+            if (!n) return alert("Ievadiet nosaukumu!");
+            const btn = document.getElementById('btn-add-stock');
+            btn.disabled = true; btn.innerText = "SAGLABĀ...";
+
+            let imgs = [];
+            for(let f of files) { imgs.push(await toBase64(f)); }
+
+            const id = Date.now();
+            db.ref('stock/' + id).set({
+                id, name: n, oem, price_neto: p, vat: v, qty: q, shelf: l, ean: e1, ean2: e2, images: imgs, timestamp: id
+            }).then(() => {
+                alert("Prece saglabāta!");
+                addLog(`Noliktavā pievienota prece: ${n} (${q}gb)`);
+                ['st-n', 'st-oem', 'st-p', 'st-q', 'st-l', 'st-e', 'st-e2', 'st-file'].forEach(i => document.getElementById(i).value = "");
+            }).finally(() => { btn.disabled = false; btn.innerText = "Saglabāt Noliktavā"; });
+        }
+
+        function drawStock() {
+            const list = document.getElementById('stock-list'), q = document.getElementById('q-stock').value.toLowerCase();
+            list.innerHTML = "";
+            
+            // Kārtošana: Jaunākie pirmo
+            const sortedItems = Object.values(stock).sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+            
+            sortedItems.forEach(item => {
+                if (item.name.toLowerCase().includes(q) || (item.ean && item.ean.includes(q)) || (item.oem && item.oem.toLowerCase().includes(q))) {
+                    const bruto = (item.price_neto * (1 + item.vat/100)).toFixed(2);
+                    const div = document.createElement('div');
+                    div.className = "stock-item-advanced";
+                    div.innerHTML = `
+                        <img src="${item.images ? item.images[0] : ''}" class="stock-img-mini" onclick="showProductDetail('${item.id}', 'stock')">
+                        <div class="shelf-tag">${item.shelf || 'N/A'}</div>
+                        <div onclick="showProductDetail('${item.id}', 'stock')" class="cursor-pointer">
+                            <div class="font-black text-slate-900 leading-tight uppercase text-sm">${item.name}</div>
+                            <div class="text-[10px] text-slate-400 font-bold">OEM: ${item.oem || '-'} | QTY: <span class="${item.qty < 3 ? 'text-red-500':'text-green-600'}">${item.qty} gb.</span></div>
+                        </div>
+                        <div class="text-right">
+                            <div class="price-badge-neto">${item.price_neto.toFixed(2)}€</div>
+                            <div class="price-badge-bruto">${bruto}€</div>
+                        </div>
+                        <div class="flex gap-1">
+                            <button onclick="editStockItem('${item.id}')" class="text-blue-500 w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center"><i class="fas fa-edit fa-xs"></i></button>
+                            <button onclick="sellStockItem('${item.id}')" class="text-red-500 w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center"><i class="fas fa-shopping-basket fa-xs"></i></button>
+                        </div>
+                    `;
+                    list.appendChild(div);
+                }
             });
         }
 
-        function deleteStockItem(id) {
+        function editStockItem(id) {
             const item = stock[id];
-            if(!confirm(`Vai tiešām vēlaties dzēst "${item.n}"? Prece tiks pārvietota uz Realizācijas sadaļu kā Dzēsta.`)) return;
+            const modal = document.getElementById('edit-modal');
+            const content = document.getElementById('edit-modal-content');
             
-            const priceBruto = (item.p * (item.vat == 21 ? 1.21 : 1)).toFixed(2);
-            db.ref('sold_history').push({
-                n: item.n,
-                oem: item.oem || '---',
-                p: priceBruto,
-                status: 'DZĒSTS',
-                d: new Date().toLocaleString('lv-LV')
-            });
+            content.innerHTML = `
+                <label class="input-group-label">Nosaukums</label>
+                <input id="ed-n" value="${item.name}">
+                <label class="input-group-label">OEM Kods</label>
+                <input id="ed-oem" value="${item.oem || ''}" class="uppercase">
+                <div class="grid grid-cols-2 gap-4">
+                    <div><label class="input-group-label">Cena bez PVN</label><input id="ed-p" type="number" step="0.01" value="${item.price_neto}"></div>
+                    <div><label class="input-group-label">Daudzums</label><input id="ed-q" type="number" value="${item.qty}"></div>
+                </div>
+                <label class="input-group-label">Plaukts</label>
+                <input id="ed-l" value="${item.shelf || ''}" class="uppercase">
+                <label class="input-group-label">Svītrkods</label>
+                <input id="ed-e" value="${item.ean || ''}">
+                
+                <label class="input-group-label">Esošie attēli</label>
+                <div class="img-grid-edit" id="ed-imgs"></div>
+                
+                <label class="input-group-label">Pievienot jaunus attēlus</label>
+                <input id="ed-file" type="file" multiple accept="image/*" class="text-xs">
 
-            db.ref('stock/' + id).remove().then(() => {
-                log(`Noliktava: Prece "${item.n}" tika dzēsta un fiksēta vēsturē.`);
-            });
+                <div class="flex flex-col gap-3 mt-6">
+                    <button onclick="saveStockEdit('${id}')" class="btn-jt !bg-green-600 !text-white">Saglabāt izmaiņas</button>
+                    <button onclick="printEAN('${item.ean}', '${item.name}', '${(item.price_neto * (1 + item.vat/100)).toFixed(2)}')" class="bg-blue-600 text-white font-black py-4 rounded-xl uppercase tracking-widest text-xs">
+                        <i class="fas fa-print mr-2"></i> Drukāt EAN Svītrkodu
+                    </button>
+                    <button onclick="deleteStockItem('${id}')" class="bg-red-100 text-red-600 font-black py-3 rounded-xl uppercase tracking-widest text-[10px]">Dzēst preci</button>
+                </div>
+            `;
+
+            const imgContainer = document.getElementById('ed-imgs');
+            if(item.images) {
+                item.images.forEach((img, idx) => {
+                    const wrap = document.createElement('div');
+                    wrap.className = "img-edit-wrap";
+                    wrap.innerHTML = `<img src="${img}"><button onclick="removeEditImg('${id}', ${idx})" class="img-edit-del"><i class="fas fa-times"></i></button>`;
+                    imgContainer.appendChild(wrap);
+                });
+            }
+            modal.classList.remove('hidden');
+        }
+
+        async function saveStockEdit(id) {
+            const n = document.getElementById('ed-n').value,
+                  oem = document.getElementById('ed-oem').value,
+                  p = parseFloat(document.getElementById('ed-p').value) || 0,
+                  q = parseInt(document.getElementById('ed-q').value) || 0,
+                  l = document.getElementById('ed-l').value.toUpperCase(),
+                  e = document.getElementById('ed-e').value,
+                  newFiles = document.getElementById('ed-file').files;
+
+            let imgs = stock[id].images || [];
+            for(let f of newFiles) { imgs.push(await toBase64(f)); }
+
+            db.ref('stock/' + id).update({
+                name: n, oem: oem, price_neto: p, qty: q, shelf: l, ean: e, images: imgs
+            }).then(() => { closeEditModal(); addLog(`Labota prece: ${n}`); });
+        }
+
+        function removeEditImg(id, idx) {
+            if(!confirm("Dzēst šo attēlu?")) return;
+            let imgs = stock[id].images;
+            imgs.splice(idx, 1);
+            db.ref('stock/' + id).update({ images: imgs }).then(() => editStockItem(id));
+        }
+
+        function deleteStockItem(id) {
+            if(confirm("Vai tiešām dzēst šo preci no noliktavas?")) {
+                db.ref('stock/' + id).remove().then(() => { closeEditModal(); addLog(`Dzēsta prece no noliktavas (ID: ${id})`); });
+            }
         }
 
         function sellStockItem(id) {
             const item = stock[id];
-            if (!item || item.q <= 0) return alert("Prece nav atlikumā!");
+            const qty = prompt(`Cik gabalus ${item.name} pārdot? (Pieejami ${item.qty})`, "1");
+            const q = parseInt(qty);
+            if(!q || q <= 0) return;
+            if(q > item.qty) return alert("Nepietiekams atlikums!");
 
-            if (confirm(`Pārdot 1 gab. "${item.n}" par ${ (item.p * (item.vat == 21 ? 1.21 : 1)).toFixed(2) }€?`)) {
-                const newQty = item.q - 1;
-                const priceBruto = (item.p * (item.vat == 21 ? 1.21 : 1)).toFixed(2);
-                
-                db.ref('stock/' + id).update({ q: newQty });
-
-                db.ref('sold_history').push({
-                    n: item.n,
-                    oem: item.oem || '---',
-                    p: priceBruto,
-                    status: 'PĀRDOTS',
-                    d: new Date().toLocaleString('lv-LV')
+            const newQty = item.qty - q;
+            db.ref('stock/' + id).update({ qty: newQty }).then(() => {
+                const soldId = Date.now();
+                const total = (item.price_neto * (1 + item.vat/100) * q).toFixed(2);
+                db.ref('sold_history/' + soldId).set({
+                    id: soldId,
+                    item_id: id,
+                    name: item.name,
+                    oem: item.oem || '-',
+                    qty: q,
+                    price_bruto: (item.price_neto * (1 + item.vat/100)).toFixed(2),
+                    total_bruto: total,
+                    date: new Date().toLocaleString('lv-LV'),
+                    status: 'NOLIKTAVAS REALIZĀCIJA'
                 });
-
-                db.ref('finances').push({
-                    nr: "PĀRDOŠANA: " + item.n,
-                    cl: "Mazumtirdzniecība",
-                    task: `Tiešā pārdošana no noliktavas. (OEM: ${item.oem || '---'})`,
-                    price: parseFloat(priceBruto),
-                    d: new Date().toLocaleDateString('lv-LV')
-                });
-
-                log(`Noliktava: Pārdots "${item.n}" (Atlikums: ${newQty})`);
-                document.getElementById('scan-sound').play().catch(e => {});
-            }
-        }
-
-        function loadSoldHistory() {
-            db.ref('sold_history').on('value', s => {
-                const data = s.val();
-                const container = document.getElementById('sold-list-body');
-                if(!data) {
-                    container.innerHTML = '<tr><td colspan="5" class="p-10 text-center opacity-20 italic font-bold">Vēsture ir tukša</td></tr>';
-                    return;
-                }
-                let h = '';
-                Object.keys(data).reverse().forEach(id => {
-                    const i = data[id];
-                    let statusColor = 'bg-green-100 text-green-600';
-                    if(i.status === 'DZĒSTS') statusColor = 'bg-red-100 text-red-600';
-                    if(i.status === 'SERVISS') statusColor = 'bg-blue-100 text-blue-600';
-
-                    h += `
-                    <tr class="hover:bg-slate-50 transition-colors">
-                        <td class="p-4 font-mono text-[10px] text-slate-500">${i.d}</td>
-                        <td class="p-4">
-                            <div class="font-bold text-slate-900">${i.n}</div>
-                            <div class="text-[10px] text-amber-600 font-black uppercase">OEM: ${i.oem} ${i.car_nr ? '| AUTO: ' + i.car_nr : ''}</div>
-                        </td>
-                        <td class="p-4 text-center">
-                            <span class="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${statusColor}">${i.status}</span>
-                        </td>
-                        <td class="p-4 text-right font-black text-slate-900">${i.p}€</td>
-                        <td class="p-4 text-center">
-                            <button onclick="returnItemToStock('${id}')" class="bg-amber-500 hover:bg-amber-600 text-white text-[10px] font-black px-3 py-1 rounded-lg uppercase tracking-wider transition-all" title="Atgriezt noliktavā">Atgriezt</button>
-                        </td>
-                    </tr>`;
-                });
-                container.innerHTML = h;
+                addLog(`Pārdota prece: ${item.name} (${q}gb), Summa: ${total}€`);
+                alert("Realizācija reģistrēta!");
             });
         }
 
-        function returnItemToStock(historyId) {
-            db.ref('sold_history/' + historyId).once('value', s => {
-                const soldItem = s.val();
-                if (!soldItem) return;
-
-                if (confirm(`Vai tiešām atgriezt preci "${soldItem.n}" noliktavā?`)) {
-                    let foundKey = null;
-                    Object.keys(stock).forEach(key => {
-                        if (stock[key].n === soldItem.n && stock[key].oem === soldItem.oem) {
-                            foundKey = key;
-                        }
-                    });
-
-                    if (foundKey) {
-                        const newQty = (stock[foundKey].q || 0) + 1;
-                        db.ref('stock/' + foundKey).update({ q: newQty }).then(() => {
-                            db.ref('sold_history/' + historyId).remove();
-                            log(`Sistēma: Prece "${soldItem.n}" atgriezta noliktavā. Jaunais atlikums: ${newQty}`);
-                            alert("Prece veiksmīgi atgriezta noliktavā!");
-                        });
-                    } else {
-                        alert("Kļūda: Šī prece vairs neeksistē noliktavas sarakstā (tika izdzēsta). Atgriešana nav iespējama bez manuālas pievienošanas.");
-                    }
-                }
+        function drawSoldHistory(data) {
+            const body = document.getElementById('sold-list-body');
+            body.innerHTML = "";
+            if(!data) {
+                body.innerHTML = `<tr><td colspan="5" class="p-10 text-center opacity-20 italic font-bold">Vēsture ir tukša</td></tr>`;
+                return;
+            }
+            Object.values(data).reverse().forEach(h => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="p-4 font-mono text-xs">${h.date}</td>
+                    <td class="p-4">
+                        <div class="font-black uppercase">${h.name}</div>
+                        <div class="text-[10px] text-slate-400">OEM: ${h.oem} | Daudzums: ${h.qty}gb.</div>
+                    </td>
+                    <td class="p-4 text-center"><span class="bg-red-100 text-red-600 px-2 py-1 rounded-md text-[9px] font-black uppercase">${h.status}</span></td>
+                    <td class="p-4 text-right font-black text-slate-900">${h.total_bruto}€</td>
+                    <td class="p-4 text-center">
+                        <button onclick="printSoldReceipt('${h.id}')" class="text-slate-400 hover:text-slate-900"><i class="fas fa-print"></i></button>
+                    </td>
+                `;
+                body.appendChild(tr);
             });
         }
 
         function clearSoldHistory() {
-            if(confirm("Vai tiešām vēlaties izdzēst VISU realizācijas vēsturi?")) {
-                db.ref('sold_history').remove().then(() => log("Sistēma: Realizācijas vēsture notīrīta."));
+            if(confirm("Vai tiešām pilnībā notīrīt realizācijas vēsturi?")) {
+                db.ref('sold_history').remove().then(() => addLog("Realizācijas vēsture notīrīta."));
             }
         }
 
-        function loadStore() { db.ref('store_items').on('value', s => { storeItems = s.val() || {}; drawStore(); }); }
-
-        async function addStoreItem() {
-            const n = document.getElementById('store-in-n').value, fileInput = document.getElementById('store-in-file'), pNeto = document.getElementById('store-in-p-neto').value, vat = document.getElementById('store-in-vat').value, q = document.getElementById('store-in-q').value, l = document.getElementById('store-in-l').value, e = document.getElementById('store-in-e').value, btn = document.getElementById('btn-add-store');
-            if(!n || !pNeto) return alert("Aizpildi nosaukumu un cenu!");
-            btn.innerText = "AUGŠUPIELĀDĒ ATTĒLUS..."; btn.disabled = true;
-            const imageUrls = await uploadImages(fileInput);
-            const finalPriceBruto = (parseFloat(pNeto) * (vat == 21 ? 1.21 : 1)).toFixed(2);
-            db.ref('store_items').push({ n, imgs: imageUrls, p: parseFloat(finalPriceBruto), p_neto: parseFloat(pNeto), vat: vat, q: parseInt(q || 1), l: l || 'Veikals', e: e || "JT" + Date.now() }).then(() => {
-                btn.innerText = "Publicēt Veikalā"; btn.disabled = false;
-                document.querySelectorAll('#sec-store input').forEach(i => i.value = '');
-                log("Veikals: Pievienota prece " + n);
+        function updateRepPartsSelect() {
+            const sel = document.getElementById('rep-parts-select');
+            if(!sel) return;
+            sel.innerHTML = '<option value="">Izvēlieties detaļu no noliktavas...</option>';
+            Object.values(stock).sort((a,b) => a.name.localeCompare(b.name)).forEach(item => {
+                if(item.qty > 0) {
+                    const opt = document.createElement('option');
+                    opt.value = item.id;
+                    opt.innerText = `${item.name} (${item.qty}gb) - ${(item.price_neto * (1 + item.vat/100)).toFixed(2)}€`;
+                    sel.appendChild(opt);
+                }
             });
-        }
-
-        function drawStore() {
-            const q = document.getElementById('q-store').value.toLowerCase();
-            const container = document.getElementById('store-container');
-            container.innerHTML = '';
-            let itemsToDraw = [];
-            Object.keys(storeItems).forEach(id => {
-                const item = storeItems[id];
-                if (item.n.toLowerCase().includes(q) || (item.e && item.e.toString().includes(q))) itemsToDraw.push({id, ...item});
-            });
-
-            if (itemsToDraw.length > 0) {
-                let h = '<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">';
-                itemsToDraw.reverse().forEach(i => {
-                    let imgHtml = '<i class="fas fa-shopping-bag text-slate-200 fa-3x"></i>';
-                    if(i.imgs && i.imgs.length > 0) {
-                        imgHtml = `<img src="${i.imgs[0]}" alt="${i.n}">${i.imgs.length > 1 ? `<div class="absolute top-2 right-2 bg-amber-500 text-[10px] font-black px-2 py-0.5 rounded-full">+${i.imgs.length}</div>` : ''}`;
-                    }
-                    h += `<div class="store-card-v2"><div class="store-card-header" onclick="openDetailModal('${i.id}', 'store')">${imgHtml}<div class="absolute top-3 left-3 shelf-tag !bg-white/90 shadow-sm">${i.l || 'V-1'}</div></div><div class="store-card-body"><h3 class="font-bold text-slate-800 text-sm leading-tight h-10 overflow-hidden mb-3" onclick="openDetailModal('${i.id}', 'store')" style="cursor:pointer;">${i.n}</h3><div class="bg-slate-50 p-2 rounded-xl border border-slate-100 flex justify-between items-center"><div><div class="text-[9px] text-slate-400 font-bold uppercase">Cena ar PVN</div><div class="text-xl font-black text-slate-900 leading-none">${parseFloat(i.p).toFixed(2)}€</div></div><div class="flex gap-1"><button onclick="editStore('${i.id}')" class="w-8 h-8 rounded-full bg-white text-slate-400 shadow-sm flex items-center justify-center hover:text-blue-500"><i class="fas fa-edit text-[10px]"></i></button><button onclick="if(confirm('Dzēst preci?')) db.ref('store_items/${i.id}').remove()" class="w-8 h-8 rounded-full bg-white text-slate-200 shadow-sm flex items-center justify-center hover:text-red-500"><i class="fas fa-trash text-[10px]"></i></button></div></div></div></div>`;
-                });
-                h += '</div>';
-                container.innerHTML = h;
-            }
-        }
-
-        function openEditModal(title, contentHtml) {
-            document.getElementById('edit-modal-title').innerText = title;
-            document.getElementById('edit-modal-content').innerHTML = contentHtml;
-            document.getElementById('edit-modal').classList.remove('hidden');
-        }
-        function closeEditModal() { document.getElementById('edit-modal').classList.add('hidden'); }
-
-        function editStock(id) {
-            const i = stock[id];
-            const imgs = i.imgs || (i.img ? [i.img] : []);
-            let imgsHtml = '<div class="img-grid-edit">';
-            imgs.forEach((url, idx) => { imgsHtml += `<div class="img-edit-wrap"><img src="${url}"><button onclick="removeImg('stock', '${id}', ${idx})" class="img-edit-del"><i class="fas fa-times"></i></button></div>`; });
-            imgsHtml += '</div>';
-
-            const html = `
-                <label class="input-group-label">Esošie attēli</label>${imgsHtml}
-                <label class="input-group-label">Pievienot jaunus attēlus</label><input id="up-st-file" type="file" multiple accept="image/*">
-                <label class="input-group-label">Nosaukums</label><input id="up-st-n" value="${i.n}">
-                <label class="input-group-label">Oriģinālais kods (OEM)</label><input id="up-st-oem" value="${i.oem || ''}" class="uppercase">
-                <label class="input-group-label">Cena bez PVN (€)</label><input id="up-st-p" type="number" step="0.01" value="${i.p}">
-                <label class="input-group-label">PVN %</label><select id="up-st-vat"><option value="21" ${i.vat == 21 ? 'selected' : ''}>21%</option><option value="0" ${i.vat == 0 ? 'selected' : ''}>0%</option></select>
-                <label class="input-group-label">Daudzums</label><input id="up-st-q" type="number" value="${i.q}">
-                <label class="input-group-label">Plaukts</label><input id="up-st-l" value="${i.l}">
-                <label class="input-group-label">EAN 1</label><input id="up-st-e" value="${i.e}">
-                <label class="input-group-label">EAN 2</label><input id="up-st-e2" value="${i.e2 || ''}">
-                <button id="btn-save-stock-edit" onclick="saveStockEdit('${id}')" class="btn-jt w-full mt-4">Saglabāt Izmaiņas</button>
-            `;
-            openEditModal("Labot Noliktavu", html);
-        }
-
-        async function saveStockEdit(id) {
-            const btn = document.getElementById('btn-save-stock-edit'); btn.innerText = "SAGLABĀ..."; btn.disabled = true;
-            const newImgs = await uploadImages(document.getElementById('up-st-file'));
-            const currentImgs = stock[id].imgs || (stock[id].img ? [stock[id].img] : []);
-            const updates = { n: document.getElementById('up-st-n').value, oem: document.getElementById('up-st-oem').value, p: parseFloat(document.getElementById('up-st-p').value), vat: document.getElementById('up-st-vat').value, q: parseInt(document.getElementById('up-st-q').value), l: document.getElementById('up-st-l').value, e: document.getElementById('up-st-e').value, e2: document.getElementById('up-st-e2').value, imgs: [...currentImgs, ...newImgs], img: null };
-            db.ref('stock/' + id).update(updates).then(() => { closeEditModal(); log("Noliktava: Rediģēts " + updates.n); });
-        }
-
-        function editStore(id) {
-            const i = storeItems[id];
-            const imgs = i.imgs || (i.img ? [i.img] : []);
-            let imgsHtml = '<div class="img-grid-edit">';
-            imgs.forEach((url, idx) => { imgsHtml += `<div class="img-edit-wrap"><img src="${url}"><button onclick="removeImg('store_items', '${id}', ${idx})" class="img-edit-del"><i class="fas fa-times"></i></button></div>`; });
-            imgsHtml += '</div>';
-
-            const html = `
-                <label class="input-group-label">Esošie attēli</label>${imgsHtml}
-                <label class="input-group-label">Pievienot jaunus</label><input id="up-sr-file" type="file" multiple accept="image/*">
-                <label class="input-group-label">Nosaukums</label><input id="up-sr-n" value="${i.n}">
-                <div class="grid grid-cols-2 gap-4">
-                    <div><label class="input-group-label">Cena bez PVN</label><input id="up-sr-pn" type="number" step="0.01" value="${i.p_neto || 0}"></div>
-                    <div><label class="input-group-label">PVN %</label><select id="up-sr-vat"><option value="21" ${i.vat == 21 ? 'selected' : ''}>21%</option><option value="0" ${i.vat == 0 ? 'selected' : ''}>0%</option></select></div>
-                </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div><label class="input-group-label">Daudzums</label><input id="up-sr-q" type="number" value="${i.q}"></div>
-                    <div><label class="input-group-label">Plaukts</label><input id="up-sr-l" value="${i.l}"></div>
-                </div>
-                <label class="input-group-label">EAN</label><input id="up-sr-e" value="${i.e}">
-                <button id="btn-save-store-edit" onclick="saveStoreEdit('${id}')" class="btn-jt w-full mt-4">Saglabāt Izmaiņas</button>
-            `;
-            openEditModal("Labot Veikalu", html);
-        }
-
-        async function saveStoreEdit(id) {
-            const btn = document.getElementById('btn-save-store-edit'); btn.innerText = "SAGLABĀ..."; btn.disabled = true;
-            const newImgs = await uploadImages(document.getElementById('up-sr-file'));
-            const currentImgs = storeItems[id].imgs || (storeItems[id].img ? [storeItems[id].img] : []);
-            const pn = parseFloat(document.getElementById('up-sr-pn').value);
-            const vat = document.getElementById('up-sr-vat').value;
-            const updates = { n: document.getElementById('up-sr-n').value, p_neto: pn, vat: vat, p: (pn * (vat == 21 ? 1.21 : 1)).toFixed(2), q: parseInt(document.getElementById('up-sr-q').value), l: document.getElementById('up-sr-l').value, e: document.getElementById('up-sr-e').value, imgs: [...currentImgs, ...newImgs], img: null };
-            db.ref('store_items/' + id).update(updates).then(() => { closeEditModal(); log("Veikals: Rediģēts " + updates.n); });
-        }
-
-        function removeImg(path, id, index) {
-            if(!confirm("Noņemt šo attēlu?")) return;
-            db.ref(path + '/' + id).once('value', s => {
-                const i = s.val(); let imgs = i.imgs || (i.img ? [i.img] : []);
-                imgs.splice(index, 1);
-                db.ref(path + '/' + id).update({ imgs: imgs, img: null }).then(() => {
-                    if(path === 'stock') editStock(id); else editStore(id);
-                });
-            });
-        }
-
-        function updatePartSelect() { 
-            let h = '<option value="">-- IZVĒLĒTIES DETAĻU --</option>'; 
-            if (stock) {
-                Object.keys(stock).forEach(id => { 
-                    if(stock[id].q > 0) {
-                        const vat = (stock[id].vat == 21) ? 1.21 : 1;
-                        const p = (stock[id].p * vat).toFixed(2);
-                        h += `<option value="${id}">${stock[id].n.toUpperCase()} (${stock[id].q} gab) - ${p}€</option>`; 
-                    }
-                }); 
-            }
-            const el = document.getElementById('rep-parts-select');
-            if(el) el.innerHTML = h; 
         }
 
         function addPartToRepairList() {
             const partId = document.getElementById('rep-parts-select').value;
             if(!partId) return;
-            
-            const part = stock[partId];
-            const vat = (part.vat == 21) ? 1.21 : 1;
-            const priceWithVat = parseFloat((part.p * vat).toFixed(2));
-            
-            currentRepairParts.push({ 
-                id: partId, 
-                n: part.n, 
-                p: priceWithVat, 
-                oem: part.oem || '---' 
+            const item = stock[partId];
+            const qty = prompt(`Cik gabalus ${item.name} pievienot? (Pieejami ${item.qty})`, "1");
+            const q = parseInt(qty);
+            if(!q || q <= 0) return;
+            if(q > item.qty) return alert("Nepietiekams atlikums!");
+
+            currentRepairParts.push({
+                id: item.id,
+                name: item.name,
+                qty: q,
+                price_neto: item.price_neto,
+                vat: item.vat,
+                price_bruto: (item.price_neto * (1 + item.vat/100)).toFixed(2),
+                total: (item.price_neto * (1 + item.vat/100) * q).toFixed(2)
             });
-            
-            let currentTotal = parseFloat(document.getElementById('rep-price').value || 0);
-            document.getElementById('rep-price').value = (currentTotal + priceWithVat).toFixed(2);
-            
-            renderCurrentParts();
+            drawSelectedParts();
         }
 
-        function renderCurrentParts() {
-            let h = '';
+        function drawSelectedParts() {
+            const list = document.getElementById('selected-parts-list');
+            list.innerHTML = "";
+            let totalParts = 0;
             currentRepairParts.forEach((p, idx) => {
-                h += `
-                <div class="flex justify-between items-center bg-slate-900 p-2 px-3 rounded-lg border border-white/10">
-                    <span class="text-white text-[10px] font-bold uppercase truncate pr-2">${p.n}</span>
+                totalParts += parseFloat(p.total);
+                const div = document.createElement('div');
+                div.className = "flex justify-between items-center bg-slate-700 p-2 rounded-xl text-white text-xs";
+                div.innerHTML = `
+                    <span>${p.name} (${p.qty}x)</span>
                     <div class="flex items-center gap-3">
-                        <span class="text-amber-500 font-black text-xs">${p.p.toFixed(2)}€</span>
-                        <button onclick="removeRepairPart(${idx})" class="text-red-500 hover:text-red-400"><i class="fas fa-times"></i></button>
+                        <span class="font-black">${p.total}€</span>
+                        <button onclick="currentRepairParts.splice(${idx},1); drawSelectedParts();" class="text-red-400"><i class="fas fa-times"></i></button>
                     </div>
-                </div>`;
+                `;
+                list.appendChild(div);
             });
-            document.getElementById('selected-parts-list').innerHTML = h;
+            document.getElementById('rep-price').value = totalParts.toFixed(2);
         }
 
-        function removeRepairPart(idx) {
-            const removed = currentRepairParts[idx];
-            let currentTotal = parseFloat(document.getElementById('rep-price').value || 0);
-            document.getElementById('rep-price').value = Math.max(0, currentTotal - removed.p).toFixed(2);
-            currentRepairParts.splice(idx, 1);
-            renderCurrentParts();
-        }
+        async function addRepair() {
+            const vin = document.getElementById('rep-vin').value, 
+                  nr = document.getElementById('rep-nr').value,
+                  cl = document.getElementById('rep-cl').value,
+                  make = document.getElementById('rep-make').value,
+                  model = document.getElementById('rep-model').value,
+                  year = document.getElementById('rep-year').value,
+                  task = document.getElementById('rep-task').value,
+                  price = parseFloat(document.getElementById('rep-price').value) || 0;
 
-        function addRepair() {
-            const nr = document.getElementById('rep-nr').value.toUpperCase();
-            const finalPrice = document.getElementById('rep-price').value;
-            if(!nr) return alert("Ievadiet auto numuru!");
+            if(!cl || !nr) return alert("Aizpildiet vismaz Klientu un Auto numuru!");
 
-            currentRepairParts.forEach(item => {
-                if(stock[item.id]) {
-                    const newQty = Math.max(0, stock[item.id].q - 1);
-                    db.ref('stock/' + item.id).update({ q: newQty });
-
-                    db.ref('sold_history').push({
-                        n: item.n,
-                        oem: item.oem || '---',
-                        p: item.p.toFixed(2),
-                        status: 'SERVISS',
-                        car_nr: nr,
-                        d: new Date().toLocaleString('lv-LV')
-                    });
-                }
-            });
-
-            db.ref('repairs').push({ 
-                nr, 
-                cl: document.getElementById('rep-cl').value, 
-                make: document.getElementById('rep-make').value, 
-                model: document.getElementById('rep-model').value, 
-                year: document.getElementById('rep-year').value, 
-                task: document.getElementById('rep-task').value, 
-                price: parseFloat(finalPrice || 0), 
-                vin: document.getElementById('rep-vin').value,
-                used_parts: currentRepairParts,
-                status: 'Procesā', // NOKLUSĒTAIS STATUSS
-                d: new Date().toLocaleDateString('lv-LV') 
+            const id = Date.now();
+            db.ref('repairs/' + id).set({
+                id, vin, nr, cl, make, model, year, task, price, status: 'Gaida', timestamp: id, parts: currentRepairParts
             }).then(() => {
-                document.querySelectorAll('#sec-repairs input, #sec-repairs textarea').forEach(i => i.value = '');
-                currentRepairParts = [];
-                renderCurrentParts();
-                log("Serviss: Izveidots jauns darbs " + nr);
-                alert("Servisa karte izveidota un detaļas fiksētas realizācijā!");
+                addLog(`Izveidota servisa karte: ${nr} (${cl})`);
+                ['rep-vin', 'rep-nr', 'rep-cl', 'rep-task', 'rep-price'].forEach(i => document.getElementById(i).value = "");
+                currentRepairParts = []; drawSelectedParts();
+                alert("Servisa karte izveidota!");
             });
         }
 
-        function loadRepairs() {
-            db.ref('repairs').on('value', s => {
-                let h = '', c = 0;
-                s.forEach(x => {
-                    const r = x.val(); const id = x.key; c++;
-                    const status = r.status || 'Procesā';
-                    
-                    // Statusu krāsas un progress
-                    let barColor = 'bg-blue-500', barWidth = '50%', statusIcon = 'fa-spinner fa-spin';
-                    if(status === 'Gaida detaļu') { barColor = 'bg-red-500'; barWidth = '20%'; statusIcon = 'fa-clock'; }
-                    if(status === 'Gatavs') { barColor = 'bg-green-500'; barWidth = '100%'; statusIcon = 'fa-check-circle'; }
-
-                    h += `
-                    <div class="card border-l-[10px] border-amber-500 !p-5 shadow-lg bg-white relative overflow-hidden">
-                        <div class="flex justify-between items-start mb-3 relative z-10">
-                            <div>
-                                <span class="bg-slate-100 text-slate-600 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider">${r.d || '---'}</span>
-                                <h2 class="text-2xl font-black mt-2 tracking-tighter text-slate-900">${r.nr}</h2>
-                                <p class="font-bold text-amber-600 text-sm italic">${r.make || ''} ${r.model || ''}</p>
-                                <div class="flex items-center gap-2 mt-2">
-                                    <select onchange="updateRepairStatus('${id}', this.value)" class="!bg-slate-100 !mb-0 !py-1 !px-3 !w-auto !text-[10px] !font-black !rounded-full uppercase tracking-tighter cursor-pointer">
-                                        <option value="Procesā" ${status === 'Procesā' ? 'selected' : ''}>🔄 Procesā</option>
-                                        <option value="Gaida detaļu" ${status === 'Gaida detaļu' ? 'selected' : ''}>⏳ Gaida detaļu</option>
-                                        <option value="Gatavs" ${status === 'Gatavs' ? 'selected' : ''}>✅ Gatavs</option>
-                                    </select>
+        function drawRepairs(data) {
+            const list = document.getElementById('repair-list');
+            list.innerHTML = "";
+            if(!data) return;
+            Object.values(data).filter(r => r.status !== 'Pabeigts' && r.status !== 'Atcelts').reverse().forEach(r => {
+                const div = document.createElement('div');
+                div.className = "card !p-0 overflow-hidden border-none shadow-xl";
+                div.innerHTML = `
+                    <div class="bg-slate-900 p-4 flex justify-between items-center">
+                        <div>
+                            <div class="text-amber-500 font-black text-xl italic">${r.nr}</div>
+                            <div class="text-slate-400 text-[10px] uppercase font-bold">${r.make} ${r.model} (${r.year})</div>
+                        </div>
+                        <div class="text-right">
+                            <span class="bg-blue-500 text-white px-3 py-1 rounded-full text-[10px] font-black uppercase">${r.status}</span>
+                        </div>
+                    </div>
+                    <div class="p-5 bg-white">
+                        <div class="flex items-center gap-2 mb-4">
+                            <i class="fas fa-user text-slate-400"></i>
+                            <span class="font-bold text-slate-700">${r.cl}</span>
+                        </div>
+                        <div class="text-sm text-slate-600 bg-slate-50 p-4 rounded-2xl mb-4 border border-slate-100 italic">"${r.task}"</div>
+                        ${r.parts ? `
+                            <div class="mb-4">
+                                <div class="text-[10px] font-black text-slate-400 uppercase mb-2">Izmantotās detaļas:</div>
+                                <div class="space-y-1">
+                                    ${r.parts.map(p => `<div class="text-[11px] flex justify-between"><span>${p.name} (x${p.qty})</span><b>${p.total}€</b></div>`).join('')}
                                 </div>
                             </div>
-                            <div class="text-right">
-                                <div class="text-2xl font-black text-slate-900">${parseFloat(r.price).toFixed(2)}€</div>
-                                <div class="text-[9px] text-slate-400 font-bold uppercase mt-1">${r.cl}</div>
+                        ` : ''}
+                        <div class="flex justify-between items-center">
+                            <div class="text-2xl font-black text-slate-900">${r.price.toFixed(2)}€</div>
+                            <div class="flex gap-2">
+                                <button onclick="changeRepStatus('${r.id}', 'Pabeigts')" class="bg-green-500 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase">Pabeigt</button>
+                                <button onclick="printRepairCard('${r.id}')" class="bg-slate-100 text-slate-600 px-4 py-2 rounded-xl text-[10px] font-black uppercase"><i class="fas fa-print"></i></button>
+                                <button onclick="deleteRepair('${r.id}')" class="text-red-400 p-2"><i class="fas fa-trash-alt"></i></button>
                             </div>
                         </div>
-                        
-                        <div class="w-full bg-slate-100 h-1.5 rounded-full my-4 overflow-hidden">
-                            <div class="${barColor} h-full transition-all duration-500" style="width: ${barWidth}"></div>
-                        </div>
-
-                        <div class="flex gap-2 relative z-10">
-                            <button onclick="finishRepair('${id}')" class="flex-[2] bg-slate-900 text-white font-bold py-3 rounded-xl uppercase text-[10px] hover:bg-black transition-all">PABEIGT DARBU</button>
-                            <button onclick="editRepair('${id}')" class="flex-1 bg-blue-50 text-blue-600 font-bold py-3 rounded-xl uppercase text-[10px] hover:bg-blue-600 hover:text-white transition-all"><i class="fas fa-edit"></i></button>
-                            <button onclick="printRepairCard('${id}')" class="flex-1 bg-amber-50 text-amber-600 font-bold py-3 rounded-xl uppercase text-[10px] hover:bg-amber-500 hover:text-white transition-all"><i class="fas fa-print"></i></button>
-                        </div>
-                    </div>`;
-                });
-                document.getElementById('repair-list').innerHTML = h || '<div class="text-center p-10 opacity-20">Nav aktīvu darbu</div>';
-                document.getElementById('s-rep').innerText = c;
-            });
-        }
-
-        // JAUNA FUNKCIJA STATUSA ATJAUNINĀŠANAI
-        function updateRepairStatus(id, newStatus) {
-            db.ref('repairs/' + id).update({ status: newStatus }).then(() => {
-                log(`Serviss: Darbam ${id} mainīts statuss uz ${newStatus}`);
-            });
-        }
-
-        function editRepair(id) {
-            db.ref('repairs/' + id).once('value', s => {
-                const r = s.val();
-                const html = `
-                    <label class="input-group-label">Auto Numurs</label><input id="up-r-nr" value="${r.nr}" class="uppercase font-black">
-                    <label class="input-group-label">Klients</label><input id="up-r-cl" value="${r.cl || ''}">
-                    <div class="grid grid-cols-2 gap-2">
-                        <div><label class="input-group-label">Marka</label><input id="up-r-make" value="${r.make || ''}"></div>
-                        <div><label class="input-group-label">Modelis</label><input id="up-r-model" value="${r.model || ''}"></div>
                     </div>
-                    <label class="input-group-label">Veicamie darbi</label><textarea id="up-r-task" class="h-24">${r.task || ''}</textarea>
-                    <label class="input-group-label">Cena (€)</label><input id="up-r-price" type="number" step="0.01" value="${r.price || 0}">
-                    <button onclick="saveRepairEdit('${id}')" class="btn-jt w-full mt-4">Saglabāt Izmaiņas</button>
                 `;
-                openEditModal("Labot Darbu", html);
+                list.appendChild(div);
             });
         }
 
-        function saveRepairEdit(id) {
-            const updates = {
-                nr: document.getElementById('up-r-nr').value.toUpperCase(),
-                cl: document.getElementById('up-r-cl').value,
-                make: document.getElementById('up-r-make').value,
-                model: document.getElementById('up-r-model').value,
-                task: document.getElementById('up-r-task').value,
-                price: parseFloat(document.getElementById('up-r-price').value || 0)
-            };
-            db.ref('repairs/' + id).update(updates).then(() => { closeEditModal(); log("Serviss: Rediģēts darbs " + updates.nr); });
-        }
-
-        function finishRepair(id) { db.ref('repairs/'+id).once('value', s => { db.ref('finances').push(s.val()); db.ref('repairs/'+id).remove(); log("Pabeidza auto: " + s.val().nr); }); }
-
-        function printRepairCard(id) {
-            db.ref('repairs/' + id).once('value', s => {
-                const r = s.val();
-                if (!r) return alert("Dati nav atrasti!");
-                const area = document.getElementById('print-area');
-                let partsTotal = 0; let partsHtml = '';
-                if(r.used_parts && r.used_parts.length > 0) {
-                    r.used_parts.forEach(p => { 
-                        partsTotal += parseFloat(p.p);
-                        partsHtml += `<tr><td style="padding: 8px; border-bottom: 1px solid #eee;">${p.n}</td><td style="padding: 8px; border-bottom: 1px solid #eee; text-align: right;">${parseFloat(p.p).toFixed(2)} €</td></tr>`;
+        function changeRepStatus(id, status) {
+            if(status === 'Pabeigts') {
+                db.ref('repairs/' + id).once('value', snapshot => {
+                    const repair = snapshot.val();
+                    if(repair.parts) {
+                        repair.parts.forEach(p => {
+                            const currentStockItem = stock[p.id];
+                            if(currentStockItem) {
+                                db.ref('stock/' + p.id).update({ qty: currentStockItem.qty - p.qty });
+                            }
+                        });
+                    }
+                    db.ref('repairs/' + id).update({ status: status }).then(() => {
+                        addLog(`Pabeigts darbs: ${repair.nr} (${repair.cl})`);
+                        db.ref('finances/' + id).set({
+                            id: id, date: new Date().toLocaleDateString('lv-LV'), 
+                            title: repair.nr + " / " + repair.cl, amount: repair.price
+                        });
                     });
+                });
+            } else {
+                db.ref('repairs/' + id).update({ status: status });
+            }
+        }
+
+        function deleteRepair(id) {
+            if(confirm("Dzēst šo darba karti?")) db.ref('repairs/' + id).remove();
+        }
+
+        function searchVehicleHistory(showAll = false) {
+            const q = document.getElementById('h-search-nr').value.toUpperCase();
+            const results = document.getElementById('history-results');
+            results.innerHTML = "";
+            
+            db.ref('repairs').once('value', s => {
+                const data = s.val() || {};
+                const filtered = Object.values(data).filter(r => {
+                    if(showAll) return r.status === 'Pabeigts';
+                    return r.nr.includes(q) && r.status === 'Pabeigts';
+                }).reverse();
+
+                if(filtered.length === 0) {
+                    results.innerHTML = `<div class="text-center py-10 opacity-20 font-bold italic">Nekas netika atrasts...</div>`;
+                    return;
                 }
-                const laborCost = Math.max(0, parseFloat(r.price) - partsTotal);
-                area.innerHTML = `
-                    <div style="padding: 20mm; font-family: 'Helvetica', sans-serif; color: #333; background: white; min-height: 297mm;">
-                        <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 4px solid #fbbf24; padding-bottom: 20px; margin-bottom: 30px;">
-                            <div><h1 style="margin: 0; font-size: 28pt; font-style: italic; font-weight: 900; color: #0f172a;">JT <span style="color:#fbbf24;">MOTORS</span></h1><p style="margin: 5px 0 0 0; font-size: 10pt; text-transform: uppercase; letter-spacing: 2px; color: #64748b;">Professional Auto Service</p></div>
-                            <div style="text-align: right;"><h2 style="margin: 0; font-size: 16pt; font-weight: 900; color: #0f172a;">DARBU TĀME</h2><p style="margin: 5px 0 0 0; font-size: 10pt; color: #64748b;">Nr. SER-${id.slice(-5).toUpperCase()}</p></div>
+
+                filtered.forEach(r => {
+                    const div = document.createElement('div');
+                    div.className = "card !bg-white border-none shadow-lg";
+                    div.innerHTML = `
+                        <div class="flex justify-between items-start mb-4">
+                            <div>
+                                <span class="bg-amber-500 text-slate-900 px-3 py-1 rounded-lg font-black text-xs italic">${r.nr}</span>
+                                <div class="mt-2 font-black text-slate-800 uppercase">${r.make} ${r.model}</div>
+                                <div class="text-[10px] text-slate-400 font-bold">${new Date(r.timestamp).toLocaleDateString('lv-LV')}</div>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-xl font-black text-slate-900">${r.price.toFixed(2)}€</div>
+                                <div class="text-[10px] font-bold text-slate-400">${r.cl}</div>
+                            </div>
                         </div>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-bottom: 40px;">
-                            <div><h3 style="font-size: 10pt; text-transform: uppercase; color: #fbbf24; margin-bottom: 10px; border-bottom: 1px solid #fbbf24;">Transportlīdzeklis</h3><p style="margin: 4px 0;"><strong>Valsts numurs:</strong> <span style="font-size: 14pt;">${r.nr}</span></p><p style="margin: 4px 0;"><strong>Auto:</strong> ${r.make} ${r.model} (${r.year || '---'})</p><p style="margin: 4px 0; font-size: 9pt; color: #64748b;"><strong>VIN:</strong> ${r.vin || '---'}</p></div>
-                            <div><h3 style="font-size: 10pt; text-transform: uppercase; color: #fbbf24; margin-bottom: 10px; border-bottom: 1px solid #fbbf24;">Klients / Datums</h3><p style="margin: 4px 0;"><strong>Vārds:</strong> ${r.cl || '---'}</p><p style="margin: 4px 0;"><strong>Datums:</strong> ${r.d}</p></div>
-                        </div>
-                        <div style="margin-bottom: 30px;"><h3 style="font-size: 10pt; text-transform: uppercase; color: #0f172a; margin-bottom: 10px; background: #f8fafc; padding: 8px;">Veiktie darbi</h3><div style="padding: 10px; border: 1px solid #f1f5f9; min-height: 100px; white-space: pre-wrap; font-size: 11pt;">${r.task}</div></div>
-                        <table style="width: 100%; border-collapse: collapse; margin-bottom: 40px;">
-                            <thead><tr style="background: #0f172a; color: white;"><th style="padding: 12px; text-align: left; font-size: 10pt; text-transform: uppercase;">Pozīcija</th><th style="padding: 12px; text-align: right; font-size: 10pt; text-transform: uppercase;">Summa</th></tr></thead>
-                            <tbody><tr><td style="padding: 12px; border-bottom: 1px solid #eee;">Remontdarbi un servisa pakalpojumi</td><td style="padding: 12px; border-bottom: 1px solid #eee; text-align: right;">${laborCost.toFixed(2)} €</td></tr>${partsHtml}<tr style="background: #f8fafc;"><td style="padding: 15px; font-weight: 900; font-size: 14pt; color: #0f172a;">KOPĀ APMAKSAI:</td><td style="padding: 15px; font-weight: 900; font-size: 14pt; text-align: right; color: #fbbf24;">${parseFloat(r.price).toFixed(2)} €</td></tr></tbody>
-                        </table>
-                        <div style="margin-top: 80px; display: grid; grid-template-columns: 1fr 1fr; gap: 60px;"><div style="text-align: center;"><div style="border-top: 1px solid #333; padding-top: 10px; font-size: 10pt;">Klients</div></div><div style="text-align: center;"><div style="border-top: 1px solid #333; padding-top: 10px; font-size: 10pt;">Servisa pārstāvis / Z.v.</div></div></div>
-                        <div style="margin-top: 50px; text-align: center; font-size: 8pt; color: #94a3b8; border-top: 1px solid #f1f5f9; padding-top: 20px;">Paldies, ka izvēlējāties JT MOTORS!</div>
-                    </div>`;
-                setTimeout(() => { window.print(); area.innerHTML = ""; }, 500);
+                        <div class="text-sm text-slate-600 bg-slate-50 p-4 rounded-xl border border-slate-100 italic">"${r.task}"</div>
+                    `;
+                    results.appendChild(div);
+                });
             });
         }
 
-        function loadOrders() {
-            db.ref('orders').on('value', s => {
-                let h = '', c = 0;
-                s.forEach(x => { 
-                    const o = x.val(); 
-                    if(o.status === 'Web-Order') { 
-                        c++; 
-                        h += `<div class="card p-5 border-l-4 border-blue-600 shadow-md"><div class="flex justify-between items-start mb-4"><div><h3 class="font-black text-slate-900">${o.n || 'Nezināma Prece'}</h3><p class="text-sm font-bold text-slate-500">${o.cl || 'Klients'} | <span class="text-blue-600">${o.phone || ''}</span></p></div><div class="text-right"><div class="text-lg font-black text-slate-900">${parseFloat(o.price || 0).toFixed(2)}€</div></div></div><div class="flex gap-2"><button onclick="editOrder('${x.key}')" class="flex-1 bg-slate-100 text-slate-600 font-black py-2 rounded-lg text-[10px] uppercase hover:bg-blue-500 hover:text-white"><i class="fas fa-edit mr-1"></i> Labot</button><button onclick="printOrder('${x.key}')" class="flex-1 bg-slate-100 text-slate-600 font-black py-2 rounded-lg text-[10px] uppercase hover:bg-amber-500 hover:text-white"><i class="fas fa-print mr-1"></i> Drukāt</button><button onclick="if(confirm('Dzēst pasūtījumu?')) db.ref('orders/${x.key}').remove()" class="bg-red-50 text-red-500 w-10 h-10 rounded-lg flex items-center justify-center hover:bg-red-500 hover:text-white"><i class="fas fa-trash-alt"></i></button></div></div>`; 
-                    } 
-                });
-                document.getElementById('orders-list').innerHTML = h || '<div class="text-center py-10 opacity-20 font-bold italic">Nav jaunu pasūtījumu</div>';
-                document.getElementById('s-ord').innerText = c;
+        function addClient() {
+            const type = document.getElementById('c-type').value,
+                  n = document.getElementById('c-n').value,
+                  p = document.getElementById('c-p').value,
+                  e = document.getElementById('c-e').value,
+                  reg = document.getElementById('c-reg').value,
+                  addr = document.getElementById('c-addr').value;
+
+            if(!n || !p) return alert("Vārds un Telefons ir obligāti!");
+
+            const id = Date.now();
+            db.ref('clients/' + id).set({
+                id, type, name: n, phone: p, email: e, reg_nr: reg, address: addr
+            }).then(() => {
+                alert("Klients saglabāts!");
+                ['c-n', 'c-p', 'c-e', 'c-reg', 'c-addr'].forEach(i => document.getElementById(i).value = "");
+                addLog(`Pievienots klients: ${n}`);
             });
         }
 
         function toggleClientFields() {
             const type = document.getElementById('c-type').value;
-            document.getElementById('company-only').classList.toggle('hidden', type !== 'company');
-            document.getElementById('private-only').classList.toggle('hidden', type === 'company');
-            document.getElementById('label-c-n').innerText = type === 'company' ? "Uzņēmuma nosaukums" : "Vārds Uzvārds";
-        }
+            const companyFields = document.getElementById('company-only');
+            const privateFields = document.getElementById('private-only');
+            const labelN = document.getElementById('label-c-n');
 
-        function loadClients() {
-            db.ref('clients').on('value', s => {
-                let h = '';
-                s.forEach(x => {
-                    const c = x.val(), id = x.key, colorBorder = c.type === 'company' ? 'border-blue-500' : 'border-amber-500', icon = c.type === 'company' ? 'fa-building' : 'fa-user';
-                    h += `<div class="card !p-5 border-t-4 ${colorBorder} shadow-md flex flex-col justify-between"><div><div class="flex justify-between items-start mb-2"><span class="text-[9px] font-black uppercase tracking-widest text-slate-400"><i class="fas ${icon} mr-1"></i> ${c.type === 'company' ? 'Uzņēmums' : 'Privātpersona'}</span><div class="flex gap-2"><button onclick="editClient('${id}')" class="text-slate-400 hover:text-blue-500"><i class="fas fa-edit"></i></button><button onclick="if(confirm('Dzēst klientu?')) db.ref('clients/${id}').remove()" class="text-slate-400 hover:text-red-500"><i class="fas fa-trash-alt"></i></button></div></div><h4 class="font-black text-slate-800 uppercase text-lg leading-tight mb-1">${c.n}</h4><p class="text-sm font-bold text-slate-500 mb-4">${c.type === 'company' ? (c.reg || 'Reģ.nr. nav') : (c.email || 'E-pasts nav')}</p></div><div class="flex gap-2 mt-auto"><a href="tel:${c.p}" class="flex-1 bg-green-500 text-white text-center py-2 rounded-xl font-black text-[10px] uppercase flex items-center justify-center gap-2"><i class="fas fa-phone-alt"></i> ZVANĪT</a><button onclick="editClient('${id}')" class="flex-1 bg-slate-100 text-slate-600 py-2 rounded-xl font-black text-[10px] uppercase flex items-center justify-center gap-2"><i class="fas fa-info-circle"></i> LABOT</button></div></div>`;
-                });
-                document.getElementById('client-list').innerHTML = h || '<div class="col-span-full text-center py-10 opacity-20 font-bold italic">Saraksts tukšs</div>';
-            });
-        }
-
-        // ==========================================
-        // RĒĶINU SEKCIJAS ATJAUNOTĀS FUNKCIJAS
-        // ==========================================
-
-        function loadFin() {
-            db.ref('finances').on('value', s => {
-                let h = '', total = 0;
-                s.forEach(x => { 
-                    const f = x.val(), key = x.key; 
-                    total += parseFloat(f.price || 0); 
-                    h = `
-                    <tr class="hover:bg-slate-50 transition-colors">
-                        <td class="p-4 text-[10px] font-bold text-slate-400">${f.d || '---'}</td>
-                        <td class="py-4">
-                            <div class="font-black text-slate-900">${f.nr}</div>
-                            <div class="text-[10px] text-slate-400 font-bold uppercase">${f.cl || 'Klients'}</div>
-                        </td>
-                        <td class="text-right font-black text-green-600">${parseFloat(f.price || 0).toFixed(2)}€</td>
-                        <td class="text-right p-4">
-                            <div class="flex justify-end gap-1">
-                                <button onclick="sendInvoiceEmail('${key}')" class="bg-blue-500 text-white w-8 h-8 rounded-lg flex items-center justify-center hover:bg-blue-600" title="Sūtīt e-pastā"><i class="fas fa-envelope text-[10px]"></i></button>
-                                <button onclick="printInvoice('${key}')" class="bg-amber-500 text-slate-900 w-8 h-8 rounded-lg flex items-center justify-center hover:bg-amber-600" title="Drukāt rēķinu"><i class="fas fa-print text-[10px]"></i></button>
-                                <button onclick="deleteInvoice('${key}', '${f.nr}')" class="bg-red-100 text-red-500 w-8 h-8 rounded-lg flex items-center justify-center hover:bg-red-500 hover:text-white" title="Dzēst"><i class="fas fa-trash-alt text-[10px]"></i></button>
-                            </div>
-                        </td>
-                    </tr>` + h; 
-                });
-                document.getElementById('fin-table').innerHTML = h || '<tr><td colspan="4" class="p-10 text-center opacity-20 italic">Nav pabeigtu rēķinu</td></tr>'; 
-                document.getElementById('s-profit').innerText = total.toFixed(0);
-            });
-        }
-
-        function printInvoice(id) {
-            db.ref('finances/' + id).once('value', s => {
-                const f = s.val();
-                if (!f) return alert("Kļūda: Rēķins nav atrasts!");
-                
-                const area = document.getElementById('print-area');
-                let partsHtml = '';
-                if(f.used_parts && f.used_parts.length > 0) {
-                    f.used_parts.forEach(p => {
-                        partsHtml += `<tr><td style="padding:10px; border-bottom:1px solid #eee;">${p.n} (OEM: ${p.oem})</td><td style="padding:10px; border-bottom:1px solid #eee; text-align:right;">${parseFloat(p.p).toFixed(2)} €</td></tr>`;
-                    });
-                }
-
-                area.innerHTML = `
-                <div style="padding: 20mm; font-family: 'Inter', sans-serif; background: white; color: #1e293b;">
-                    <div style="display:flex; justify-content:space-between; border-bottom:5px solid #fbbf24; padding-bottom:20px; margin-bottom:30px;">
-                        <div>
-                            <h1 style="margin:0; font-size:32pt; font-weight:900; font-style:italic;">JT <span style="color:#fbbf24;">MOTORS</span></h1>
-                            <p style="margin:5px 0; font-weight:bold; font-size:10pt; color:#64748b;">REĢ. NR: 40203300000 | TĀLR: +371 20000000</p>
-                        </div>
-                        <div style="text-align:right;">
-                            <h2 style="margin:0; font-size:18pt; font-weight:900;">RĒĶINS</h2>
-                            <p style="margin:5px 0; font-weight:bold; color:#64748b;">Nr. INV-${id.slice(-6).toUpperCase()}</p>
-                            <p style="margin:0; font-size:9pt;">Datums: ${f.d}</p>
-                        </div>
-                    </div>
-                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:50px; margin-bottom:40px;">
-                        <div style="background:#f8fafc; padding:20px; border-radius:10px;">
-                            <h4 style="margin:0 0 10px 0; color:#fbbf24; text-transform:uppercase; font-size:9pt;">Maksātājs</h4>
-                            <p style="margin:0; font-size:12pt; font-weight:900;">${f.cl || 'Privātpersona'}</p>
-                            <p style="margin:5px 0 0 0; font-size:10pt; color:#64748b;">Auto: ${f.nr} (${f.make || ''} ${f.model || ''})</p>
-                        </div>
-                        <div style="padding:20px;">
-                            <h4 style="margin:0 0 10px 0; color:#fbbf24; text-transform:uppercase; font-size:9pt;">Informācija</h4>
-                            <p style="margin:0; font-size:10pt;">Apmaksas veids: Pārskaitījums / Skaidra nauda</p>
-                            <p style="margin:5px 0 0 0; font-size:10pt;">Izpildes vieta: Rīga, Latvija</p>
-                        </div>
-                    </div>
-                    <table style="width:100%; border-collapse:collapse; margin-bottom:30px;">
-                        <thead style="background:#0f172a; color:white;">
-                            <tr><th style="padding:15px; text-align:left;">PAKALPOJUMA / PRECES APRAKSTS</th><th style="padding:15px; text-align:right;">SUMMA</th></tr>
-                        </thead>
-                        <tbody>
-                            <tr><td style="padding:15px; border-bottom:1px solid #eee;"><strong>Remontdarbi:</strong><br><span style="font-size:9pt; color:#64748b;">${f.task || 'Auto apkope'}</span></td><td style="padding:15px; border-bottom:1px solid #eee; text-align:right;">${(parseFloat(f.price || 0) - (f.used_parts ? f.used_parts.reduce((a, b) => a + b.p, 0) : 0)).toFixed(2)} €</td></tr>
-                            ${partsHtml}
-                        </tbody>
-                        <tfoot>
-                            <tr style="background:#fbbf24; color:#0f172a;">
-                                <td style="padding:20px; font-size:16pt; font-weight:900;">KOPĀ APMAKSAI (EUR):</td>
-                                <td style="padding:20px; font-size:20pt; font-weight:900; text-align:right;">${parseFloat(f.price || 0).toFixed(2)} €</td>
-                            </tr>
-                        </tfoot>
-                    </table>
-                    <div style="margin-top:100px; display:flex; justify-content:space-between; font-size:9pt;">
-                        <div style="width:200px; border-top:1px solid #000; text-align:center; padding-top:10px;">Izsniedza (Paraksts)</div>
-                        <div style="width:200px; border-top:1px solid #000; text-align:center; padding-top:10px;">Saņēma (Paraksts)</div>
-                    </div>
-                    <p style="text-align:center; margin-top:50px; font-size:8pt; color:#94a3b8;">Šis dokuments ir sagatavots elektroniski un ir derīgs bez paraksta.</p>
-                </div>`;
-                
-                setTimeout(() => { window.print(); area.innerHTML = ""; }, 500);
-            });
-        }
-
-        function sendInvoiceEmail(id) {
-            db.ref('finances/' + id).once('value', s => {
-                const f = s.val();
-                if (!f) return;
-                const subject = encodeURIComponent(`JT MOTORS Rēķins - ${f.nr}`);
-                const body = encodeURIComponent(`Labdien!\n\nInformējam, ka Jūsu auto (${f.nr}) remontdarbi ir pabeigti.\n\nKopējā rēķina summa: ${parseFloat(f.price || 0).toFixed(2)} EUR.\n\nVeiktie darbi: ${f.task}\n\nAr cieņu,\nJT MOTORS Serviss`);
-                window.location.href = `mailto:?subject=${subject}&body=${body}`;
-            });
-        }
-
-        function deleteInvoice(id, nr) {
-            if(confirm(`Vai tiešām vēlaties dzēst rēķinu auto ${nr}?`)) {
-                db.ref('finances/' + id).remove().then(() => log(`Sistēma: Izdzēsts rēķins auto ${nr}`));
+            if(type === 'company') {
+                companyFields.classList.remove('hidden');
+                privateFields.classList.add('hidden');
+                labelN.innerText = "Uzņēmuma nosaukums";
+                document.getElementById('c-n').placeholder = "SIA JT MOTORS";
+            } else {
+                companyFields.classList.add('hidden');
+                privateFields.classList.remove('hidden');
+                labelN.innerText = "Vārds Uzvārds";
+                document.getElementById('c-n').placeholder = "Jānis Bērziņš";
             }
         }
 
-        function loadLogs() { db.ref('logs').limitToLast(100).on('value', s => { let h = ''; s.forEach(x => { h = `<div class="border-b border-white/5 pb-1 mb-1"><span class="text-slate-600">[${x.val().t}]</span> <span class="text-amber-500 font-bold">${x.val().u}:</span> ${x.val().i}</div>` + h; }); document.getElementById('logs-box').innerHTML = h; }); }
-        
-        function printEAN(code, name) {
-            if(!code) return alert("Nav koda!");
-            const area = document.getElementById('print-area');
-            area.innerHTML = `<div style="width: 62mm; height: 29mm; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; padding: 1mm; box-sizing: border-box;"><div style="font-family: 'Inter', sans-serif; font-size: 8pt; font-weight: 900; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; text-align: center; margin-bottom: 1mm; color: black;">${name}</div><svg id="barcode-target" style="max-width: 58mm; max-height: 18mm;"></svg></div>`;
-            JsBarcode("#barcode-target", code.toString(), { format: "CODE128", width: 1.6, height: 40, displayValue: true, fontSize: 12, margin: 0, background: "#ffffff" });
-            setTimeout(() => { window.print(); area.innerHTML = ""; }, 300);
+        function drawClients(data) {
+            const list = document.getElementById('client-list');
+            list.innerHTML = "";
+            if(!data) return;
+            Object.values(data).forEach(c => {
+                const div = document.createElement('div');
+                div.className = "card !p-5 relative overflow-hidden";
+                div.innerHTML = `
+                    <div class="absolute -right-4 -bottom-4 text-slate-50 opacity-10"><i class="fas ${c.type === 'company' ? 'fa-building' : 'fa-user'} fa-5x"></i></div>
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
+                            <i class="fas ${c.type === 'company' ? 'fa-building' : 'fa-user'}"></i>
+                        </div>
+                        <div>
+                            <div class="font-black text-slate-900 leading-tight">${c.name}</div>
+                            <div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">${c.type === 'company' ? 'Uzņēmums' : 'Privātpersona'}</div>
+                        </div>
+                    </div>
+                    <div class="space-y-2 relative z-10">
+                        <div class="text-xs text-slate-600 flex items-center gap-2"><i class="fas fa-phone fa-xs text-amber-500"></i> ${c.phone}</div>
+                        ${c.email ? `<div class="text-xs text-slate-600 flex items-center gap-2"><i class="fas fa-envelope fa-xs text-amber-500"></i> ${c.email}</div>` : ''}
+                        ${c.reg_nr ? `<div class="text-xs text-slate-600 flex items-center gap-2"><i class="fas fa-file-invoice fa-xs text-amber-500"></i> ${c.reg_nr}</div>` : ''}
+                        <div class="flex gap-2 mt-4">
+                            <a href="tel:${c.phone}" class="flex-1 bg-slate-900 text-white text-center py-2 rounded-lg text-[10px] font-black uppercase">Zvanīt</a>
+                            <button onclick="deleteClient('${c.id}')" class="w-10 bg-red-50 text-red-500 rounded-lg"><i class="fas fa-trash-alt fa-xs"></i></button>
+                        </div>
+                    </div>
+                `;
+                list.appendChild(div);
+            });
         }
 
-        async function startScan(targetId) {
-            const r = document.getElementById('reader'); r.classList.remove('hidden');
-            if(!scanner) scanner = new Html5Qrcode("reader");
-            scanner.start({facingMode: "environment"}, {fps: 10, qrbox: 250}, text => { 
-                document.getElementById('scan-sound').play().catch(e => console.log("Audio error"));
-                document.getElementById(targetId).value = text; 
-                if(targetId === 'q-store') drawStore();
+        function deleteClient(id) {
+            if(confirm("Dzēst šo klientu no reģistra?")) db.ref('clients/' + id).remove();
+        }
+
+        async function addStoreItem() {
+            const n = document.getElementById('store-in-n').value,
+                  p_neto = parseFloat(document.getElementById('store-in-p-neto').value) || 0,
+                  vat = parseInt(document.getElementById('store-in-vat').value),
+                  q = parseInt(document.getElementById('store-in-q').value) || 0,
+                  l = document.getElementById('store-in-l').value.toUpperCase(),
+                  ean = document.getElementById('store-in-e').value,
+                  files = document.getElementById('store-in-file').files;
+
+            if(!n) return alert("Ievadiet nosaukumu!");
+            const btn = document.getElementById('btn-add-store');
+            btn.disabled = true; btn.innerText = "PUBLICĒ...";
+
+            let imgs = [];
+            for(let f of files) { imgs.push(await toBase64(f)); }
+
+            const id = Date.now();
+            db.ref('store/' + id).set({
+                id, name: n, price_neto: p_neto, vat, qty: q, shelf: l, ean, images: imgs, timestamp: id
+            }).then(() => {
+                alert("Prece publicēta JT VEIKALĀ!");
+                ['store-in-n', 'store-in-p-neto', 'store-in-q', 'store-in-l', 'store-in-e', 'store-in-file'].forEach(i => document.getElementById(i).value = "");
+                addLog(`Publicēta e-veikala prece: ${n}`);
+            }).finally(() => { btn.disabled = false; btn.innerText = "Publicēt Veikalā"; });
+        }
+
+        function drawStore() {
+            const container = document.getElementById('store-container'), q = document.getElementById('q-store').value.toLowerCase();
+            container.innerHTML = "";
+            
+            const grouped = {};
+            Object.values(storeItems).forEach(item => {
+                if (item.name.toLowerCase().includes(q) || (item.ean && item.ean.includes(q))) {
+                    const cat = item.shelf ? item.shelf.split('-')[0] : 'CITI';
+                    if (!grouped[cat]) grouped[cat] = [];
+                    grouped[cat].push(item);
+                }
+            });
+
+            Object.keys(grouped).sort().forEach(cat => {
+                const section = document.createElement('div');
+                section.innerHTML = `
+                    <div class="flex items-center gap-4 mb-6">
+                        <div class="h-[2px] flex-grow bg-slate-200"></div>
+                        <h2 class="text-sm font-black text-slate-400 uppercase tracking-[0.3em]">${cat} SEKCIJA</h2>
+                        <div class="h-[2px] flex-grow bg-slate-200"></div>
+                    </div>
+                    <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
+                        ${grouped[cat].map(item => `
+                            <div class="store-card-v2 group">
+                                <div class="store-card-header" onclick="showProductDetail('${item.id}', 'store')">
+                                    <img src="${item.images ? item.images[0] : ''}">
+                                    <div class="absolute top-2 right-2 bg-white/90 backdrop-blur px-2 py-1 rounded-lg text-[9px] font-black shadow-sm">${item.shelf}</div>
+                                    <div class="absolute inset-0 bg-amber-500/0 group-hover:bg-amber-500/20 transition-all duration-300 flex items-center justify-center">
+                                        <i class="fas fa-eye text-white opacity-0 group-hover:opacity-100 scale-50 group-hover:scale-100 transition-all"></i>
+                                    </div>
+                                </div>
+                                <div class="store-card-body">
+                                    <div class="text-[10px] text-slate-400 font-bold uppercase mb-1">Daudzums: ${item.qty} gb.</div>
+                                    <div class="font-black text-slate-900 text-sm leading-tight mb-3 h-8 overflow-hidden">${item.name}</div>
+                                    <div class="flex justify-between items-end">
+                                        <div>
+                                            <div class="text-[9px] text-slate-400 font-bold">${item.price_neto.toFixed(2)}€ + PVN</div>
+                                            <div class="text-lg font-black text-slate-900 leading-none">${(item.price_neto * (1 + item.vat/100)).toFixed(2)}€</div>
+                                        </div>
+                                        <button onclick="editStoreItem('${item.id}')" class="w-8 h-8 rounded-full bg-slate-900 text-white flex items-center justify-center hover:bg-amber-500 transition-colors">
+                                            <i class="fas fa-pen text-[10px]"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+                container.appendChild(section);
+            });
+        }
+
+        function editStoreItem(id) {
+            const item = storeItems[id];
+            const modal = document.getElementById('edit-modal');
+            const content = document.getElementById('edit-modal-content');
+            
+            content.innerHTML = `
+                <label class="input-group-label">Nosaukums</label>
+                <input id="ed-st-n" value="${item.name}">
+                <div class="grid grid-cols-2 gap-4">
+                    <div><label class="input-group-label">Cena bez PVN</label><input id="ed-st-p" type="number" step="0.01" value="${item.price_neto}"></div>
+                    <div><label class="input-group-label">Daudzums</label><input id="ed-st-q" type="number" value="${item.qty}"></div>
+                </div>
+                <label class="input-group-label">Plaukts</label>
+                <input id="ed-st-l" value="${item.shelf || ''}" class="uppercase">
+                <label class="input-group-label">Svītrkods</label>
+                <input id="ed-st-e" value="${item.ean || ''}">
+                <div class="flex flex-col gap-3 mt-6">
+                    <button onclick="saveStoreEdit('${id}')" class="btn-jt !bg-green-600 !text-white">Saglabāt</button>
+                    <button onclick="deleteStoreItem('${id}')" class="bg-red-100 text-red-600 font-black py-3 rounded-xl uppercase tracking-widest text-[10px]">Dzēst no veikala</button>
+                </div>
+            `;
+            modal.classList.remove('hidden');
+        }
+
+        function saveStoreEdit(id) {
+            const n = document.getElementById('ed-st-n').value,
+                  p = parseFloat(document.getElementById('ed-st-p').value) || 0,
+                  q = parseInt(document.getElementById('ed-st-q').value) || 0,
+                  l = document.getElementById('ed-st-l').value.toUpperCase(),
+                  e = document.getElementById('ed-st-e').value;
+
+            db.ref('store/' + id).update({ name: n, price_neto: p, qty: q, shelf: l, ean: e }).then(() => {
+                closeEditModal(); addLog(`Labota veikala prece: ${n}`);
+            });
+        }
+
+        function deleteStoreItem(id) {
+            if(confirm("Dzēst šo preci no e-veikala?")) {
+                db.ref('store/' + id).remove().then(() => { closeEditModal(); addLog(`Dzēsta prece no e-veikala (ID: ${id})`); });
+            }
+        }
+
+        function drawOrders(data) {
+            const list = document.getElementById('orders-list');
+            list.innerHTML = "";
+            if(!data) {
+                list.innerHTML = `<div class="text-center py-10 opacity-20 font-bold italic">Nav jaunu pasūtījumu...</div>`;
+                return;
+            }
+            Object.values(data).reverse().forEach(o => {
+                const div = document.createElement('div');
+                div.className = "card !p-6 border-l-4 border-blue-500";
+                div.innerHTML = `
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <div class="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1">PASŪTĪJUMS #${o.id.toString().slice(-6)}</div>
+                            <div class="font-black text-xl text-slate-900">${o.customer_name}</div>
+                            <div class="text-xs text-slate-500 font-bold">${o.customer_phone} | ${o.customer_email}</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-2xl font-black text-slate-900">${o.total.toFixed(2)}€</div>
+                            <span class="bg-blue-100 text-blue-600 px-2 py-1 rounded text-[9px] font-black uppercase">${o.status}</span>
+                        </div>
+                    </div>
+                    <div class="bg-slate-50 p-4 rounded-2xl mb-4">
+                        ${o.items.map(i => `<div class="text-xs flex justify-between py-1 border-b border-slate-200 last:border-0"><span>${i.name} (x${i.qty})</span><b>${i.price}€</b></div>`).join('')}
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="updateOrderStatus('${o.id}', 'Izsūtīts')" class="flex-1 bg-slate-900 text-white py-3 rounded-xl text-[10px] font-black uppercase">Atzīmēt kā izsūtītu</button>
+                        <button onclick="printOrderLabel('${o.id}')" class="bg-slate-100 text-slate-600 px-4 rounded-xl"><i class="fas fa-print"></i></button>
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        function updateOrderStatus(id, status) {
+            db.ref('orders/' + id).update({ status: status }).then(() => addLog(`Pasūtījums #${id.toString().slice(-6)} statuss: ${status}`));
+        }
+
+        function showProductDetail(id, type) {
+            const item = (type === 'stock') ? stock[id] : storeItems[id];
+            if(!item) return;
+            
+            const modal = document.getElementById('product-detail-modal');
+            const content = document.getElementById('detail-modal-content');
+            const title = document.getElementById('detail-modal-title');
+            
+            title.innerText = item.name;
+            content.innerHTML = `
+                <div class="detail-img-scroll mb-6">
+                    ${item.images ? item.images.map(img => `<img src="${img}" onclick="window.open(this.src)">`).join('') : '<div class="w-full h-40 bg-slate-100 rounded-2xl flex items-center justify-center italic text-slate-400">Nav attēlu</div>'}
+                </div>
+                <div class="grid grid-cols-2 gap-8 mb-8">
+                    <div>
+                        <div class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Informācija</div>
+                        <div class="space-y-3">
+                            <div class="flex justify-between border-b pb-2"><span>OEM:</span><b class="uppercase">${item.oem || '-'}</b></div>
+                            <div class="flex justify-between border-b pb-2"><span>Atlikums:</span><b class="${item.qty < 3 ? 'text-red-500' : 'text-green-600'}">${item.qty} gb.</b></div>
+                            <div class="flex justify-between border-b pb-2"><span>Plaukts:</span><b class="uppercase">${item.shelf || 'NAV'}</b></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Cena</div>
+                        <div class="bg-slate-900 text-white p-5 rounded-[20px] text-center">
+                            <div class="text-[10px] font-bold text-slate-400 uppercase">Bruto cena</div>
+                            <div class="text-4xl font-black italic">€${(item.price_neto * (1 + item.vat/100)).toFixed(2)}</div>
+                            <div class="text-[10px] text-slate-400 mt-1">Bez PVN: €${item.price_neto.toFixed(2)}</div>
+                        </div>
+                    </div>
+                </div>
+                ${item.ean ? `
+                    <div class="bg-white border-2 border-dashed border-slate-200 p-6 rounded-[20px] text-center">
+                        <div class="text-[10px] font-black text-slate-400 uppercase mb-4">Svītrkods (EAN-13)</div>
+                        <svg id="detail-barcode" class="mx-auto"></svg>
+                        <div class="mt-4 flex gap-2 justify-center">
+                            <button onclick="printEAN('${item.ean}', '${item.name}', '${(item.price_neto * (1 + item.vat/100)).toFixed(2)}')" class="bg-slate-100 text-slate-600 px-6 py-2 rounded-xl text-[10px] font-black uppercase">Drukāt uzlīmi</button>
+                        </div>
+                    </div>
+                ` : ''}
+            `;
+
+            modal.classList.remove('hidden');
+            if(item.ean) {
+                setTimeout(() => {
+                    JsBarcode("#detail-barcode", item.ean, { format: "EAN13", width: 2, height: 60, fontSize: 14 });
+                }, 100);
+            }
+        }
+
+        function closeDetailModal() { document.getElementById('product-detail-modal').classList.add('hidden'); }
+        function closeEditModal() { document.getElementById('edit-modal').classList.add('hidden'); }
+
+        function generateEAN(inputId) {
+            let ean = "20" + Math.floor(Math.random() * 10000000000).toString().padStart(10, '0');
+            let sum = 0;
+            for(let i=0; i<12; i++) sum += parseInt(ean[i]) * (i % 2 === 0 ? 1 : 3);
+            let check = (10 - (sum % 10)) % 10;
+            document.getElementById(inputId).value = ean + check;
+        }
+
+        function startScan(targetId) {
+            const sound = document.getElementById('scan-sound');
+            const reader = document.getElementById('reader');
+            reader.classList.remove('hidden');
+            if (scanner) { scanner.clear(); scanner = null; }
+            scanner = new Html5QrcodeScanner("reader", { fps: 20, qrbox: 250 });
+            scanner.render((text) => {
+                document.getElementById(targetId).value = text;
+                sound.play();
+                scanner.clear();
+                reader.classList.add('hidden');
                 if(targetId === 'q-stock') drawStock();
-                scanner.stop(); r.classList.add('hidden'); 
-            }).catch(err => { r.classList.add('hidden'); });
+                if(targetId === 'q-store') drawStore();
+            }, (err) => {});
         }
 
-        function generateEAN(targetId) { const ean = "200" + Date.now().toString().slice(-10); document.getElementById(targetId).value = ean; }
+        function printEAN(ean, name, price) {
+            const printArea = document.getElementById('print-area');
+            printArea.innerHTML = `
+                <div style="width: 40mm; height: 25mm; padding: 2mm; text-align: center; font-family: sans-serif; background: white;">
+                    <div style="font-size: 8px; font-weight: 900; white-space: nowrap; overflow: hidden; margin-bottom: 2mm;">${name.toUpperCase()}</div>
+                    <svg id="print-barcode-svg"></svg>
+                    <div style="font-size: 10px; font-weight: 900; margin-top: 1mm;">€ ${price}</div>
+                </div>
+            `;
+            JsBarcode("#print-barcode-svg", ean, { format: "EAN13", width: 1.5, height: 35, fontSize: 10 });
+            setTimeout(() => { window.print(); printArea.innerHTML = ""; }, 300);
+        }
+
+        function printRepairCard(id) {
+            db.ref('repairs/' + id).once('value', s => {
+                const repair = s.val();
+                const printArea = document.getElementById('print-area');
+                printArea.innerHTML = `
+                    <div style="padding: 20mm; font-family: sans-serif; color: #000;">
+                        <div style="display: flex; justify-between; align-items: center; border-bottom: 4px solid #000; padding-bottom: 10px; margin-bottom: 20px;">
+                            <h1 style="font-size: 40px; font-weight: 900; font-style: italic;">JT MOTORS</h1>
+                            <div style="text-align: right;">
+                                <div style="font-weight: 900;">SERVISA KARTE #${repair.id}</div>
+                                <div>Datums: ${new Date(repair.timestamp).toLocaleDateString('lv-LV')}</div>
+                            </div>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-bottom: 30px;">
+                            <div><div style="font-size: 10px; font-weight: 900; color: #666; text-transform: uppercase;">Klients</div><div style="font-size: 18px; font-weight: 900;">${repair.cl}</div></div>
+                            <div><div style="font-size: 10px; font-weight: 900; color: #666; text-transform: uppercase;">Automašīna</div><div style="font-size: 18px; font-weight: 900;">${repair.make} ${repair.model} (${repair.year})</div><div style="font-size: 14px; font-weight: 900; color: #fbbf24;">${repair.nr}</div><div style="font-size: 10px; font-family: monospace;">VIN: ${repair.vin || '-'}</div></div>
+                        </div>
+                        <div style="margin-bottom: 30px;"><div style="font-size: 10px; font-weight: 900; color: #666; text-transform: uppercase; border-bottom: 1px solid #eee; padding-bottom: 5px;">Veicamie darbi</div><div style="padding: 15px 0; font-style: italic; line-height: 1.6;">${repair.task}</div></div>
+                        <div style="text-align: right; border-top: 4px solid #000; padding-top: 10px;"><div style="font-size: 12px; font-weight: 900; color: #666;">KOPĀ APMAKSAI</div><div style="font-size: 32px; font-weight: 900;">€ ${repair.price.toFixed(2)}</div></div>
+                    </div>
+                `;
+                setTimeout(() => { window.print(); printArea.innerHTML = ""; }, 300);
+            });
+        }
+
+        function toBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = error => reject(error);
+            });
+        }
+
+        function addLog(msg) {
+            const time = new Date().toLocaleTimeString('lv-LV');
+            db.ref('logs').push({ time, msg });
+        }
+
+        function clearLogs() {
+            if(confirm("Vai tiešām dzēst visus sistēmas ierakstus?")) db.ref('logs').remove();
+        }
 
         async function decodeVIN() {
-            const vin = document.getElementById('rep-vin').value.trim();
-            if (vin.length !== 17) return alert("VIN numuram jābūt precīzi 17 rakstzīmēm!");
-            const btn = event.target; btn.innerText = "..."; btn.disabled = true;
+            const vin = document.getElementById('rep-vin').value;
+            if (vin.length !== 17) return alert("VIN jābūt 17 zīmēm!");
+            const btn = document.querySelector('button[onclick="decodeVIN()"]');
+            btn.innerText = "MEKLĒ..."; btn.disabled = true;
             try {
                 const response = await fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/decodevinvalues/${vin}?format=json`);
                 const data = await response.json();
@@ -1564,7 +1511,6 @@
             } catch (error) { alert("Kļūda VIN datubāzē."); } finally { btn.innerText = "DEKODĒT"; btn.disabled = false; }
         }
 
-        // JAUNA FUNKCIJA MANUĀLAI IEVADEI
         function enableManualInput(id, containerId, placeholder) {
             const container = document.getElementById(containerId);
             const labelText = id.includes('make') ? 'Marka' : 'Modelis';
