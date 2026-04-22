@@ -853,7 +853,9 @@
 
             sortedKeys.forEach(id => {
                 const i = stock[id];
-                if(i.n.toLowerCase().includes(q) || (i.e && i.e.toString().includes(q)) || (i.e2 && i.e2.toString().includes(q)) || (i.oem && i.oem.toLowerCase().includes(q))) {
+                // Izmanto "Optional Chaining" (?.) vai pārbaudi
+(item.name || "").toLowerCase();
+
                     const priceNeto = parseFloat(i.p).toFixed(2);
                     const priceBruto = (i.p * (i.vat == 21 ? 1.21 : 1)).toFixed(2);
                     const isLowStock = i.q <= 2;
