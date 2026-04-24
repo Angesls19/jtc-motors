@@ -220,23 +220,22 @@
         
         .detail-img-scroll { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 15px; scrollbar-width: thin; }
         .detail-img-scroll img { width: 180px; height: 180px; object-fit: cover; border-radius: 16px; border: 2px solid #f1f5f9; flex-shrink: 0; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+
+        .selected-part-chip {
+            background: #0f172a;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 11px;
+            font-weight: 700;
+            border: 1px solid rgba(251, 191, 36, 0.3);
+        }
     </style>
 </head>
 <body>
-    <div id="maintenance-screen" class="fixed inset-0 bg-slate-950 flex items-center justify-center p-6 z-[10000]">
-        <div class="text-center">
-            <div class="mb-10">
-                <h1 class="text-white font-black italic text-5xl leading-tight mb-4">JT <span class="text-amber-500">MOTORS</span></h1>
-                <div class="inline-block p-4 bg-amber-500/10 rounded-full mb-6">
-                    <i class="fas fa-tools text-amber-500 text-5xl animate-bounce"></i>
-                </div>
-                <h2 class="text-white text-2xl font-bold uppercase tracking-widest">Notiek tehniski darbi</h2>
-                <p class="text-slate-400 mt-4 max-w-sm mx-auto">Mēs šobrīd uzlabojam sistēmu. Lūdzu, mēģiniet vēlreiz vēlāk.</p>
-            </div>
-            <button onclick="checkAdminAccess()" class="text-slate-700 text-[10px] font-black uppercase tracking-[0.3em] hover:text-amber-500 transition-all">Sistēmas administrēšana</button>
-        </div>
-    </div>
-
     <audio id="scan-sound" src="https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3" preload="auto"></audio>
 
     <div id="print-area"></div>
@@ -261,11 +260,11 @@
         </div>
     </div>
 
-    <div id="login-screen" class="fixed inset-0 bg-slate-950 hidden items-center justify-center p-6 z-[9999]">
+    <div id="login-screen" class="fixed inset-0 bg-slate-950 flex items-center justify-center p-6 z-[9999]">
         <div class="bg-slate-900 p-10 rounded-[40px] w-full max-w-sm text-center border border-white/5 shadow-2xl">
             <div class="mb-10">
                 <h1 class="text-white font-black italic text-4xl leading-tight">JT <span class="text-amber-500">MOTORS</span></h1>
-                <p class="text-slate-500 text-sm mt-2 font-semibold">ADMINISTRATORA PIEABAJA</p>
+                <p class="text-slate-500 text-sm mt-2 font-semibold">ULTIMATE MANAGEMENT SYSTEM</p>
             </div>
             <input id="l-email" type="email" placeholder="E-pasts" class="!bg-slate-950 !text-white border-none mb-4">
             <input id="l-pass" type="password" placeholder="Parole" class="!bg-slate-950 !text-white border-none mb-4">
@@ -276,9 +275,7 @@
                 </label>
                 <button onclick="forgotPassword()" class="text-amber-500 text-xs font-bold hover:underline">Aizmirsu paroli?</button>
             </div>
-
             <button onclick="doLogin()" class="btn-jt w-full">Ienākt Sistēmā</button>
-            <button onclick="location.reload()" class="text-slate-500 text-[10px] mt-6 uppercase font-bold hover:text-white">Atpakaļ</button>
         </div>
     </div>
 
@@ -390,68 +387,762 @@
                     </div>
                     <button onclick="startScan('q-stock')" class="bg-white border border-slate-200 text-slate-600 w-12 h-[50px] rounded-xl flex items-center justify-center shadow-sm"><i class="fas fa-camera"></i></button>
                 </div>
-
                 <div id="stock-list" class="grid gap-3"></div>
             </div>
 
-            </main>
+            <div id="sec-sold" class="tab-content hidden">
+                <div class="flex justify-between items-center mb-6 px-2">
+                    <h2 class="text-2xl font-black italic uppercase tracking-tighter">NOLIKTAVAS <span class="text-red-500">REALIZĀCIJA</span></h2>
+                    <button onclick="clearSoldHistory()" class="bg-red-500 text-white text-[10px] font-black px-4 py-2 rounded-xl uppercase tracking-widest hover:bg-red-600">Notīrīt vēsturi</button>
+                </div>
+                <div class="card !p-0 overflow-hidden border-none shadow-xl">
+                    <table class="w-full text-sm">
+                        <thead class="bg-slate-900 text-white uppercase text-[10px]">
+                            <tr>
+                                <th class="p-4 text-left">Datums</th>
+                                <th class="p-4 text-left">Prece / OEM</th>
+                                <th class="p-4 text-center">Statuss</th>
+                                <th class="p-4 text-right">Summa (ar PVN)</th>
+                                <th class="p-4 text-center">Darbība</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sold-list-body" class="divide-y divide-slate-100 bg-white">
+                            <tr><td colspan="5" class="p-10 text-center opacity-20 italic font-bold">Vēsture ir tukša</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="sec-repairs" class="tab-content hidden">
+                <div class="card !bg-slate-900 border-none shadow-2xl overflow-hidden relative">
+                    <div class="absolute -right-10 -top-10 text-white opacity-5 rotate-12"><i class="fas fa-tools fa-9x"></i></div>
+                    <h3 class="font-black mb-6 flex items-center gap-3 text-white text-xl italic tracking-tighter">
+                        <span class="bg-amber-500 text-slate-900 w-8 h-8 rounded-lg flex items-center justify-center"><i class="fas fa-car-side"></i></span> JAUNS SERVISA DARBS
+                    </h3>
+                    <div class="relative z-10">
+                        <div class="mb-4">
+                            <label class="input-group-label text-slate-400">VIN Numurs</label>
+                            <div class="flex gap-2">
+                                <input id="rep-vin" placeholder="VIN (17 zīmes)" class="!bg-slate-800 !text-white border-none uppercase font-mono !mb-0">
+                                <button onclick="decodeVIN()" class="bg-blue-600 text-white px-4 rounded-xl font-black text-xs hover:bg-blue-500 transition-all">DEKODĒT</button>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div><label class="input-group-label text-slate-400">Valsts numurs</label><input id="rep-nr" placeholder="AA-1234" class="!bg-slate-800 !text-white border-none uppercase font-black"></div>
+                            <div><label class="input-group-label text-slate-400">Klients</label><input id="rep-cl" placeholder="Vārds / Uzņēmums" class="!bg-slate-800 !text-white border-none"></div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div id="make-container">
+                                <label class="input-group-label text-slate-400 flex justify-between">Marka <button onclick="enableManualInput('rep-make', 'make-container', 'Piem. BMW')" class="text-amber-500 text-[9px] underline">CITI</button></label>
+                                <select id="rep-make" onchange="updateModels()" class="!bg-slate-800 !text-white border-none"></select>
+                            </div>
+                            <div id="model-container">
+                                <label class="input-group-label text-slate-400 flex justify-between">Modelis <button onclick="enableManualInput('rep-model', 'model-container', 'Piem. E60')" class="text-amber-500 text-[9px] underline">CITI</button></label>
+                                <select id="rep-model" class="!bg-slate-800 !text-white border-none"></select>
+                            </div>
+                            <div><label class="input-group-label text-slate-400">Gads</label><select id="rep-year" class="!bg-slate-800 !text-white border-none"></select></div>
+                        </div>
+                        <label class="input-group-label text-slate-400">Veicamie darbi</label>
+                        <textarea id="rep-task" placeholder="Aprakstiet bojājumus..." class="!bg-slate-800 !text-white border-none h-24"></textarea>
+                        
+                        <div class="bg-slate-800/50 p-4 rounded-2xl mb-4 border border-white/5">
+                            <label class="input-group-label text-amber-500 font-bold mb-2">Pievienot detaļas no noliktavas</label>
+                            <div class="flex gap-2 mb-3">
+                                <select id="rep-parts-select" class="!bg-slate-800 !text-white border-none !mb-0 flex-1"></select>
+                                <button onclick="addPartToRepairList()" class="bg-amber-500 text-slate-900 px-4 rounded-xl font-black text-xs hover:bg-amber-400">PIEVIENOT</button>
+                            </div>
+                            <div id="selected-parts-list" class="space-y-2 mb-2">
+                                </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 gap-4">
+                            <div><label class="input-group-label text-slate-400">Kopējā cena (€) - darbs + detaļas</label><input id="rep-price" type="number" step="0.01" placeholder="0.00" class="!bg-slate-800 !text-white border-none text-xl font-black"></div>
+                        </div>
+                        <button onclick="addRepair()" class="btn-jt w-full mt-4 !py-4 shadow-xl uppercase font-black">Izveidot servisa karti</button>
+                    </div>
+                </div>
+                <div id="repair-list" class="grid gap-4 mt-6"></div>
+            </div>
+
+            <div id="sec-history" class="tab-content hidden">
+                <div class="card !bg-slate-900 border-none shadow-2xl overflow-hidden relative mb-6">
+                    <div class="absolute -right-10 -top-10 text-white opacity-5 rotate-12"><i class="fas fa-history fa-9x"></i></div>
+                    <h3 class="font-black mb-6 flex items-center gap-3 text-white text-xl italic tracking-tighter">
+                        <span class="bg-amber-500 text-slate-900 w-8 h-8 rounded-lg flex items-center justify-center"><i class="fas fa-search"></i></span> MEKLĒT AUTO VĒSTURI
+                    </h3>
+                    <div class="relative z-10 flex flex-col gap-2">
+                        <div class="flex gap-2">
+                            <input id="h-search-nr" placeholder="AA-1234" class="!bg-slate-800 !text-white border-none uppercase font-black !mb-0" onkeyup="if(event.key === 'Enter') searchVehicleHistory()">
+                            <button onclick="searchVehicleHistory()" class="btn-jt px-8 !py-0 h-[50px]">Meklēt</button>
+                        </div>
+                        <button onclick="searchVehicleHistory(true)" class="w-full bg-slate-800 text-slate-400 font-bold py-3 rounded-xl border border-white/5 hover:bg-slate-700 hover:text-white transition-all uppercase text-[10px] tracking-widest">Rādīt visu pabeigto darbu vēsturi</button>
+                    </div>
+                </div>
+                <div id="history-results" class="grid gap-4">
+                    <div class="text-center py-10 opacity-20 font-bold italic">Ievadiet numuru, lai redzētu veiktos darbus...</div>
+                </div>
+            </div>
+
+            <div id="sec-store" class="tab-content hidden">
+                <div class="card !bg-slate-900 border-none shadow-2xl overflow-hidden relative mb-8">
+                    <div class="absolute -right-10 -top-10 text-white opacity-5 rotate-12"><i class="fas fa-shopping-cart fa-9x"></i></div>
+                    <h3 class="font-black mb-6 flex items-center gap-3 text-white text-xl italic tracking-tighter">
+                        <span class="bg-amber-500 text-slate-900 w-8 h-8 rounded-lg flex items-center justify-center"><i class="fas fa-cart-plus"></i></span> PIEVIENOT PRECI VEIKALAM
+                    </h3>
+                    <div class="relative z-10">
+                        <label class="input-group-label text-slate-400">Produkta nosaukums</label>
+                        <input id="store-in-n" placeholder="Piem. Motoreļļa 5W30" class="!bg-slate-800 !text-white !mb-4 border-slate-700">
+                        
+                        <label class="input-group-label text-slate-400">Produkta attēli (Augšupielādēt vairākus)</label>
+                        <input id="store-in-file" type="file" accept="image/*" multiple class="!bg-slate-800 !text-white !mb-4 border-slate-700">
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div><label class="input-group-label text-slate-400">Cena bez PVN (€)</label><input id="store-in-p-neto" type="number" step="0.01" placeholder="0.00" class="!bg-slate-800 !text-white border-slate-700"></div>
+                            <div><label class="input-group-label text-slate-400">PVN Likme</label><select id="store-in-vat" class="!bg-slate-800 !text-white border-slate-700"><option value="21">PVN 21%</option><option value="0">PVN 0%</option></select></div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div><label class="input-group-label text-slate-400">Daudzums</label><input id="store-in-q" type="number" placeholder="1" class="!bg-slate-800 !text-white border-slate-700"></div>
+                            <div><label class="input-group-label text-slate-400">Plaukts</label><input id="store-in-l" placeholder="V-1" class="!bg-slate-800 !text-white border-slate-700 uppercase"></div>
+                        </div>
+                        <label class="input-group-label text-slate-400">Svītrkods (EAN)</label>
+                        <div class="flex gap-2">
+                            <input id="store-in-e" placeholder="Skenēt vai ierakstīt..." class="!bg-slate-800 !text-white border-slate-700 font-mono text-sm">
+                            <button onclick="generateEAN('store-in-e')" class="bg-blue-500 text-white w-14 h-[50px] rounded-xl flex items-center justify-center font-black text-xs">GEN</button>
+                            <button onclick="startScan('store-in-e')" class="bg-amber-500 text-slate-900 w-14 h-[50px] rounded-xl flex items-center justify-center shadow-lg shadow-amber-500/20"><i class="fas fa-barcode"></i></button>
+                        </div>
+                        <button id="btn-add-store" onclick="addStoreItem()" class="btn-jt w-full mt-4 !py-4">Publicēt Veikalā</button>
+                    </div>
+                </div>
+
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4 px-2">
+                    <h2 class="text-2xl font-black italic uppercase tracking-tighter">JT VEIKALS <span class="text-amber-500">LIVE</span></h2>
+                    <div class="relative w-full md:w-1/2 flex gap-2">
+                        <div class="relative flex-grow">
+                            <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                            <input id="q-store" oninput="drawStore()" placeholder="Meklēt veikalā..." class="!mb-0 pl-12 py-3 !bg-white shadow-sm border-slate-200">
+                        </div>
+                        <button onclick="startScan('q-store')" class="bg-white border border-slate-200 text-slate-600 w-12 h-[50px] rounded-xl flex items-center justify-center shadow-sm"><i class="fas fa-camera"></i></button>
+                    </div>
+                </div>
+                <div id="store-container" class="space-y-12"></div>
+            </div>
+
+            <div id="sec-orders" class="tab-content hidden">
+                <div class="flex justify-between items-center mb-6 px-2">
+                    <h2 class="text-2xl font-black italic uppercase tracking-tighter">WEB <span class="text-blue-600">PASŪTĪJUMI</span></h2>
+                    <span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">Gatavi sūtīšanai</span>
+                </div>
+                <div id="orders-list" class="grid gap-4">
+                    <div class="text-center py-10 opacity-20 font-bold italic">Nav jaunu pasūtījumu...</div>
+                </div>
+            </div>
+
+            <div id="sec-clients" class="tab-content hidden">
+                <div class="card !bg-slate-900 border-none shadow-2xl overflow-hidden relative">
+                    <div class="absolute -right-10 -top-10 text-white opacity-5 rotate-12"><i class="fas fa-address-book fa-9x"></i></div>
+                    <h3 class="font-black mb-6 flex items-center gap-3 text-white text-xl italic tracking-tighter">
+                        <span class="bg-amber-500 text-slate-900 w-8 h-8 rounded-lg flex items-center justify-center"><i class="fas fa-user-plus"></i></span> KLIENTU REĢISTRS
+                    </h3>
+                    
+                    <div class="relative z-10">
+                        <label class="input-group-label text-slate-400">Klienta tips</label>
+                        <select id="c-type" onchange="toggleClientFields()" class="!bg-slate-800 !text-white border-slate-700 !mb-4">
+                            <option value="private">Privātpersona</option>
+                            <option value="company">Uzņēmums</option>
+                        </select>
+                        <div id="client-form-fields" class="space-y-1">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label id="label-c-n" class="input-group-label text-slate-400">Vārds Uzvārds</label>
+                                    <input id="c-n" placeholder="Jānis Bērziņš" class="!bg-slate-800 !text-white border-slate-700">
+                                </div>
+                                <div>
+                                    <label class="input-group-label text-slate-400">Telefona nr.</label>
+                                    <input id="c-p" placeholder="+371 20000000" class="!bg-slate-800 !text-white border-slate-700">
+                                </div>
+                            </div>
+                            <div id="private-only">
+                                <label class="input-group-label text-slate-400">E-pasts</label>
+                                <input id="c-e" placeholder="piemers@epasts.lv" class="!bg-slate-800 !text-white border-slate-700">
+                            </div>
+                            <div id="company-only" class="hidden space-y-4">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="input-group-label text-slate-400">Reģistrācijas Nr.</label>
+                                        <input id="c-reg" placeholder="40003000..." class="!bg-slate-800 !text-white border-slate-700">
+                                    </div>
+                                    <div>
+                                        <label class="input-group-label text-slate-400">Juridiskā Adrese</label>
+                                        <input id="c-addr" placeholder="Rīga, Brīvības iela 1" class="!bg-slate-800 !text-white border-slate-700">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <button onclick="addClient()" class="btn-jt w-full mt-4 !py-4">Saglabāt Klientu</button>
+                    </div>
+                </div>
+                <div id="client-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+            </div>
+
+            <div id="sec-fin" class="tab-content hidden">
+                <div class="card !p-0 overflow-hidden border-none shadow-xl">
+                    <div class="bg-slate-800 p-4 text-white text-center text-xs font-black uppercase tracking-widest">Finanšu pārskats / Rēķini</div>
+                    <table class="w-full text-sm">
+                        <thead class="bg-slate-100 text-slate-500 uppercase text-[10px]">
+                            <tr>
+                                <th class="p-4 text-left">Datums</th>
+                                <th class="text-left">Auto / Klients</th>
+                                <th class="text-right">Summa</th>
+                                <th class="p-4 text-right">Darbības</th>
+                            </tr>
+                        </thead>
+                        <tbody id="fin-table" class="divide-y divide-slate-100"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="sec-logs" class="tab-content hidden">
+                <div class="card bg-slate-950 p-4 border-none">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center gap-2 text-green-500 text-xs font-bold uppercase tracking-widest">
+                            <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span> Sistēmas Logs
+                        </div>
+                        <button onclick="clearLogs()" class="text-[10px] bg-red-500/20 text-red-500 border border-red-500/50 px-3 py-1 rounded-lg font-black uppercase hover:bg-red-500 hover:text-white transition-all">Nodzēst visu</button>
+                    </div>
+                    <div class="font-mono text-[11px] h-[60vh] overflow-y-auto space-y-1 text-slate-400" id="logs-box"></div>
+                </div>
+            </div>
+
+        </main>
     </div>
 
     <script>
-        // APKOPES FUNKCIJA
-        function checkAdminAccess() {
-            const adminEmail = prompt("Ievadiet administratora e-pastu, lai ienāktu:");
-            if (adminEmail === "admin@jtmotors.lv") {
-                document.getElementById('maintenance-screen').classList.add('hidden');
-                document.getElementById('login-screen').classList.remove('hidden');
-                document.getElementById('login-screen').classList.add('flex');
-            } else {
-                alert("Piekļuve liegta.");
-            }
-        }
-
-        const firebaseConfig = { 
-            apiKey: "AIzaSyBK20atH4pmEORbuHLCTAXaSCPUBfz9190", 
-            databaseURL: "https://jtc-motors-default-rtdb.europe-west1.firebasedatabase.app" 
-        };
+        const firebaseConfig = { apiKey: "AIzaSyBK20atH4pmEORbuHLCTAXaSCPUBfz9190", databaseURL: "https://jtc-motors-default-rtdb.europe-west1.firebasedatabase.app" };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database(), auth = firebase.auth();
 
-        // Autentifikācijas klausītājs - nodrošina, ka pat ielogojies ne-admins neredz UI
+        let stock = {}, storeItems = {}, userRole = "", scanner = null;
+        let currentRepairParts = []; 
+
+        const modelsByMake = {
+            "Alfa Romeo": ["Giulia", "Stelvio", "Tonale", "Guilietta", "159"],
+            "Audi": ["A1", "A3", "A4", "A5", "A6", "A7", "A8", "Q2", "Q3", "Q4 e-tron", "Q5", "Q7", "Q8", "TT"],
+            "BMW": ["1. sērija", "2. sērija", "3. sērija", "4. sērija", "5. sērija", "6. sērija", "7. sērija", "8. sērija", "X1", "X2", "X3", "X4", "X5", "X6", "X7", "Z4", "i3", "i4", "iX"],
+            "Citroen": ["C3", "C4", "C5 Aircross", "Berlingo", "Jumpy"],
+            "Cupra": ["Formentor", "Leon", "Born", "Ateca"],
+            "Dacia": ["Duster", "Sandero", "Jogger", "Logan"],
+            "Dodge": ["Challenger", "Charger", "Ram", "Durango"],
+            "Fiat": ["500", "Panda", "Tipo", "Ducato", "Doblo"],
+            "Ford": ["Focus", "Mondeo", "Fiesta", "Transit", "Puma", "Kuga", "Ranger", "Mustang", "Explorer"],
+            "Honda": ["Civic", "CR-V", "HR-V", "Jazz", "Accord"],
+            "Hyundai": ["i10", "i20", "i30", "Tucson", "Santa Fe", "Ioniq 5", "Kona"],
+            "Infiniti": ["Q30", "Q50", "QX70"],
+            "Jaguar": ["XF", "XJ", "F-Pace", "E-Pace", "I-Pace"],
+            "Jeep": ["Grand Cherokee", "Wrangler", "Compass", "Renegade"],
+            "Kia": ["Ceed", "Sportage", "Sorento", "Rio", "Niro", "EV6", "Stinger"],
+            "Land Rover": ["Range Rover", "Defender", "Discovery", "Evoque", "Velar"],
+            "Lexus": ["IS", "GS", "LS", "RX", "NX", "UX", "ES"],
+            "Mazda": ["Mazda 2", "Mazda 3", "Mazda 6", "CX-3", "CX-30", "CX-5", "CX-60", "MX-5"],
+            "Mercedes-Benz": ["A-Class", "B-Class", "C-Class", "E-Class", "S-Class", "CLA", "CLS", "GLA", "GLB", "GLC", "GLE", "GLS", "G-Class", "Sprinter", "Vito"],
+            "Mini": ["Cooper", "Countryman", "Clubman"],
+            "Mitsubishi": ["Outlander", "L200", "ASX", "Eclipse Cross", "Pajero"],
+            "Nissan": ["Qashqai", "Juke", "X-Trail", "Leaf", "Navara", "Micra"],
+            "Opel": ["Astra", "Insignia", "Corsa", "Mokka", "Grandland", "Zafira", "Vivaro"],
+            "Peugeot": ["208", "308", "508", "2008", "3008", "5008", "Partner", "Boxer"],
+            "Porsche": ["911", "Cayenne", "Macan", "Panamera", "Taycan"],
+            "Renault": ["Clio", "Megane", "Captur", "Kadjar", "Austral", "Trafic", "Master", "Scenic"],
+            "Seat": ["Ibiza", "Leon", "Ateca", "Tarraco", "Alhambra"],
+            "Skoda": ["Octavia", "Superb", "Fabia", "Kodiaq", "Karoq", "Kamiq", "Enyaq"],
+            "Subaru": ["Outback", "Forester", "XV", "Impreza"],
+            "Suzuki": ["Vitara", "Swift", "Jimny", "SX4 S-Cross"],
+            "Tesla": ["Model 3", "Model S", "Model X", "Model Y"],
+            "Toyota": ["Corolla", "Avensis", "Yaris", "RAV4", "Land Cruiser", "Hilux", "C-HR", "Camry", "Proace"],
+            "Volkswagen": ["Golf", "Passat", "Tiguan", "Touareg", "Transporter", "Caddy", "Arteon", "ID.3", "ID.4", "ID.5", "Polo", "Crafter"],
+            "Volvo": ["S40", "S60", "S80", "S90", "V40", "V60", "V70", "V90", "XC40", "XC60", "XC70", "XC90"]
+        };
+
         auth.onAuthStateChanged(user => {
-            if (user && user.email === "admin@jtmotors.lv") {
-                document.getElementById('login-screen').classList.add('hidden');
-                document.getElementById('maintenance-screen').classList.add('hidden');
+            if(user) {
+                userRole = (user.email === "cihmuks@gmail.com") ? "Admin" : "Priekšnieks";
+                document.getElementById('user-badge').innerText = userRole;
+                document.getElementById('login-screen').style.display = 'none';
                 document.getElementById('app-ui').style.display = 'block';
-                document.getElementById('user-badge').innerText = user.email.split('@')[0];
-                loadInitialData();
+                init();
             } else {
-                if (user) auth.signOut(); // Izrakstīt, ja nav admins
+                document.getElementById('login-screen').style.display = 'flex';
                 document.getElementById('app-ui').style.display = 'none';
-                // Atstājam maintenance screen redzamu
             }
         });
 
-        // Pārējās funkcijas (doLogin, addStock, decodeVIN utt.) paliek identiskas kā oriģinālā
         async function doLogin() {
-            const email = document.getElementById('l-email').value;
-            const pass = document.getElementById('l-pass').value;
+            const e = document.getElementById('l-email').value, p = document.getElementById('l-pass').value, rem = document.getElementById('l-remember').checked;
+            if(!e || !p) return alert("Ievadiet datus!");
+            try {
+                await auth.setPersistence(rem ? firebase.auth.Auth.Persistence.LOCAL : firebase.auth.Auth.Persistence.SESSION);
+                await auth.signInWithEmailAndPassword(e, p);
+                log("Sistēma: Lietotājs pieslēdzās");
+            } catch(err) { alert("Piekļuve liegta!"); }
+        }
+
+        function forgotPassword() {
+            const e = document.getElementById('l-email').value;
+            if(!e) return alert("Ievadiet e-pastu!");
+            auth.sendPasswordResetEmail(e).then(() => alert("Atiestatīšanas saite nosūtīta!")).catch(err => alert(err.message));
+        }
+
+        function setSec(s) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
+            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+            const target = document.getElementById('sec-' + s);
+            if(target) target.classList.remove('hidden');
+            const nav = document.getElementById('n-' + s);
+            if(nav) nav.classList.add('active');
+        }
+
+        function init() {
+            loadStock(); loadRepairs(); loadOrders(); loadClients(); loadFin(); loadLogs(); loadStore(); loadSoldHistory();
+            fillMakes(); fillYears();
+        }
+
+        function fillMakes() {
+            let h = '<option value="">Izvēlies...</option>';
+            Object.keys(modelsByMake).sort().forEach(m => h += `<option value="${m}">${m}</option>`);
+            document.getElementById('rep-make').innerHTML = h;
+        }
+
+        function fillYears() {
+            let h = '<option value="">---</option>';
+            for(let y = 2026; y >= 1990; y--) h += `<option value="${y}">${y}</option>`;
+            document.getElementById('rep-year').innerHTML = h;
+        }
+
+        function updateModels() {
+            const make = document.getElementById('rep-make').value;
+            let h = '<option value="">Izvēlies...</option>';
+            if(modelsByMake[make]) modelsByMake[make].forEach(m => h += `<option value="${m}">${m}</option>`);
+            document.getElementById('rep-model').innerHTML = h;
+        }
+
+        function log(msg) { db.ref('logs').push({t: new Date().toLocaleString('lv-LV'), u: userRole, i: msg}); }
+
+        function clearLogs() { if(confirm("Dzēst žurnālu?")) db.ref('logs').remove(); }
+
+        async function uploadImages(fileInput) {
+            const urls = [];
+            if(fileInput && fileInput.files.length > 0) {
+                for(let file of fileInput.files) {
+                    const formData = new FormData();
+                    formData.append("image", file);
+                    try {
+                        const response = await fetch("https://api.imgbb.com/1/upload?key=1e5fd5e4f97806bc6b403e42c3d94288", { method: "POST", body: formData });
+                        const result = await response.json();
+                        if(result.success) urls.push(result.data.display_url);
+                    } catch (err) { console.error("Augšupielādes kļūda"); }
+                }
+            }
+            return urls;
+        }
+
+        // --- SALABOTĀ NOLIKTAVA ---
+        function loadStock() {
+            db.ref('stock').on('value', s => {
+                const rawData = s.val() || {};
+                stock = {};
+                // Filtrējam null/undefined vērtības, ja datubāzē tādas ir radušās
+                Object.keys(rawData).forEach(key => {
+                    if (rawData[key]) stock[key] = rawData[key];
+                });
+
+                drawStock();
+                updatePartSelect();
+                let v = 0; 
+                Object.values(stock).forEach(i => {
+                    if (i && i.p) {
+                        v += ((parseFloat(i.q) || 0) * (parseFloat(i.p) * (i.vat == 21 ? 1.21 : 1)));
+                    }
+                });
+                const sValEl = document.getElementById('s-val');
+                if(sValEl) sValEl.innerText = v.toFixed(0) + "€";
+            });
+        }
+
+        function drawStock() {
+            const qInput = document.getElementById('q-stock');
+            const q = qInput ? qInput.value.toLowerCase().trim() : '';
+            const list = document.getElementById('stock-list');
+            let h = '';
             
-            if (email !== "admin@jtmotors.lv") {
-                alert("Šī piekļuve ir ierobežota tikai administratoram.");
+            const entries = Object.keys(stock).reverse();
+
+            if(entries.length === 0) {
+                list.innerHTML = '<p class="text-center p-10 opacity-20">Noliktava ir tukša</p>';
                 return;
             }
 
-            try {
-                await auth.signInWithEmailAndPassword(email, pass);
-            } catch (error) {
-                alert("Kļūda: " + error.message);
+            entries.forEach(id => {
+                const i = stock[id];
+                if (!i) return; // Drošības pārbaude
+
+                const name = String(i.n || '').toLowerCase();
+                const oem = String(i.oem || '').toLowerCase();
+                const ean = String(i.e || '').toLowerCase();
+                const ean2 = String(i.e2 || '').toLowerCase();
+                const loc = String(i.l || '').toLowerCase();
+
+                if(q === '' || name.includes(q) || oem.includes(q) || ean.includes(q) || ean2.includes(q) || loc.includes(q)) {
+                    const priceBruto = (parseFloat(i.p || 0) * (i.vat == 21 ? 1.21 : 1)).toFixed(2);
+                    let img = '<div class="stock-img-mini flex items-center justify-center text-slate-300" onclick="openDetailModal(\''+id+'\', \'stock\')"><i class="fas fa-box"></i></div>';
+                    if(i.imgs && i.imgs.length > 0 && i.imgs[0]) img = `<img src="${i.imgs[0]}" class="stock-img-mini" onclick="openDetailModal('${id}', 'stock')">`;
+                    
+                    h += `
+                    <div class="stock-item-advanced">
+                        <div class="shelf-tag">${i.l || '---'}</div>
+                        ${img}
+                        <div onclick="openDetailModal('${id}', 'stock')" class="cursor-pointer overflow-hidden">
+                            <h4 class="font-bold text-sm text-slate-800 truncate uppercase">${i.n || 'Nenosaukts'}</h4>
+                            <p class="text-[10px] text-amber-600 font-bold">OEM: ${i.oem || '---'}</p>
+                            <span class="text-[10px] font-black ${parseInt(i.q || 0) < 2 ? 'text-red-500' : 'text-slate-400'}">${i.q || 0} GAB</span>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <div class="text-right">
+                                <div class="price-badge-bruto">${priceBruto}€</div>
+                            </div>
+                            <div class="flex gap-1">
+                                <button onclick="sellStockItem('${id}')" class="w-8 h-8 rounded-lg bg-green-100 text-green-600 hover:bg-green-500 hover:text-white" title="Pārdot"><i class="fas fa-shopping-cart text-xs"></i></button>
+                                <button onclick="editStock('${id}')" class="w-8 h-8 rounded-lg bg-slate-100 text-slate-400 hover:bg-blue-500 hover:text-white"><i class="fas fa-edit text-xs"></i></button>
+                                <button onclick="deleteStockItem('${id}')" class="w-8 h-8 rounded-lg bg-slate-100 text-slate-300 hover:bg-red-500 hover:text-white"><i class="fas fa-trash text-xs"></i></button>
+                            </div>
+                        </div>
+                    </div>`;
+                }
+            });
+            list.innerHTML = h || '<p class="text-center p-10 opacity-20">Nekas nav atrasts</p>';
+        }
+
+        async function addStock() {
+            const n = document.getElementById('st-n').value, p = document.getElementById('st-p').value, btn = document.getElementById('btn-add-stock');
+            if(!n || !p) return alert("Aizpildi datus!");
+            btn.disabled = true; btn.innerText = "AUGŠUPIELĀDE...";
+            const imgs = await uploadImages(document.getElementById('st-file'));
+            db.ref('stock').push({
+                n, p: parseFloat(p), vat: document.getElementById('st-vat').value,
+                oem: document.getElementById('st-oem').value, q: parseInt(document.getElementById('st-q').value || 1),
+                l: document.getElementById('st-l').value || 'Nav', e: document.getElementById('st-e').value || Date.now().toString(),
+                e2: document.getElementById('st-e2').value || '', imgs
+            }).then(() => {
+                btn.disabled = false; btn.innerText = "Saglabāt Noliktavā";
+                document.querySelectorAll('#sec-stock input').forEach(i => i.value = '');
+                log("Noliktava: Pievienota prece " + n);
+            });
+        }
+
+        function deleteStockItem(id) {
+            if(confirm("Vai tiešām vēlaties dzēst šo preci?")) {
+                db.ref('stock/'+id).remove();
+                log("Noliktava: Dzēsta prece " + id);
             }
         }
 
-        // ... Šeit turpinās viss pārējais oriģinālais JS kods bez izmaiņām ...
-        // (Visi drawStock, addRepair, searchVehicleHistory utt.)
+        function sellStockItem(id) {
+            const i = stock[id]; if(!i || i.q <= 0) return alert("Nav atlikumā!");
+            if(confirm(`Pārdot 1 gab. ${i.n}?`)) {
+                const pb = (parseFloat(i.p) * (i.vat == 21 ? 1.21 : 1)).toFixed(2);
+                db.ref('stock/'+id).update({q: i.q - 1});
+                db.ref('sold_history').push({ n: i.n, oem: i.oem || '', p: pb, status: 'PĀRDOTS', d: new Date().toLocaleString('lv-LV') });
+                db.ref('finances').push({ nr: "PĀRDOŠANA", cl: "Mazumtirdzniecība", task: i.n, price: parseFloat(pb), d: new Date().toLocaleDateString('lv-LV') });
+                document.getElementById('scan-sound').play();
+            }
+        }
+
+        // --- TRŪKSTOŠIE MODĀLIE LOGI (EDIT UN DETAIL) ---
+        function openDetailModal(id, type) {
+            const item = type === 'stock' ? stock[id] : storeItems[id];
+            if(!item) return;
+            let imgsHtml = '';
+            if(item.imgs && item.imgs.length > 0) {
+                item.imgs.forEach(url => imgsHtml += `<img src="${url}">`);
+            } else {
+                imgsHtml = '<div class="w-[180px] h-[180px] bg-slate-100 rounded-2xl flex items-center justify-center text-slate-300"><i class="fas fa-box fa-3x"></i></div>';
+            }
+            const pBruto = (parseFloat(item.p || 0) * (item.vat == 21 ? 1.21 : 1)).toFixed(2);
+            document.getElementById('detail-modal-content').innerHTML = `
+                <div class="detail-img-scroll">${imgsHtml}</div>
+                <h2 class="text-2xl font-black uppercase mb-2">${item.n}</h2>
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div class="bg-slate-50 p-3 rounded-xl"><span class="text-[10px] text-slate-400 font-bold uppercase block">OEM Kods</span><span class="font-mono font-bold">${item.oem || '---'}</span></div>
+                    <div class="bg-slate-50 p-3 rounded-xl"><span class="text-[10px] text-slate-400 font-bold uppercase block">Plaukts</span><span class="font-mono font-bold">${item.l || '---'}</span></div>
+                    <div class="bg-slate-50 p-3 rounded-xl"><span class="text-[10px] text-slate-400 font-bold uppercase block">EAN 1</span><span class="font-mono text-xs">${item.e || '---'}</span></div>
+                    <div class="bg-slate-50 p-3 rounded-xl"><span class="text-[10px] text-slate-400 font-bold uppercase block">EAN 2</span><span class="font-mono text-xs">${item.e2 || '---'}</span></div>
+                </div>
+                <div class="flex justify-between items-center bg-amber-50 p-4 rounded-xl border border-amber-200">
+                    <div>
+                        <span class="text-amber-600 font-black text-sm block">Atlikums noliktavā: ${item.q || 0} gab.</span>
+                        <span class="text-slate-500 text-xs font-bold">Cena bez PVN: ${parseFloat(item.p || 0).toFixed(2)}€</span>
+                    </div>
+                    <div class="text-3xl font-black text-slate-900">${pBruto}€</div>
+                </div>
+            `;
+            document.getElementById('product-detail-modal').classList.remove('hidden');
+        }
+
+        function editStock(id) {
+            const i = stock[id]; if(!i) return;
+            document.getElementById('edit-modal-content').innerHTML = `
+                <label class="input-group-label">Nosaukums</label>
+                <input id="ed-n" value="${i.n || ''}" class="!bg-slate-100 !text-slate-900 border-slate-200 mb-3">
+                <label class="input-group-label">OEM</label>
+                <input id="ed-oem" value="${i.oem || ''}" class="!bg-slate-100 !text-slate-900 border-slate-200 mb-3 uppercase">
+                <div class="grid grid-cols-2 gap-2 mb-3">
+                    <div><label class="input-group-label">Cena Neto</label><input id="ed-p" type="number" step="0.01" value="${i.p || 0}" class="!bg-slate-100 !text-slate-900 border-slate-200"></div>
+                    <div><label class="input-group-label">Daudzums</label><input id="ed-q" type="number" value="${i.q || 0}" class="!bg-slate-100 !text-slate-900 border-slate-200"></div>
+                </div>
+                <div class="grid grid-cols-2 gap-2 mb-3">
+                    <div><label class="input-group-label">Plaukts</label><input id="ed-l" value="${i.l || ''}" class="!bg-slate-100 !text-slate-900 border-slate-200"></div>
+                    <div><label class="input-group-label">PVN</label>
+                        <select id="ed-vat" class="!bg-slate-100 !text-slate-900 border-slate-200">
+                            <option value="21" ${i.vat==21?'selected':''}>21%</option>
+                            <option value="0" ${i.vat==0?'selected':''}>0%</option>
+                        </select>
+                    </div>
+                </div>
+                <button onclick="saveEditStock('${id}')" class="btn-jt w-full mt-2">Saglabāt izmaiņas</button>
+            `;
+            document.getElementById('edit-modal').classList.remove('hidden');
+        }
+
+        function saveEditStock(id) {
+            const n = document.getElementById('ed-n').value;
+            const p = parseFloat(document.getElementById('ed-p').value);
+            const oem = document.getElementById('ed-oem').value;
+            const q = parseInt(document.getElementById('ed-q').value);
+            const l = document.getElementById('ed-l').value;
+            const vat = document.getElementById('ed-vat').value;
+            db.ref('stock/'+id).update({n, p, oem, q, l, vat}).then(() => {
+                closeEditModal();
+                log("Noliktava: Labota prece " + n);
+            });
+        }
+
+        function editRepair(id) {
+            const status = prompt("Ievadiet jaunu statusu (Procesā / Gatavs):");
+            if(status === "Procesā" || status === "Gatavs") {
+                db.ref('repairs/'+id).update({status});
+            }
+        }
+
+        // --- REPAIR LOGIC ---
+        function updatePartSelect() {
+            const select = document.getElementById('rep-parts-select');
+            if(!select) return;
+            let h = '<option value="">-- Izvēlēties detaļu no noliktavas --</option>';
+            Object.keys(stock).forEach(id => {
+                const i = stock[id];
+                if(i && i.q > 0) { // Drošības pārbaude
+                    const price = (parseFloat(i.p || 0) * (i.vat == 21 ? 1.21 : 1)).toFixed(2);
+                    h += `<option value="${id}">${String(i.n || '').toUpperCase()} | OEM: ${i.oem || 'Nav'} | ${i.q} gab. | ${price}€</option>`;
+                }
+            });
+            select.innerHTML = h;
+        }
+
+        function addPartToRepairList() {
+            const id = document.getElementById('rep-parts-select').value;
+            if(!id) return;
+            const i = stock[id];
+            const price = parseFloat((parseFloat(i.p) * (i.vat == 21 ? 1.21 : 1)).toFixed(2));
+            currentRepairParts.push({ id, n: i.n, p: price, oem: i.oem || '' });
+            const priceInput = document.getElementById('rep-price');
+            priceInput.value = (parseFloat(priceInput.value || 0) + price).toFixed(2);
+            renderCurrentPartsList();
+        }
+
+        function renderCurrentPartsList() {
+            const list = document.getElementById('selected-parts-list');
+            let h = '';
+            currentRepairParts.forEach((item, index) => {
+                h += `<div class="selected-part-chip"><span class="truncate pr-4">${item.n} (${item.p}€)</span><button onclick="removePartFromRepairList(${index})" class="text-red-500 hover:text-white"><i class="fas fa-times"></i></button></div>`;
+            });
+            list.innerHTML = h;
+        }
+
+        function removePartFromRepairList(index) {
+            const item = currentRepairParts[index];
+            const priceInput = document.getElementById('rep-price');
+            priceInput.value = Math.max(0, parseFloat(priceInput.value || 0) - item.p).toFixed(2);
+            currentRepairParts.splice(index, 1);
+            renderCurrentPartsList();
+        }
+
+        function addRepair() {
+            const nr = document.getElementById('rep-nr').value.toUpperCase();
+            if(!nr) return alert("Ievadiet numuru!");
+            const price = parseFloat(document.getElementById('rep-price').value || 0);
+            currentRepairParts.forEach(part => {
+                if(stock[part.id]) {
+                    db.ref('stock/'+part.id).update({ q: Math.max(0, stock[part.id].q - 1) });
+                    db.ref('sold_history').push({ n: part.n, oem: part.oem, p: part.p.toFixed(2), status: 'SERVISS', car_nr: nr, d: new Date().toLocaleString('lv-LV') });
+                }
+            });
+            const data = { nr, cl: document.getElementById('rep-cl').value, vin: document.getElementById('rep-vin').value, make: document.getElementById('rep-make').value, model: document.getElementById('rep-model').value, year: document.getElementById('rep-year').value, task: document.getElementById('rep-task').value, price, used_parts: currentRepairParts, status: 'Procesā', d: new Date().toLocaleDateString('lv-LV') };
+            db.ref('repairs').push(data).then(() => {
+                log("Serviss: Jauns darbs " + nr);
+                document.querySelectorAll('#sec-repairs input, #sec-repairs textarea').forEach(i => i.value = '');
+                currentRepairParts = []; renderCurrentPartsList(); alert("Servisa karte izveidota!");
+            });
+        }
+
+        function loadRepairs() {
+            db.ref('repairs').on('value', s => {
+                let h = '', c = 0;
+                s.forEach(x => {
+                    const r = x.val(); const id = x.key; c++;
+                    h += `<div class="card border-l-[10px] border-amber-500"><div class="flex justify-between items-start"><div><span class="text-[10px] font-black text-slate-400 uppercase">${r.d}</span><h2 class="text-2xl font-black tracking-tighter">${r.nr}</h2><p class="text-amber-600 font-bold text-sm italic">${r.make} ${r.model}</p><select onchange="db.ref('repairs/${id}').update({status: this.value})" class="!py-1 !px-2 !w-auto !text-[10px] !font-black !rounded-full uppercase mt-2"><option value="Procesā" ${r.status === 'Procesā' ? 'selected' : ''}>Procesā</option><option value="Gatavs" ${r.status === 'Gatavs' ? 'selected' : ''}>Gatavs</option></select></div><div class="text-right"><div class="text-2xl font-black">${parseFloat(r.price).toFixed(2)}€</div><div class="text-[9px] text-slate-400 font-bold uppercase">${r.cl}</div></div></div><div class="flex gap-2 mt-4"><button onclick="finishRepair('${id}')" class="flex-[2] bg-slate-900 text-white font-bold py-3 rounded-xl text-[10px] uppercase">Pabeigt</button><button onclick="editRepair('${id}')" class="flex-1 bg-slate-100 text-slate-400 py-3 rounded-xl"><i class="fas fa-edit"></i></button><button onclick="printRepairCard('${id}')" class="flex-1 bg-amber-100 text-amber-600 py-3 rounded-xl"><i class="fas fa-print"></i></button></div></div>`;
+                });
+                document.getElementById('repair-list').innerHTML = h || '<p class="text-center p-10 opacity-20">Nav aktīvu darbu</p>';
+                document.getElementById('s-rep').innerText = c;
+            });
+        }
+
+        function finishRepair(id) {
+            db.ref('repairs/'+id).once('value', s => {
+                if(!s.exists()) return;
+                db.ref('finances').push(s.val());
+                db.ref('repairs/'+id).remove();
+                log("Serviss: Pabeigts auto " + s.val().nr);
+            });
+        }
+
+        // --- SALABOTĀS FINANSES ---
+        function loadFin() {
+            db.ref('finances').on('value', s => {
+                let h = '', total = 0;
+                s.forEach(x => {
+                    const f = x.val(); total += parseFloat(f.price || 0);
+                    h = `<tr><td class="p-4 text-[10px] font-bold text-slate-400">${f.d}</td><td class="py-4"><b>${f.nr}</b><br><small>${f.cl}</small></td><td class="text-right font-black text-green-600">${parseFloat(f.price).toFixed(2)}€</td><td class="text-right p-4"><button onclick="printInvoice('${x.key}')" class="bg-amber-500 p-2 rounded-lg text-white"><i class="fas fa-print"></i></button></td></tr>` + h;
+                });
+                document.getElementById('fin-table').innerHTML = h;
+                document.getElementById('s-profit').innerText = total.toFixed(0);
+            });
+        }
+        
+        function printInvoice(id) {
+            db.ref('finances/'+id).once('value', s => {
+                const f = s.val(); if(!f) return;
+                const area = document.getElementById('print-area');
+                area.innerHTML = `<div style="padding:20mm; font-family:sans-serif;"><h1 style="font-style:italic;">JT <span style="color:#fbbf24;">MOTORS</span></h1><hr><h3>RĒĶINS / KVĪTS</h3><p>Datums: ${f.d}</p><p>Klients / Dokuments: ${f.nr} (${f.cl})</p><p>Darbi / Preces: ${f.task || 'Nav apraksta'}</p><h2 style="text-align:right;">KOPĀ AR PVN: ${parseFloat(f.price).toFixed(2)}€</h2></div>`;
+                window.print(); area.innerHTML = "";
+            });
+        }
+
+        function searchVehicleHistory(all = false) {
+            const nr = document.getElementById('h-search-nr').value.toUpperCase();
+            db.ref('finances').once('value', s => {
+                let h = '';
+                s.forEach(x => {
+                    const r = x.val();
+                    if(all || r.nr === nr) {
+                        h += `<div class="card !bg-white border-l-4 border-slate-900"><div class="flex justify-between"><b>${r.nr}</b> <span>${r.d}</span></div><p class="text-xs mt-2">${r.task || 'Nav apraksta'}</p><div class="text-right font-black mt-2">${parseFloat(r.price).toFixed(2)}€</div></div>`;
+                    }
+                });
+                document.getElementById('history-results').innerHTML = h || '<p class="text-center p-10 opacity-20">Nekas nav atrasts</p>';
+            });
+        }
+
+        async function decodeVIN() {
+            const vin = document.getElementById('rep-vin').value;
+            if(vin.length !== 17) return alert("VIN jābūt 17 zīmēm!");
+            try {
+                const res = await fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/decodevinvalues/${vin}?format=json`);
+                const d = await res.json(); const r = d.Results[0];
+                if(r.Make) {
+                    document.getElementById('rep-make').value = r.Make; updateModels();
+                    setTimeout(() => { document.getElementById('rep-model').value = r.Model; document.getElementById('rep-year').value = r.ModelYear; }, 500);
+                }
+            } catch(e) { alert("VIN kļūda"); }
+        }
+
+        function generateEAN(tid) { document.getElementById(tid).value = "200" + Date.now().toString().slice(-10); }
+
+        function startScan(tid) {
+            const r = document.getElementById('reader'); r.classList.remove('hidden');
+            if(!scanner) scanner = new Html5Qrcode("reader");
+            scanner.start({facingMode: "environment"}, {fps: 10, qrbox: 250}, text => {
+                document.getElementById(tid).value = text;
+                if(tid === 'q-stock') drawStock();
+                if(tid === 'q-store') drawStore();
+                scanner.stop(); r.classList.add('hidden');
+            }).catch(e => r.classList.add('hidden'));
+        }
+
+        function printRepairCard(id) {
+            db.ref('repairs/'+id).once('value', s => {
+                const r = s.val(); const area = document.getElementById('print-area');
+                let pts = ''; (r.used_parts || []).forEach(p => pts += `<tr><td>${p.n}</td><td style="text-align:right;">${p.p}€</td></tr>`);
+                area.innerHTML = `<div style="padding:20mm; font-family:sans-serif;"><h1 style="font-style:italic;">JT <span style="color:#fbbf24;">MOTORS</span></h1><hr><h3>SERVISA KARTE: ${r.nr}</h3><p>Auto: ${r.make} ${r.model} | VIN: ${r.vin || '---'}</p><p>Darbi: ${r.task}</p><table style="width:100%; border-collapse:collapse; margin-top:20px;"><tr style="background:#eee; text-align:left;"><th>Detaļas</th><th style="text-align:right;">Cena</th></tr>${pts}<tr style="font-weight:900;"><td>KOPĀ:</td><td style="text-align:right;">${r.price}€</td></tr></table></div>`;
+                window.print(); area.innerHTML = "";
+            });
+        }
+
+        // --- SALABOTĀ PĀRĒJĀ LOĢIKA ---
+        function clearSoldHistory() {
+            if(confirm("Vai tiešām vēlaties dzēst realizācijas vēsturi?")) {
+                db.ref('sold_history').remove();
+                log("Sistēma: Izdzēsta realizācijas vēsture");
+            }
+        }
+        
+        function loadLogs() { db.ref('logs').on('value', s => { let h = ''; s.forEach(x => { const l = x.val(); h = `<div><span class="text-slate-600">[${l.t}]</span> <span class="text-amber-500">${l.u}:</span> ${l.i}</div>` + h; }); document.getElementById('logs-box').innerHTML = h; }); }
+        
+        function loadSoldHistory() { db.ref('sold_history').on('value', s => { let h = ''; s.forEach(x => { const i = x.val(); h = `<tr><td class="p-4 text-[10px] text-slate-400 font-bold">${i.d}</td><td class="p-4"><b>${i.n}</b><br><small>${i.oem}</small></td><td class="p-4 text-center"><span class="bg-blue-100 text-blue-600 px-2 py-1 rounded-md text-[9px] font-black">${i.status}</span></td><td class="p-4 text-right font-black">${i.p}€</td><td class="p-4 text-center text-slate-300">---</td></tr>` + h; }); document.getElementById('sold-list-body').innerHTML = h || '<tr><td colspan="5" class="p-10 text-center opacity-20 italic">Nav vēstures</td></tr>'; }); }
+        
+        function addClient() {
+            const type = document.getElementById('c-type').value, n = document.getElementById('c-n').value, p = document.getElementById('c-p').value;
+            const e = document.getElementById('c-e').value, reg = document.getElementById('c-reg').value, addr = document.getElementById('c-addr').value;
+            if(!n || !p) return alert("Ievadiet obligātos datus (Vārds un Telefons)!");
+            db.ref('clients').push({type, n, p, e, reg, addr}).then(() => {
+                alert("Klients saglabāts!"); document.querySelectorAll('#sec-clients input').forEach(i => i.value = ''); log("Klienti: Pievienots " + n);
+            });
+        }
+        
+        function loadClients() { db.ref('clients').on('value', s => { let h = ''; s.forEach(x => { const c = x.val(); h += `<div class="card !mb-0"><b>${c.n}</b><br><small>${c.p}</small><br><span class="text-[10px] uppercase font-black text-amber-500">${c.type}</span></div>`; }); document.getElementById('client-list').innerHTML = h; }); }
+        
+        function loadOrders() { document.getElementById('orders-list').innerHTML = '<div class="text-center py-10 opacity-20 font-bold italic">Nav jaunu pasūtījumu...</div>'; }
+        
+        // --- VEIKALA LOĢIKA ---
+        async function addStoreItem() {
+            const n = document.getElementById('store-in-n').value, p = document.getElementById('store-in-p-neto').value;
+            if(!n || !p) return alert("Ievadiet nosaukumu un cenu!");
+            const btn = document.getElementById('btn-add-store');
+            btn.disabled = true; btn.innerText = "AUGŠUPIELĀDE...";
+            const imgs = await uploadImages(document.getElementById('store-in-file'));
+            db.ref('store').push({ n, p: parseFloat(p), vat: document.getElementById('store-in-vat').value, q: parseInt(document.getElementById('store-in-q').value || 1), l: document.getElementById('store-in-l').value || 'Nav', e: document.getElementById('store-in-e').value || '', imgs }).then(() => {
+                btn.disabled = false; btn.innerText = "Publicēt Veikalā";
+                document.querySelectorAll('#sec-store input').forEach(i => i.value = '');
+                log("Veikals: Pievienota prece " + n);
+            });
+        }
+        
+        function loadStore() {
+            db.ref('store').on('value', s => { storeItems = s.val() || {}; drawStore(); });
+        }
+        
+        function drawStore() {
+            const q = (document.getElementById('q-store').value || '').toLowerCase();
+            let h = '';
+            Object.keys(storeItems).reverse().forEach(id => {
+                const i = storeItems[id];
+                if((i.n || '').toLowerCase().includes(q) || (i.e || '').toLowerCase().includes(q)) {
+                    let img = i.imgs && i.imgs.length > 0 ? `<img src="${i.imgs[0]}" class="w-full h-32 object-cover rounded-xl mb-2">` : '<div class="w-full h-32 bg-slate-100 flex items-center justify-center rounded-xl mb-2"><i class="fas fa-image text-slate-300 text-3xl"></i></div>';
+                    h += `<div class="card !p-3 cursor-pointer" onclick="openDetailModal('${id}', 'store')">${img}<div class="font-bold text-sm truncate">${i.n}</div><div class="flex justify-between items-center mt-2"><div class="font-black text-amber-600">${parseFloat(i.p * (i.vat==21?1.21:1)).toFixed(2)}€</div><div class="text-[10px] text-slate-400">Atlikums: ${i.q}</div></div></div>`;
+                }
+            });
+            document.getElementById('store-container').innerHTML = h ? `<div class="grid grid-cols-2 md:grid-cols-4 gap-4">${h}</div>` : '<p class="text-center p-10 opacity-20 w-full">Veikalā nav preču</p>';
+        }
+
+        function toggleClientFields() { const t = document.getElementById('c-type').value; document.getElementById('company-only').classList.toggle('hidden', t !== 'company'); }
+        function enableManualInput(id, container, ph) { document.getElementById(container).innerHTML = `<label class="input-group-label">${ph}</label><input id="${id}" class="!bg-slate-800 !text-white uppercase">`; }
+        function closeEditModal() { document.getElementById('edit-modal').classList.add('hidden'); }
+        function closeDetailModal() { document.getElementById('product-detail-modal').classList.add('hidden'); }
     </script>
 </body>
 </html>
-
