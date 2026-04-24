@@ -623,6 +623,7 @@
 
         let stock = {}, storeItems = {}, userRole = "", scanner = null;
         let currentRepairParts = []; 
+        let currentEditImgs = [];
 
         const modelsByMake = {
             "Alfa Romeo": ["Giulia", "Stelvio", "Tonale", "Guilietta", "159"],
@@ -743,12 +744,10 @@
             return urls;
         }
 
-        // --- SALABOTĀ NOLIKTAVA ---
         function loadStock() {
             db.ref('stock').on('value', s => {
                 const rawData = s.val() || {};
                 stock = {};
-                // Filtrējam null/undefined vērtības, ja datubāzē tādas ir radušās
                 Object.keys(rawData).forEach(key => {
                     if (rawData[key]) stock[key] = rawData[key];
                 });
@@ -781,7 +780,7 @@
 
             entries.forEach(id => {
                 const i = stock[id];
-                if (!i) return; // Drošības pārbaude
+                if (!i) return;
 
                 const name = String(i.n || '').toLowerCase();
                 const oem = String(i.oem || '').toLowerCase();
@@ -808,6 +807,7 @@
                                 <div class="price-badge-bruto">${priceBruto}€</div>
                             </div>
                             <div class="flex gap-1">
+                                <button onclick="printBarcode('${id}')" class="w-8 h-8 rounded-lg bg-amber-100 text-amber-600 hover:bg-amber-500 hover:text-white" title="Printēt svītrkodu"><i class="fas fa-barcode text-xs"></i></button>
                                 <button onclick="sellStockItem('${id}')" class="w-8 h-8 rounded-lg bg-green-100 text-green-600 hover:bg-green-500 hover:text-white" title="Pārdot"><i class="fas fa-shopping-cart text-xs"></i></button>
                                 <button onclick="editStock('${id}')" class="w-8 h-8 rounded-lg bg-slate-100 text-slate-400 hover:bg-blue-500 hover:text-white"><i class="fas fa-edit text-xs"></i></button>
                                 <button onclick="deleteStockItem('${id}')" class="w-8 h-8 rounded-lg bg-slate-100 text-slate-300 hover:bg-red-500 hover:text-white"><i class="fas fa-trash text-xs"></i></button>
@@ -840,6 +840,7 @@
             if(confirm("Vai tiešām vēlaties dzēst šo preci?")) {
                 db.ref('stock/'+id).remove();
                 log("Noliktava: Dzēsta prece " + id);
+                closeDetailModal();
             }
         }
 
@@ -854,7 +855,45 @@
             }
         }
 
-        // --- TRŪKSTOŠIE MODĀLIE LOGI (EDIT UN DETAIL) ---
+        function printBarcode(id) {
+            const i = stock[id];
+            if(!i) return;
+            const ean = i.e || i.e2;
+            if(!ean) return alert("Precei nav piesaistīts svītrkods!");
+
+            const area = document.getElementById('print-area');
+            const priceBruto = (parseFloat(i.p || 0) * (i.vat == 21 ? 1.21 : 1)).toFixed(2);
+            
+            area.innerHTML = `
+                <div style="padding: 10px; width: 100%; max-width: 300px; text-align: center; font-family: sans-serif;">
+                    <div style="font-size: 12px; font-weight: bold; margin-bottom: 5px; text-transform: uppercase;">${i.n}</div>
+                    ${i.oem ? `<div style="font-size: 10px; margin-bottom: 5px;">OEM: ${i.oem}</div>` : ''}
+                    <svg id="label-barcode"></svg>
+                    <div style="font-size: 14px; font-weight: 900; margin-top: 5px;">${priceBruto} €</div>
+                    <div style="font-size: 10px; color: #666; margin-top: 2px;">Plaukts: ${i.l || '---'}</div>
+                </div>
+            `;
+            
+            try {
+                JsBarcode("#label-barcode", ean, {
+                    format: "CODE128", 
+                    lineColor: "#000",
+                    width: 2,
+                    height: 40,
+                    displayValue: true,
+                    fontSize: 12,
+                    margin: 0
+                });
+                setTimeout(() => { 
+                    window.print(); 
+                    area.innerHTML = ""; 
+                }, 300);
+            } catch (e) {
+                alert("Kļūda ģenerējot svītrkodu! Pārliecinieties, ka svītrkods nav tukšs.");
+                area.innerHTML = "";
+            }
+        }
+
         function openDetailModal(id, type) {
             const item = type === 'stock' ? stock[id] : storeItems[id];
             if(!item) return;
@@ -865,6 +904,17 @@
                 imgsHtml = '<div class="w-[180px] h-[180px] bg-slate-100 rounded-2xl flex items-center justify-center text-slate-300"><i class="fas fa-box fa-3x"></i></div>';
             }
             const pBruto = (parseFloat(item.p || 0) * (item.vat == 21 ? 1.21 : 1)).toFixed(2);
+
+            let actionButtons = '';
+            if (type === 'stock') {
+                actionButtons = `
+                <div class="mt-6 flex gap-2 border-t border-slate-100 pt-4">
+                    <button onclick="printBarcode('${id}')" class="flex-1 bg-amber-100 text-amber-600 font-black py-3 rounded-xl hover:bg-amber-500 hover:text-white transition-all text-xs uppercase tracking-wider"><i class="fas fa-barcode mr-1"></i> Printēt</button>
+                    <button onclick="closeDetailModal(); editStock('${id}')" class="flex-1 bg-slate-100 text-slate-500 font-black py-3 rounded-xl hover:bg-blue-500 hover:text-white transition-all text-xs uppercase tracking-wider"><i class="fas fa-edit mr-1"></i> Labot</button>
+                    <button onclick="deleteStockItem('${id}')" class="flex-1 bg-red-50 text-red-500 font-black py-3 rounded-xl hover:bg-red-500 hover:text-white transition-all text-xs uppercase tracking-wider"><i class="fas fa-trash mr-1"></i> Dzēst</button>
+                </div>`;
+            }
+
             document.getElementById('detail-modal-content').innerHTML = `
                 <div class="detail-img-scroll">${imgsHtml}</div>
                 <h2 class="text-2xl font-black uppercase mb-2">${item.n}</h2>
@@ -881,12 +931,24 @@
                     </div>
                     <div class="text-3xl font-black text-slate-900">${pBruto}€</div>
                 </div>
+                ${actionButtons}
             `;
             document.getElementById('product-detail-modal').classList.remove('hidden');
         }
 
         function editStock(id) {
             const i = stock[id]; if(!i) return;
+            currentEditImgs = i.imgs ? [...i.imgs] : [];
+            let imgsHtml = '';
+            
+            currentEditImgs.forEach((url, idx) => {
+                imgsHtml += `
+                <div class="img-edit-wrap">
+                    <img src="${url}">
+                    <button onclick="removeEditImg(${idx}, this)" class="img-edit-del"><i class="fas fa-times"></i></button>
+                </div>`;
+            });
+
             document.getElementById('edit-modal-content').innerHTML = `
                 <label class="input-group-label">Nosaukums</label>
                 <input id="ed-n" value="${i.n || ''}" class="!bg-slate-100 !text-slate-900 border-slate-200 mb-3">
@@ -905,19 +967,39 @@
                         </select>
                     </div>
                 </div>
-                <button onclick="saveEditStock('${id}')" class="btn-jt w-full mt-2">Saglabāt izmaiņas</button>
+                
+                <label class="input-group-label mt-4">Pievienot papildus bildes</label>
+                <input id="ed-file" type="file" accept="image/*" multiple class="!bg-slate-100 !text-slate-900 border-slate-200 mb-4 text-sm">
+                
+                <label class="input-group-label">Esošās bildes</label>
+                <div class="img-grid-edit">${imgsHtml}</div>
+
+                <button id="btn-save-edit" onclick="saveEditStock('${id}')" class="btn-jt w-full mt-2">Saglabāt izmaiņas</button>
             `;
             document.getElementById('edit-modal').classList.remove('hidden');
         }
 
-        function saveEditStock(id) {
+        function removeEditImg(idx, btnEl) {
+            currentEditImgs[idx] = null;
+            btnEl.parentElement.remove();
+        }
+
+        async function saveEditStock(id) {
+            const btn = document.getElementById('btn-save-edit');
+            btn.disabled = true; btn.innerText = "SAGLABĀ...";
+
             const n = document.getElementById('ed-n').value;
             const p = parseFloat(document.getElementById('ed-p').value);
             const oem = document.getElementById('ed-oem').value;
             const q = parseInt(document.getElementById('ed-q').value);
             const l = document.getElementById('ed-l').value;
             const vat = document.getElementById('ed-vat').value;
-            db.ref('stock/'+id).update({n, p, oem, q, l, vat}).then(() => {
+            
+            const newImgs = await uploadImages(document.getElementById('ed-file'));
+            const validExistingImgs = currentEditImgs.filter(url => url !== null);
+            const finalImgs = [...validExistingImgs, ...newImgs];
+
+            db.ref('stock/'+id).update({n, p, oem, q, l, vat, imgs: finalImgs}).then(() => {
                 closeEditModal();
                 log("Noliktava: Labota prece " + n);
             });
@@ -930,14 +1012,13 @@
             }
         }
 
-        // --- REPAIR LOGIC ---
         function updatePartSelect() {
             const select = document.getElementById('rep-parts-select');
             if(!select) return;
             let h = '<option value="">-- Izvēlēties detaļu no noliktavas --</option>';
             Object.keys(stock).forEach(id => {
                 const i = stock[id];
-                if(i && i.q > 0) { // Drošības pārbaude
+                if(i && i.q > 0) {
                     const price = (parseFloat(i.p || 0) * (i.vat == 21 ? 1.21 : 1)).toFixed(2);
                     h += `<option value="${id}">${String(i.n || '').toUpperCase()} | OEM: ${i.oem || 'Nav'} | ${i.q} gab. | ${price}€</option>`;
                 }
@@ -1012,7 +1093,6 @@
             });
         }
 
-        // --- SALABOTĀS FINANSES ---
         function loadFin() {
             db.ref('finances').on('value', s => {
                 let h = '', total = 0;
@@ -1083,7 +1163,6 @@
             });
         }
 
-        // --- SALABOTĀ PĀRĒJĀ LOĢIKA ---
         function clearSoldHistory() {
             if(confirm("Vai tiešām vēlaties dzēst realizācijas vēsturi?")) {
                 db.ref('sold_history').remove();
@@ -1108,7 +1187,6 @@
         
         function loadOrders() { document.getElementById('orders-list').innerHTML = '<div class="text-center py-10 opacity-20 font-bold italic">Nav jaunu pasūtījumu...</div>'; }
         
-        // --- VEIKALA LOĢIKA ---
         async function addStoreItem() {
             const n = document.getElementById('store-in-n').value, p = document.getElementById('store-in-p-neto').value;
             if(!n || !p) return alert("Ievadiet nosaukumu un cenu!");
