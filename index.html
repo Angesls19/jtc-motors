@@ -949,6 +949,7 @@
                 </div>`;
             });
 
+            document.getElementById('edit-modal-title').innerText = "Labot Noliktavas Preci";
             document.getElementById('edit-modal-content').innerHTML = `
                 <label class="input-group-label">Nosaukums</label>
                 <input id="ed-n" value="${i.n || ''}" class="!bg-slate-100 !text-slate-900 border-slate-200 mb-3">
@@ -1006,10 +1007,57 @@
         }
 
         function editRepair(id) {
-            const status = prompt("Ievadiet jaunu statusu (Procesā / Gatavs):");
-            if(status === "Procesā" || status === "Gatavs") {
-                db.ref('repairs/'+id).update({status});
-            }
+            db.ref('repairs/'+id).once('value', s => {
+                const r = s.val();
+                if(!r) return;
+
+                document.getElementById('edit-modal-title').innerText = "Labot Servisa Karti";
+                document.getElementById('edit-modal-content').innerHTML = `
+                    <div class="grid grid-cols-2 gap-2 mb-3">
+                        <div><label class="input-group-label">Valsts Numurs</label><input id="ed-r-nr" value="${r.nr || ''}" class="!bg-slate-100 !text-slate-900 border-slate-200 uppercase"></div>
+                        <div><label class="input-group-label">Klients</label><input id="ed-r-cl" value="${r.cl || ''}" class="!bg-slate-100 !text-slate-900 border-slate-200"></div>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2 mb-3">
+                        <div><label class="input-group-label">Marka</label><input id="ed-r-make" value="${r.make || ''}" class="!bg-slate-100 !text-slate-900 border-slate-200"></div>
+                        <div><label class="input-group-label">Modelis</label><input id="ed-r-model" value="${r.model || ''}" class="!bg-slate-100 !text-slate-900 border-slate-200"></div>
+                        <div><label class="input-group-label">Gads</label><input id="ed-r-year" value="${r.year || ''}" class="!bg-slate-100 !text-slate-900 border-slate-200"></div>
+                    </div>
+                    <label class="input-group-label">Veicamie darbi</label>
+                    <textarea id="ed-r-task" class="!bg-slate-100 !text-slate-900 border-slate-200 mb-3 h-24">${r.task || ''}</textarea>
+                    
+                    <div class="grid grid-cols-2 gap-2 mb-3">
+                        <div><label class="input-group-label">Statuss</label>
+                            <select id="ed-r-status" class="!bg-slate-100 !text-slate-900 border-slate-200">
+                                <option value="Procesā" ${r.status === 'Procesā' ? 'selected' : ''}>Procesā</option>
+                                <option value="Gaida detaļu" ${r.status === 'Gaida detaļu' ? 'selected' : ''}>Gaida detaļu</option>
+                                <option value="Gatavs" ${r.status === 'Gatavs' ? 'selected' : ''}>Gatavs</option>
+                            </select>
+                        </div>
+                        <div><label class="input-group-label">Summa (€)</label><input id="ed-r-price" type="number" step="0.01" value="${r.price || 0}" class="!bg-slate-100 !text-slate-900 border-slate-200 text-xl font-black"></div>
+                    </div>
+                    <button id="btn-save-r-edit" onclick="saveRepairEdit('${id}')" class="btn-jt w-full mt-2">Saglabāt izmaiņas</button>
+                `;
+                document.getElementById('edit-modal').classList.remove('hidden');
+            });
+        }
+
+        function saveRepairEdit(id) {
+            const btn = document.getElementById('btn-save-r-edit');
+            btn.disabled = true; btn.innerText = "SAGLABĀ...";
+
+            const nr = document.getElementById('ed-r-nr').value.toUpperCase();
+            const cl = document.getElementById('ed-r-cl').value;
+            const make = document.getElementById('ed-r-make').value;
+            const model = document.getElementById('ed-r-model').value;
+            const year = document.getElementById('ed-r-year').value;
+            const task = document.getElementById('ed-r-task').value;
+            const status = document.getElementById('ed-r-status').value;
+            const price = parseFloat(document.getElementById('ed-r-price').value) || 0;
+
+            db.ref('repairs/'+id).update({nr, cl, make, model, year, task, status, price}).then(() => {
+                closeEditModal();
+                log("Serviss: Labota servisa karte " + nr);
+            });
         }
 
         function updatePartSelect() {
@@ -1077,7 +1125,7 @@
                 let h = '', c = 0;
                 s.forEach(x => {
                     const r = x.val(); const id = x.key; c++;
-                    h += `<div class="card border-l-[10px] border-amber-500"><div class="flex justify-between items-start"><div><span class="text-[10px] font-black text-slate-400 uppercase">${r.d}</span><h2 class="text-2xl font-black tracking-tighter">${r.nr}</h2><p class="text-amber-600 font-bold text-sm italic">${r.make} ${r.model}</p><select onchange="db.ref('repairs/${id}').update({status: this.value})" class="!py-1 !px-2 !w-auto !text-[10px] !font-black !rounded-full uppercase mt-2"><option value="Procesā" ${r.status === 'Procesā' ? 'selected' : ''}>Procesā</option><option value="Gatavs" ${r.status === 'Gatavs' ? 'selected' : ''}>Gatavs</option></select></div><div class="text-right"><div class="text-2xl font-black">${parseFloat(r.price).toFixed(2)}€</div><div class="text-[9px] text-slate-400 font-bold uppercase">${r.cl}</div></div></div><div class="flex gap-2 mt-4"><button onclick="finishRepair('${id}')" class="flex-[2] bg-slate-900 text-white font-bold py-3 rounded-xl text-[10px] uppercase">Pabeigt</button><button onclick="editRepair('${id}')" class="flex-1 bg-slate-100 text-slate-400 py-3 rounded-xl"><i class="fas fa-edit"></i></button><button onclick="printRepairCard('${id}')" class="flex-1 bg-amber-100 text-amber-600 py-3 rounded-xl"><i class="fas fa-print"></i></button></div></div>`;
+                    h += `<div class="card border-l-[10px] border-amber-500"><div class="flex justify-between items-start"><div><span class="text-[10px] font-black text-slate-400 uppercase">${r.d}</span><h2 class="text-2xl font-black tracking-tighter">${r.nr}</h2><p class="text-amber-600 font-bold text-sm italic">${r.make} ${r.model}</p><select onchange="db.ref('repairs/${id}').update({status: this.value})" class="!py-1 !px-2 !w-auto !text-[10px] !font-black !rounded-full uppercase mt-2"><option value="Procesā" ${r.status === 'Procesā' ? 'selected' : ''}>Procesā</option><option value="Gaida detaļu" ${r.status === 'Gaida detaļu' ? 'selected' : ''}>Gaida detaļu</option><option value="Gatavs" ${r.status === 'Gatavs' ? 'selected' : ''}>Gatavs</option></select></div><div class="text-right"><div class="text-2xl font-black">${parseFloat(r.price).toFixed(2)}€</div><div class="text-[9px] text-slate-400 font-bold uppercase">${r.cl}</div></div></div><div class="flex gap-2 mt-4"><button onclick="finishRepair('${id}')" class="flex-[2] bg-slate-900 text-white font-bold py-3 rounded-xl text-[10px] uppercase">Pabeigt</button><button onclick="editRepair('${id}')" class="flex-1 bg-slate-100 text-slate-400 py-3 rounded-xl hover:bg-slate-200 transition-all"><i class="fas fa-edit"></i></button><button onclick="printEstimate('${id}')" class="flex-[2] bg-blue-100 text-blue-600 py-3 rounded-xl text-[10px] uppercase font-bold tracking-wider hover:bg-blue-500 hover:text-white transition-all"><i class="fas fa-file-invoice-dollar mr-1"></i> Tāme</button><button onclick="printRepairCard('${id}')" class="flex-1 bg-amber-100 text-amber-600 py-3 rounded-xl hover:bg-amber-500 hover:text-white transition-all" title="Darba lapa"><i class="fas fa-print"></i></button></div></div>`;
                 });
                 document.getElementById('repair-list').innerHTML = h || '<p class="text-center p-10 opacity-20">Nav aktīvu darbu</p>';
                 document.getElementById('s-rep').innerText = c;
@@ -1120,12 +1168,86 @@
                 let h = '';
                 s.forEach(x => {
                     const r = x.val();
+                    const id = x.key;
                     if(all || r.nr === nr) {
-                        h += `<div class="card !bg-white border-l-4 border-slate-900"><div class="flex justify-between"><b>${r.nr}</b> <span>${r.d}</span></div><p class="text-xs mt-2">${r.task || 'Nav apraksta'}</p><div class="text-right font-black mt-2">${parseFloat(r.price).toFixed(2)}€</div></div>`;
+                        h += `
+                        <div class="card !bg-white border-l-4 border-slate-900">
+                            <div class="flex justify-between"><b>${r.nr}</b> <span class="text-slate-400 text-xs">${r.d}</span></div>
+                            <p class="text-xs mt-2">${r.task || 'Nav apraksta'}</p>
+                            <div class="text-right font-black mt-2 text-lg">${parseFloat(r.price).toFixed(2)}€</div>
+                            <div class="flex gap-2 mt-3 pt-3 border-t border-slate-100">
+                                <button onclick="printInvoice('${id}')" class="flex-1 bg-amber-100 text-amber-600 py-2 rounded-xl text-xs font-bold hover:bg-amber-500 hover:text-white transition-all"><i class="fas fa-print"></i> Printēt</button>
+                                <button onclick="editHistory('${id}', ${all})" class="flex-1 bg-slate-100 text-slate-500 py-2 rounded-xl text-xs font-bold hover:bg-blue-500 hover:text-white transition-all"><i class="fas fa-edit"></i> Labot</button>
+                                <button onclick="deleteHistory('${id}', ${all})" class="flex-1 bg-red-50 text-red-500 py-2 rounded-xl text-xs font-bold hover:bg-red-500 hover:text-white transition-all"><i class="fas fa-trash"></i> Dzēst</button>
+                            </div>
+                        </div>`;
                     }
                 });
                 document.getElementById('history-results').innerHTML = h || '<p class="text-center p-10 opacity-20">Nekas nav atrasts</p>';
             });
+        }
+
+        function editHistory(id, all) {
+            db.ref('finances/'+id).once('value', s => {
+                const data = s.val();
+                if(!data) return;
+                
+                document.getElementById('edit-modal-title').innerText = "Labot Vēstures Ierakstu";
+                document.getElementById('edit-modal-content').innerHTML = `
+                    <label class="input-group-label">Datums</label>
+                    <input id="ed-h-d" value="${data.d || ''}" class="!bg-slate-100 !text-slate-900 border-slate-200 mb-3">
+                    
+                    <div class="grid grid-cols-2 gap-2 mb-3">
+                        <div>
+                            <label class="input-group-label">Auto Numurs</label>
+                            <input id="ed-h-nr" value="${data.nr || ''}" class="!bg-slate-100 !text-slate-900 border-slate-200 uppercase">
+                        </div>
+                        <div>
+                            <label class="input-group-label">Klients</label>
+                            <input id="ed-h-cl" value="${data.cl || ''}" class="!bg-slate-100 !text-slate-900 border-slate-200">
+                        </div>
+                    </div>
+                    
+                    <label class="input-group-label">Veiktie darbi / Preces</label>
+                    <textarea id="ed-h-task" class="!bg-slate-100 !text-slate-900 border-slate-200 mb-3 h-24">${data.task || ''}</textarea>
+                    
+                    <label class="input-group-label">Summa (€)</label>
+                    <input id="ed-h-price" type="number" step="0.01" value="${data.price || 0}" class="!bg-slate-100 !text-slate-900 border-slate-200 mb-4 text-xl font-black">
+                    
+                    <button id="btn-save-h-edit" onclick="saveHistoryEdit('${id}', ${all})" class="btn-jt w-full mt-2">Saglabāt izmaiņas</button>
+                `;
+                document.getElementById('edit-modal').classList.remove('hidden');
+            });
+        }
+
+        function saveHistoryEdit(id, all) {
+            const btn = document.getElementById('btn-save-h-edit');
+            btn.disabled = true; btn.innerText = "SAGLABĀ...";
+
+            const d = document.getElementById('ed-h-d').value;
+            const nr = document.getElementById('ed-h-nr').value.toUpperCase();
+            const cl = document.getElementById('ed-h-cl').value;
+            const task = document.getElementById('ed-h-task').value;
+            const price = parseFloat(document.getElementById('ed-h-price').value) || 0;
+
+            db.ref('finances/'+id).update({d, nr, cl, task, price}).then(() => {
+                closeEditModal();
+                log("Vēsture: Labots ieraksts " + nr);
+                searchVehicleHistory(all);
+            });
+        }
+
+        function deleteHistory(id, all) {
+            if(confirm("Vai tiešām vēlaties dzēst šo vēstures ierakstu? Ieraksts un rēķins tiks dzēsts arī no finanšu atskaites!")) {
+                db.ref('finances/'+id).once('value', s => {
+                    const data = s.val();
+                    if(data) log("Vēsture: Dzēsts ieraksts " + data.nr);
+                    
+                    db.ref('finances/'+id).remove().then(() => {
+                        searchVehicleHistory(all);
+                    });
+                });
+            }
         }
 
         async function decodeVIN() {
@@ -1160,6 +1282,126 @@
                 let pts = ''; (r.used_parts || []).forEach(p => pts += `<tr><td>${p.n}</td><td style="text-align:right;">${p.p}€</td></tr>`);
                 area.innerHTML = `<div style="padding:20mm; font-family:sans-serif;"><h1 style="font-style:italic;">JT <span style="color:#fbbf24;">MOTORS</span></h1><hr><h3>SERVISA KARTE: ${r.nr}</h3><p>Auto: ${r.make} ${r.model} | VIN: ${r.vin || '---'}</p><p>Darbi: ${r.task}</p><table style="width:100%; border-collapse:collapse; margin-top:20px;"><tr style="background:#eee; text-align:left;"><th>Detaļas</th><th style="text-align:right;">Cena</th></tr>${pts}<tr style="font-weight:900;"><td>KOPĀ:</td><td style="text-align:right;">${r.price}€</td></tr></table></div>`;
                 window.print(); area.innerHTML = "";
+            });
+        }
+        
+        function printEstimate(id) {
+            db.ref('repairs/'+id).once('value', s => {
+                const r = s.val(); if(!r) return;
+                const area = document.getElementById('print-area');
+                
+                let ptsHTML = '';
+                let partsTotal = 0;
+                
+                if (r.used_parts && r.used_parts.length > 0) {
+                    r.used_parts.forEach(p => {
+                        const price = parseFloat(p.p || 0);
+                        partsTotal += price;
+                        ptsHTML += `<tr style="border-bottom: 1px solid #f1f5f9;">
+                            <td style="padding: 10px 5px;">${p.n}</td>
+                            <td style="padding: 10px 5px; text-align: center; color: #64748b; font-size: 12px;">${p.oem || '-'}</td>
+                            <td style="padding: 10px 5px; text-align: right; font-weight: 600;">${price.toFixed(2)} €</td>
+                        </tr>`;
+                    });
+                } else {
+                    ptsHTML = '<tr><td colspan="3" style="padding: 15px; text-align: center; color: #94a3b8; font-style: italic;">Nav pievienotu rezerves daļu</td></tr>';
+                }
+                
+                const total = parseFloat(r.price || 0);
+                let laborTotal = total - partsTotal;
+                if (laborTotal < 0) laborTotal = 0;
+
+                area.innerHTML = `
+                <div style="padding:40px; font-family:'Inter', sans-serif; max-width: 800px; margin: 0 auto; color: #0f172a;">
+                    <div style="display: flex; justify-content: space-between; border-bottom: 2px solid #e2e8f0; padding-bottom: 20px; margin-bottom: 30px;">
+                        <div>
+                            <h1 style="font-size: 36px; font-weight: 900; font-style: italic; margin: 0;">JT <span style="color: #fbbf24;">MOTORS</span></h1>
+                            <p style="font-size: 12px; color: #64748b; margin: 4px 0 0 0; text-transform: uppercase; letter-spacing: 2px; font-weight: 800;">Professional Auto Service</p>
+                        </div>
+                        <div style="text-align: right; font-size: 12px; line-height: 1.6; color: #475569;">
+                            <strong style="color: #0f172a; font-size: 14px;">SIA "JT MOTORS"</strong><br>
+                            Reģ. Nr. 40000000000<br>
+                            Rīga, Brīvības iela 1<br>
+                            Tel: +371 20000000<br>
+                            info@jtmotors.lv
+                        </div>
+                    </div>
+
+                    <div style="text-align: center; margin-bottom: 40px;">
+                        <h2 style="font-size: 24px; font-weight: 900; letter-spacing: 1px; margin: 0; text-transform: uppercase;">Remontdarbu Tāme</h2>
+                        <p style="color: #64748b; margin-top: 5px; font-size: 14px; font-weight: 600;">Datums: ${new Date().toLocaleDateString('lv-LV')}</p>
+                    </div>
+
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 30px; gap: 20px;">
+                        <div style="flex: 1; background: #f8fafc; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0;">
+                            <h3 style="font-size: 10px; color: #64748b; font-weight: 800; text-transform: uppercase; margin-top: 0; margin-bottom: 10px; letter-spacing: 1px;">Klienta Informācija</h3>
+                            <p style="margin:0; font-weight: 700; font-size: 16px;">${r.cl || 'Klients nav norādīts'}</p>
+                        </div>
+                        <div style="flex: 1; background: #f8fafc; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0;">
+                            <h3 style="font-size: 10px; color: #64748b; font-weight: 800; text-transform: uppercase; margin-top: 0; margin-bottom: 10px; letter-spacing: 1px;">Transportlīdzeklis</h3>
+                            <table style="width: 100%; font-size: 14px;">
+                                <tr><td style="color:#64748b; padding-bottom:6px;">Auto:</td><td style="font-weight:700; text-align:right;">${r.make} ${r.model} ${r.year ? '('+r.year+')' : ''}</td></tr>
+                                <tr><td style="color:#64748b; padding-bottom:6px;">Valsts Nr:</td><td style="font-weight:900; text-align:right; text-transform: uppercase;">${r.nr}</td></tr>
+                                <tr><td style="color:#64748b;">VIN:</td><td style="font-weight:600; text-align:right; font-family: monospace;">${r.vin || '-'}</td></tr>
+                            </table>
+                        </div>
+                    </div>
+
+                    <h3 style="font-size: 12px; color: #0f172a; font-weight: 800; text-transform: uppercase; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 15px; letter-spacing: 1px;">Pieteiktie darbi / Defektācija</h3>
+                    <div style="font-size: 14px; line-height: 1.6; background: #f1f5f9; padding: 20px; border-radius: 12px; white-space: pre-wrap; margin-top:0; font-weight: 500;">${r.task || 'Nav apraksta'}</div>
+
+                    <h3 style="font-size: 12px; color: #0f172a; font-weight: 800; text-transform: uppercase; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 15px; margin-top: 40px; letter-spacing: 1px;">Rezerves Daļas un Materiāli</h3>
+                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 40px; font-size: 14px;">
+                        <thead>
+                            <tr style="border-bottom: 2px solid #cbd5e1; text-align: left; color: #64748b; font-size: 12px; text-transform: uppercase;">
+                                <th style="padding: 10px 5px; font-weight: 800;">Nosaukums</th>
+                                <th style="padding: 10px 5px; text-align: center; font-weight: 800;">Kods (OEM)</th>
+                                <th style="padding: 10px 5px; text-align: right; font-weight: 800;">Cena ar PVN</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${ptsHTML}
+                        </tbody>
+                    </table>
+
+                    <div style="display: flex; justify-content: flex-end; margin-bottom: 60px;">
+                        <table style="width: 350px; font-size: 14px; border-collapse: collapse;">
+                            <tr>
+                                <td style="padding: 10px 0; color: #64748b; font-weight: 600;">Rezerves daļas kopā:</td>
+                                <td style="text-align: right; font-weight: 700;">${partsTotal.toFixed(2)} €</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 10px 0; color: #64748b; font-weight: 600; border-bottom: 2px solid #e2e8f0;">Darba izmaksas kopā:</td>
+                                <td style="text-align: right; font-weight: 700; border-bottom: 2px solid #e2e8f0;">${laborTotal.toFixed(2)} €</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 20px 0 0 0; font-size: 20px; font-weight: 900; color: #0f172a;">KOPĒJĀ SUMMA:</td>
+                                <td style="text-align: right; padding: 20px 0 0 0; font-size: 24px; font-weight: 900; color: #0f172a;">${total.toFixed(2)} €</td>
+                            </tr>
+                            <tr>
+                                <td colspan="2" style="text-align: right; font-size: 10px; color: #94a3b8; padding-top: 5px; font-weight: 600;">* Visas cenas norādītas ar iekļautu PVN</td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <div style="margin-top: auto; display: flex; justify-content: space-between; font-size: 12px; color: #475569;">
+                        <div style="text-align: center; width: 40%;">
+                            <div style="border-top: 1px solid #94a3b8; padding-top: 10px; font-weight: 600;">Servisa pārstāvis (Paraksts / Atšifrējums)</div>
+                        </div>
+                        <div style="text-align: center; width: 40%;">
+                            <div style="border-top: 1px solid #94a3b8; padding-top: 10px; font-weight: 600;">Klients piekrīt tāmei (Paraksts / Atšifrējums)</div>
+                        </div>
+                    </div>
+                    
+                    <div style="text-align: center; margin-top: 40px; font-size: 10px; color: #cbd5e1; font-weight: 600; text-transform: uppercase;">
+                        Šim dokumentam ir informatīvs raksturs. Izmaksas var tikt precizētas darbu gaitā.
+                    </div>
+                </div>
+                `;
+                setTimeout(() => { 
+                    window.print(); 
+                    area.innerHTML = ""; 
+                }, 300);
             });
         }
 
