@@ -507,6 +507,21 @@
                     <div class="relative z-10">
                         <label class="input-group-label text-slate-400">Produkta nosaukums</label>
                         <input id="store-in-n" placeholder="Piem. Motoreļļa 5W30" class="!bg-slate-800 !text-white !mb-4 border-slate-700">
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <label class="input-group-label text-slate-400">Kategorija</label>
+                                <select id="store-cat" onchange="updateSubCats()" class="!bg-slate-800 !text-white border-slate-700">
+                                    <option value="">Izvēlies kategoriju...</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="input-group-label text-slate-400">Apakškategorija</label>
+                                <select id="store-subcat" class="!bg-slate-800 !text-white border-slate-700">
+                                    <option value="">Vispirms izvēlies kategoriju...</option>
+                                </select>
+                            </div>
+                        </div>
                         
                         <label class="input-group-label text-slate-400">Oriģinālais preces kods (OEM)</label>
                         <input id="store-in-oem" placeholder="Piem. 83212365947" class="!bg-slate-800 !text-white !mb-4 border-slate-700 uppercase">
@@ -780,6 +795,29 @@
             "Volvo": ["S40", "S60", "S80", "S90", "V40", "V60", "V70", "V90", "XC40", "XC60", "XC70", "XC90"]
         };
 
+        const shopCategories = {
+            "Bremzes": ["Bremžu diski", "Bremžu kluči", "Bremžu suports", "Bremžu disku aizsargi", "Disku bremžu piederumi", "Nodiluma devēji", "Bremžu suporta detaļas", "Rokas bremzes daļas", "Bremžu trumulis", "Bremžu loki", "Riteņa bremžu cilindri", "Trumuļu bremžu piederumi", "ABS sensori un gredzeni", "Galvenais bremžu cilindrs", "Bremžu šļūtenes", "Rokas bremzes troses", "Bremžu cauruļvadu uzgaļi", "Bremžu pastiprinātāji", "Bremžu spēka regulators", "Bremžu cauruļvadi", "Bremžu vakuumsūknis"],
+            "Filtri": ["Eļļas filtri", "Gaisa filtri", "Salona filtri", "Degvielas filtri", "Filtru komplekts", "Hidrauliskais filtrs", "Dzesēšanas šķidruma filtrs", "Stūres iekārtas filtrs"],
+            "Amortizācija": ["Amortizatori", "Atsperes", "Amortizatora statnes", "Amortizatoru putekļu sargi", "Riteņu gultņi", "Riteņa rumbas", "Piekares sviras", "Disku skrūves un uzgriežņi", "Stūres svira", "Stabilizatora atsaites", "Stabilizatori", "Atsperes atbalstplāksne", "Lodbalsti", "Stabilizatora bukses", "Pneimopiekare", "Grozāmass statnes", "Lāgu atsperes", "Grozāmass", "Tilta piekares remkomplekti", "Klīrensa regulēšana", "Riteņu starplika", "Piekare, Riteņu gultņa korpuss", "Tilta sijas remkomplekti"],
+            "Stūre": ["Šarnīri", "Stūres pirksti", "Stūres mehānismi", "Stūres pastiprinātāja sūkņi", "Stūres mehānisma putekļu sargi", "Stūres mehānisma pārvads", "Stūres sistēmas šļūtenes", "Stūres statnes", "Stūres vadības amortizators", "Eļļas izplešanās tvertne", "Iekšējā slēdzene", "Stūres mehānisma piekare"],
+            "Logu tīrītāji": ["Logu slotiņas", "Stiklu tīrītāju motori", "Stiklu šķidruma sūkņi", "Stiklu tīrītāju mehānisms", "Lukturu tīrīšanas sistēma", "Stikla tīrītāju sviras", "Smidzinātāja sprauslas", "Logu šķidruma tvertnes"],
+            "Dzinējs": ["Zobsiksnas komplekti", "Dzinēja blīves un blīvslēgi", "Motora ķēele komplekti", "Droseles", "Siksnas un ruļļi", "Spriegotājrullītis, skriemeļi, demferi", "Ķīļsiksnas komplekts", "Turbīnas", "Turbīnas gaisa caurule", "Turbīnu daļas, remkomplekti", "Cilindra galva un daļas", "Kloķa-klaņa mehānisms", "Eļļošana", "Izplūdes gāzu attīrīšanas sistēma", "Ieplūdes kolektori", "Gaisa padeves caurules", "Motora spilvens", "Akseleratora trose, piederumi", "Brīvgaitas regulēšana"],
+            "Degviela": ["Degvielas sūkņi", "Degvielas sprauslas", "Degvielas padeves ierīce", "Augstspiediena sūkņi (HPFP)", "Degvielas šļūtenes", "Degvielas caurules", "Degvielas spiediena regulators", "Degvielas tvertnes līmeņa sensors", "Degvielas tvertne", "Degvielas tvertnes vāciņš", "Degvielas iesmidzināšanas sūknis", "Iesmidzināšanas sistēmas piederumi", "Common Rail sistēmas daļas", "Iesmidzināšanas vārsts", "Landa zonde", "Gaisa masas mērītājs", "Kvēlsveces / Aizdedzes sveces"],
+            "Izplūde": ["Izpūtēji", "Izpūtēja caurules", "Katalizatori", "Izplūdes kolektori", "Kvēpu filtri (DPF)", "Izplūdes blīves", "Lambda zondes", "Montāžas elementi", "Izplūdes sistēmas sensori", "Izplūdes vārsts"],
+            "Elektroiekārta": ["Akumulatori", "Ģeneratori", "Ģeneratora rullis", "Sensori", "Aizdedzes sveces", "Starteri", "Kvēlsveces", "Aizdedzes spoles", "Slēdži", "Sveču vadi", "Aizdedzes sadalītājs", "Ģeneratora sastāvdaļas", "Sprieguma regulators", "Startera sastāvdaļas", "Vadības bloki", "Startera ievilcējrelejs", "Skaņas signāls, taure", "Vadu komplekts", "Gaisa spilvenu sistēma"],
+            "Dzesēšana": ["Ūdens sūkņi", "Dzesēšanas sistēmas blīves", "Ūdenssūkņa piedziņas skriemelis", "Radiatori", "Dzesēšanas šķidruma caurules", "Ventilatori", "Interkūleri", "Termostati", "Kompensācijas tvertnes", "Antifrīzs", "Dzesēšanas slēdži un sensori", "Radiatora stiprināšanas detaļas", "Eļļas radiators", "Dzesēšanas šķidruma flancis"],
+            "Apsilde": ["Kondicioniera kompresori", "Kondicioniera kondensatori", "Sausinātājs", "Salona ventilatori", "Salona apsildes radiatori", "Apsildes šļaukas", "Autonomā apsildes sistēma", "Iztvaikotāji", "Kondicioniera šļaukas un caurules", "Gaisa kondicionēšanas relejs", "Vadības elementi", "Temperatūras sensori", "Gaisa kondicionēšanas vārsti", "Regulēšanas vārsti"],
+            "Transmisija": ["Sajūga komplekti", "Pusasis", "Spararati", "Pusass šarnīru komplekti", "Pusass putekļu sargi", "Atsevišķas sajūga detaļas", "Eļļas maiņas komplekts", "Kardāna šarnīrs", "Transmisijas blīves un blīvslēgi", "Kardāni", "Kardāna krustiņi un gultņi", "Sajūga galvenie cilindri", "Troses, sviras un piederumi", "Ātrumkārbas stiprinājumi", "Automātiskās ātrumkārbas radiators", "Tripod rumba", "Pusass skrūves, uzgriežņi", "Ātrumkārbas korpuss", "Centrējošais gultnis", "Spidometra trose", "Eļļas vācele", "Diferenciālis"],
+            "Virsbūve": ["Durvju rokturi un slēdzenes", "Stikla pacelšanas mehānismi", "Gāzes atsperes", "Bampers", "Spārni", "Spoguļi", "Paspārni", "Interjera daļas", "Sliekšņi", "Priekšējās restes", "Durvis, komponenti", "Motora pārsegs, komponenti", "Palīgrāmis", "Bagāžas nodalījuma pārsegs", "Apdares un aizsarguzlikas", "Virsbūves grīda", "Iestiklošanas blīves", "Piekabes āķa bampera uzlika", "Numura zīmes turētāji", "Motora vāks", "Sēdekļa regulēšanas daļas", "Antena"],
+            "Apgaismojums": ["Aizmugurējie lukturi", "Priekšējie lukturi", "Pamatluktura komponentes", "Aizmugurējā luktura komponentes", "Spuldzes", "Pagrieziena lukturi", "Apgaismojuma slēdži", "Miglas lukturi", "Aizmugurējie miglas lukturi", "Numurzīmes apgaismojuma lukturi", "Atpakaļgaitas lukturi", "LED numurzīmes apgaismojums", "Dienas gaismas lukturi", "Papildu bremžu signāla lukturi"],
+            "Eļļas un šķidrumi": ["Motoreļļa", "Kopšana", "Transmisijas eļļa", "Hidrauliskā eļļa", "Smērvielas", "Bremžu šķidrums", "Stūres pastiprinātāja eļļa", "Dzesēšanas šķidrums", "Degvielas piedevas", "AdBlue", "Eļļas piedevas", "Līmes un hermētiķi", "Vējstiklu šķidrums"],
+            "Auto piederumi": ["Elektromobiļu lādētāji", "Salona komforts un aizsardzība", "Telefona piederumi", "Papildu apgaismojums", "Piekabes āķis un piederumi", "Auto paklājiņi", "Bagāžnieka paklājiņi", "Preces ziemai", "Sniega ķēdes un zeķes", "Akumulatoru lādētāji", "Akumulatora būsteri", "Starta vadi", "Parkošanās sensori (universālie)", "Atpakaļskata kameras", "Jumta šķērsstieņi un piederumi", "Jumta kastes un piederumi", "Velosipēdu turētāji", "Videoreģistratori", "Sprieguma pārveinvertori", "Pārklāji", "Dekoratīvās disku uzlikas", "Baterijas", "Citi piederumi"],
+            "Instrumenti": ["Rokas instrumenti", "Transportlīdzekļu remonta instrumenti", "Elektriskie instrumenti", "Akumulatora instrumenti", "Pneimatiskie instrumenti"],
+            "Riepas": ["Ziemas riepas", "Vasaras riepas", "Vissezonas riepas"],
+            "Velo preces": ["Velosipēdu rati un riepas", "Velosipēdu bremžu daļas", "Velosipēdu sēdekļi un stūres", "Velosipēda ķēdes piedziņa", "Velosipēdu piederumi", "Velosipēdu gaisa pumpji", "Velosipēdu instrumenti", "Velosipēdu kopšanas līredzekļi", "Velosipēdi"],
+            "Laivu aprīkojums": ["Glābšanas vestes", "Kompasi un navigācija", "Klāja aprīkojums", "Burāšanas aprīkojums un takelāža", "Fenderi un bojas", "Laivas dzinējs", "Tauvošanās", "Elektronika", "Laivas stūres sistēma", "Barometri un pulksteņi", "Karogi", "Sūkņi, caurules un santehnika"]
+        };
+
         auth.onAuthStateChanged(user => {
             if(user) {
                 userRole = (user.email === "cihmuks@gmail.com") ? "Admin" : "Priekšnieks";
@@ -828,7 +866,32 @@
 
         function init() {
             loadStock(); loadRepairs(); loadOrders(); loadClients(); loadFin(); loadLogs(); loadStore(); loadSoldHistory(); loadAdminInvoices();
-            fillMakes(); fillYears();
+            fillMakes(); fillYears(); initCategorySelects();
+        }
+
+        function initCategorySelects() {
+            const catSel = document.getElementById('store-cat');
+            if(!catSel) return;
+            let h = '<option value="">Izvēlies kategoriju...</option>';
+            Object.keys(shopCategories).forEach(cat => {
+                h += `<option value="${cat}">${cat}</option>`;
+            });
+            catSel.innerHTML = h;
+        }
+
+        function updateSubCats() {
+            const cat = document.getElementById('store-cat').value;
+            const subSel = document.getElementById('store-subcat');
+            if(!subSel) return;
+            if(!cat) {
+                subSel.innerHTML = '<option value="">Vispirms izvēlies kategoriju...</option>';
+                return;
+            }
+            let h = '<option value="">Izvēlies apakškategoriju...</option>';
+            shopCategories[cat].forEach(sub => {
+                h += `<option value="${sub}">${sub}</option>`;
+            });
+            subSel.innerHTML = h;
         }
 
         function fillMakes() {
@@ -1056,6 +1119,7 @@
 
             document.getElementById('detail-modal-content').innerHTML = `
                 <div class="detail-img-scroll">${imgsHtml}</div>
+                ${item.cat ? `<div class="text-[10px] text-blue-500 font-black uppercase mb-1">${item.cat} > ${item.subcat}</div>` : ''}
                 <h2 class="text-2xl font-black uppercase mb-2">${item.n}</h2>
                 <div class="grid grid-cols-2 gap-4 mb-4">
                     <div class="bg-slate-50 p-3 rounded-xl"><span class="text-[10px] text-slate-400 font-bold uppercase block">OEM Kods</span><span class="font-mono font-bold">${item.oem || '---'}</span></div>
@@ -1097,10 +1161,39 @@
                 </div>`;
             });
 
+            let catHtml = '';
+            if (type === 'store') {
+                let catOpts = '<option value="">Izvēlies kategoriju...</option>';
+                Object.keys(shopCategories).forEach(cat => {
+                    catOpts += `<option value="${cat}" ${i.cat === cat ? 'selected' : ''}>${cat}</option>`;
+                });
+                
+                let subcatOpts = '<option value="">Vispirms izvēlies kategoriju...</option>';
+                if(i.cat && shopCategories[i.cat]) {
+                    shopCategories[i.cat].forEach(sub => {
+                        subcatOpts += `<option value="${sub}" ${i.subcat === sub ? 'selected' : ''}>${sub}</option>`;
+                    });
+                }
+
+                catHtml = `
+                <div class="grid grid-cols-2 gap-2 mb-3">
+                    <div>
+                        <label class="input-group-label">Kategorija</label>
+                        <select id="ed-cat" onchange="updateEditSubCats()" class="!bg-slate-100 !text-slate-900 border-slate-200">${catOpts}</select>
+                    </div>
+                    <div>
+                        <label class="input-group-label">Apakškategorija</label>
+                        <select id="ed-subcat" class="!bg-slate-100 !text-slate-900 border-slate-200">${subcatOpts}</select>
+                    </div>
+                </div>
+                `;
+            }
+
             document.getElementById('edit-modal-title').innerText = type === 'stock' ? "Labot Noliktavas Preci" : "Labot Veikala Preci";
             document.getElementById('edit-modal-content').innerHTML = `
                 <label class="input-group-label">Nosaukums</label>
                 <input id="ed-n" value="${i.n || ''}" class="!bg-slate-100 !text-slate-900 border-slate-200 mb-3">
+                ${catHtml}
                 <label class="input-group-label">OEM</label>
                 <input id="ed-oem" value="${i.oem || ''}" class="!bg-slate-100 !text-slate-900 border-slate-200 mb-3 uppercase">
                 <div class="grid grid-cols-2 gap-2 mb-3">
@@ -1130,6 +1223,21 @@
             document.getElementById('edit-modal').classList.remove('hidden');
         }
 
+        function updateEditSubCats() {
+            const cat = document.getElementById('ed-cat').value;
+            const subSel = document.getElementById('ed-subcat');
+            if(!subSel) return;
+            if(!cat) {
+                subSel.innerHTML = '<option value="">Vispirms izvēlies kategoriju...</option>';
+                return;
+            }
+            let h = '<option value="">Izvēlies apakškategoriju...</option>';
+            shopCategories[cat].forEach(sub => {
+                h += `<option value="${sub}">${sub}</option>`;
+            });
+            subSel.innerHTML = h;
+        }
+
         function removeEditImg(idx, btnEl) {
             currentEditImgs[idx] = null;
             btnEl.parentElement.remove();
@@ -1147,11 +1255,17 @@
             const vat = document.getElementById('ed-vat').value;
             const e = document.getElementById('ed-ean').value;
             
+            let extraData = {};
+            if(type === 'store') {
+                extraData.cat = document.getElementById('ed-cat').value;
+                extraData.subcat = document.getElementById('ed-subcat').value;
+            }
+            
             const newImgs = await uploadImages(document.getElementById('ed-file'));
             const validExistingImgs = currentEditImgs.filter(url => url !== null);
             const finalImgs = [...validExistingImgs, ...newImgs];
 
-            db.ref(type + '/' + id).update({n, p, oem, q, l, vat, e, imgs: finalImgs}).then(() => {
+            db.ref(type + '/' + id).update({n, p, oem, q, l, vat, e, imgs: finalImgs, ...extraData}).then(() => {
                 closeEditModal();
                 log((type === 'stock' ? "Noliktava" : "Veikals") + ": Labota prece " + n);
             });
@@ -1895,8 +2009,6 @@
         function loadLogs() { db.ref('logs').on('value', s => { let h = ''; s.forEach(x => { const l = x.val(); h = `<div><span class="text-slate-600">[${l.t}]</span> <span class="text-amber-500">${l.u}:</span> ${l.i}</div>` + h; }); document.getElementById('logs-box').innerHTML = h; }); }
         
         function loadSoldHistory() { db.ref('sold_history').on('value', s => { let h = ''; s.forEach(x => { const i = x.val(); h = `<tr><td class="p-4 text-[10px] text-slate-400 font-bold">${i.d}</td><td class="p-4"><b>${i.n}</b><br><small>${i.oem}</small></td><td class="p-4 text-center"><span class="bg-blue-100 text-blue-600 px-2 py-1 rounded-md text-[9px] font-black">${i.status}</span></td><td class="p-4 text-right font-black">${i.p}€</td><td class="p-4 text-center text-slate-300">---</td></tr>` + h; }); document.getElementById('sold-list-body').innerHTML = h || '<tr><td colspan="5" class="p-10 text-center opacity-20 italic">Nav vēstures</td></tr>'; }); }
-        
-        // ====== KLIENTU SADAĻA (UZLABOTA) ======
 
         function addClient() {
             const type = document.getElementById('c-type').value;
@@ -2057,13 +2169,34 @@
         
         async function addStoreItem() {
             const n = document.getElementById('store-in-n').value, p = document.getElementById('store-in-p-neto').value;
+            
+            // Nolasa izvēlētās kategorijas
+            const catElement = document.getElementById('store-cat');
+            const subcatElement = document.getElementById('store-subcat');
+            const cat = catElement ? catElement.value : '';
+            const subcat = subcatElement ? subcatElement.value : '';
+            
             if(!n || !p) return alert("Ievadiet nosaukumu un cenu!");
             const btn = document.getElementById('btn-add-store');
             btn.disabled = true; btn.innerText = "AUGŠUPIELĀDE...";
             const imgs = await uploadImages(document.getElementById('store-in-file'));
-            db.ref('store').push({ n, p: parseFloat(p), vat: document.getElementById('store-in-vat').value, oem: document.getElementById('store-in-oem').value, q: parseInt(document.getElementById('store-in-q').value || 1), l: document.getElementById('store-in-l').value || 'Nav', e: document.getElementById('store-in-e').value || '', imgs }).then(() => {
+            
+            db.ref('store').push({ 
+                n, 
+                p: parseFloat(p), 
+                vat: document.getElementById('store-in-vat').value, 
+                oem: document.getElementById('store-in-oem').value, 
+                q: parseInt(document.getElementById('store-in-q').value || 1), 
+                l: document.getElementById('store-in-l').value || 'Nav', 
+                e: document.getElementById('store-in-e').value || '', 
+                imgs,
+                cat,     // Pievieno galveno kategoriju datubāzei
+                subcat   // Pievieno apakškategoriju datubāzei
+            }).then(() => {
                 btn.disabled = false; btn.innerText = "Publicēt Veikalā";
                 document.querySelectorAll('#sec-store input').forEach(i => i.value = '');
+                if (catElement) catElement.value = '';
+                if (subcatElement) subcatElement.innerHTML = '<option value="">Vispirms izvēlies kategoriju...</option>';
                 log("Veikals: Pievienota prece " + n);
             });
         }
@@ -2094,13 +2227,14 @@
             let h = '';
             Object.keys(storeItems).reverse().forEach(id => {
                 const i = storeItems[id];
-                if((i.n || '').toLowerCase().includes(q) || (i.e || '').toLowerCase().includes(q) || (i.oem || '').toLowerCase().includes(q)) {
+                if((i.n || '').toLowerCase().includes(q) || (i.e || '').toLowerCase().includes(q) || (i.oem || '').toLowerCase().includes(q) || (i.cat || '').toLowerCase().includes(q)) {
                     const priceBruto = (parseFloat(i.p || 0) * (i.vat == 21 ? 1.21 : 1)).toFixed(2);
                     let img = i.imgs && i.imgs.length > 0 ? `<img src="${i.imgs[0]}" class="w-full h-32 object-cover rounded-xl mb-2">` : '<div class="w-full h-32 bg-slate-100 flex items-center justify-center rounded-xl mb-2"><i class="fas fa-image text-slate-300 text-3xl"></i></div>';
                     h += `
                     <div class="bg-white p-3 rounded-2xl shadow-sm border border-slate-200 hover:shadow-md transition-all">
                         <div class="cursor-pointer" onclick="openDetailModal('${id}', 'store')">
                             ${img}
+                            ${i.cat ? `<div class="text-[10px] text-blue-500 font-black uppercase mb-1">${i.cat} ${i.subcat ? '> '+i.subcat : ''}</div>` : ''}
                             <div class="font-bold text-sm truncate uppercase">${i.n}</div>
                             <div class="text-[9px] text-amber-600 font-bold">OEM: ${i.oem || '---'}</div>
                             <div class="flex justify-between items-center mt-2">
@@ -2137,7 +2271,6 @@
 
                 s.forEach(x => {
                     const f = x.val();
-                    // Firebase datums ir formātā DD.MM.YYYY, pārvēršam salīdzināšanai
                     const parts = f.d.split('.');
                     const fDate = new Date(parts[2], parts[1]-1, parts[0]);
 
@@ -2204,7 +2337,7 @@
                             <button onclick="emailSavedAdminInvoice('${x.key}')" class="bg-blue-500 text-white p-2 rounded hover:bg-blue-600 text-xs shadow-lg" title="Sūtīt e-pastu"><i class="fas fa-envelope"></i></button>
                             <button onclick="deleteAdminInvoice('${x.key}')" class="bg-red-500/20 text-red-500 p-2 rounded hover:bg-red-500 hover:text-white text-xs border border-red-500/30" title="Dzēst"><i class="fas fa-trash"></i></button>
                         </div>
-                    </div>` + h; // Jaunākie saraksta augšā
+                    </div>` + h;
                 });
                 document.getElementById('adm-saved-invoices').innerHTML = h || '<div class="text-center py-4 text-slate-500 text-xs italic">Nav saglabātu rēķinu</div>';
             });
@@ -2313,7 +2446,6 @@
             }
         }
 
-
         function editAdminNote(date, key) {
             db.ref('admin_notes/' + date + '/' + key).once('value', s => {
                 const note = s.val();
@@ -2344,7 +2476,6 @@
             if(!date || !text) return alert("Lūdzu izvēlies datumu un ieraksti piezīmi!");
 
             if(currentAdminNoteEditKey && currentAdminNoteEditDate === date) {
-                // Labo esošu piezīmi tajā pašā datumā
                 db.ref('admin_notes/' + date + '/' + currentAdminNoteEditKey).update({
                     text: text
                 }).then(() => {
@@ -2352,7 +2483,6 @@
                     loadAdminNotesForDate();
                 });
             } else {
-                // Ja datums nomainīts labojot, dzēšam veco. Vai arī izveidojam pilnīgi jaunu.
                 if(currentAdminNoteEditKey) {
                     db.ref('admin_notes/' + currentAdminNoteEditDate + '/' + currentAdminNoteEditKey).remove();
                 }
