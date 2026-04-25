@@ -508,6 +508,9 @@
                         <label class="input-group-label text-slate-400">Produkta nosaukums</label>
                         <input id="store-in-n" placeholder="Piem. Motoreļļa 5W30" class="!bg-slate-800 !text-white !mb-4 border-slate-700">
                         
+                        <label class="input-group-label text-slate-400">Oriģinālais preces kods (OEM)</label>
+                        <input id="store-in-oem" placeholder="Piem. 83212365947" class="!bg-slate-800 !text-white !mb-4 border-slate-700 uppercase">
+
                         <label class="input-group-label text-slate-400">Produkta attēli (Augšupielādēt vairākus)</label>
                         <input id="store-in-file" type="file" accept="image/*" multiple class="!bg-slate-800 !text-white !mb-4 border-slate-700">
 
@@ -657,6 +660,23 @@
 
             <div id="sec-admin" class="tab-content hidden">
                 <h2 class="text-2xl font-black italic uppercase tracking-tighter mb-6 px-2 text-purple-500">ADMINISTRATORA PANELIS</h2>
+
+                <div class="card !bg-white border-2 border-purple-100 shadow-xl mb-6">
+                    <h3 class="font-black mb-4 text-slate-900 text-xl italic flex items-center gap-2"><i class="fas fa-file-export text-purple-600"></i> EKSPORTS GRĀMATVEDĪBAI</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="input-group-label">No datuma</label>
+                            <input type="date" id="exp-from" class="!bg-slate-50 border-slate-200">
+                        </div>
+                        <div>
+                            <label class="input-group-label">Līdz datumam</label>
+                            <input type="date" id="exp-to" class="!bg-slate-50 border-slate-200">
+                        </div>
+                    </div>
+                    <button onclick="exportFinancesToCSV()" class="w-full bg-purple-700 text-white font-black py-4 rounded-xl hover:bg-purple-800 transition-all uppercase tracking-widest shadow-lg shadow-purple-200 mt-2 flex items-center justify-center gap-2">
+                        <i class="fas fa-download"></i> Eksportēt Finanšu datus (.CSV / Excel)
+                    </button>
+                </div>
 
                 <div class="card !bg-slate-900 border-none shadow-2xl relative mb-6">
                     <h3 class="font-black mb-4 text-white text-xl italic flex items-center gap-2"><i class="fas fa-file-invoice-dollar text-purple-500"></i> MANUĀLAIS RĒĶINS</h3>
@@ -975,8 +995,8 @@
             }
         }
 
-        function printBarcode(id) {
-            const i = stock[id];
+        function printBarcode(id, type = 'stock') {
+            const i = type === 'stock' ? stock[id] : storeItems[id];
             if(!i) return;
             const ean = i.e || i.e2;
             if(!ean) return alert("Precei nav piesaistīts svītrkods!");
@@ -1027,15 +1047,12 @@
             }
             const pBruto = (parseFloat(item.p || 0) * (item.vat == 21 ? 1.21 : 1)).toFixed(2);
 
-            let actionButtons = '';
-            if (type === 'stock') {
-                actionButtons = `
+            let actionButtons = `
                 <div class="mt-6 flex gap-2 border-t border-slate-100 pt-4">
-                    <button onclick="printBarcode('${id}')" class="flex-1 bg-amber-100 text-amber-600 font-black py-3 rounded-xl hover:bg-amber-500 hover:text-white transition-all text-xs uppercase tracking-wider"><i class="fas fa-barcode mr-1"></i> Printēt</button>
-                    <button onclick="closeDetailModal(); editStock('${id}')" class="flex-1 bg-slate-100 text-slate-500 font-black py-3 rounded-xl hover:bg-blue-500 hover:text-white transition-all text-xs uppercase tracking-wider"><i class="fas fa-edit mr-1"></i> Labot</button>
-                    <button onclick="deleteStockItem('${id}')" class="flex-1 bg-red-50 text-red-500 font-black py-3 rounded-xl hover:bg-red-500 hover:text-white transition-all text-xs uppercase tracking-wider"><i class="fas fa-trash mr-1"></i> Dzēst</button>
+                    <button onclick="printBarcode('${id}', '${type}')" class="flex-1 bg-amber-100 text-amber-600 font-black py-3 rounded-xl hover:bg-amber-500 hover:text-white transition-all text-xs uppercase tracking-wider"><i class="fas fa-barcode mr-1"></i> Printēt</button>
+                    <button onclick="closeDetailModal(); ${type === 'stock' ? 'editStock' : 'editStoreItem'}('${id}')" class="flex-1 bg-slate-100 text-slate-500 font-black py-3 rounded-xl hover:bg-blue-500 hover:text-white transition-all text-xs uppercase tracking-wider"><i class="fas fa-edit mr-1"></i> Labot</button>
+                    <button onclick="${type === 'stock' ? 'deleteStockItem' : 'deleteStoreItem'}('${id}')" class="flex-1 bg-red-50 text-red-500 font-black py-3 rounded-xl hover:bg-red-500 hover:text-white transition-all text-xs uppercase tracking-wider"><i class="fas fa-trash mr-1"></i> Dzēst</button>
                 </div>`;
-            }
 
             document.getElementById('detail-modal-content').innerHTML = `
                 <div class="detail-img-scroll">${imgsHtml}</div>
@@ -1044,11 +1061,11 @@
                     <div class="bg-slate-50 p-3 rounded-xl"><span class="text-[10px] text-slate-400 font-bold uppercase block">OEM Kods</span><span class="font-mono font-bold">${item.oem || '---'}</span></div>
                     <div class="bg-slate-50 p-3 rounded-xl"><span class="text-[10px] text-slate-400 font-bold uppercase block">Plaukts</span><span class="font-mono font-bold">${item.l || '---'}</span></div>
                     <div class="bg-slate-50 p-3 rounded-xl"><span class="text-[10px] text-slate-400 font-bold uppercase block">EAN 1</span><span class="font-mono text-xs">${item.e || '---'}</span></div>
-                    <div class="bg-slate-50 p-3 rounded-xl"><span class="text-[10px] text-slate-400 font-bold uppercase block">EAN 2</span><span class="font-mono text-xs">${item.e2 || '---'}</span></div>
+                    <div class="bg-slate-50 p-3 rounded-xl"><span class="text-[10px] text-slate-400 font-bold uppercase block">Daudzums</span><span class="font-mono text-xs">${item.q || 0} gab.</span></div>
                 </div>
                 <div class="flex justify-between items-center bg-amber-50 p-4 rounded-xl border border-amber-200">
                     <div>
-                        <span class="text-amber-600 font-black text-sm block">Atlikums noliktavā: ${item.q || 0} gab.</span>
+                        <span class="text-amber-600 font-black text-sm block">Veikala statuss: ${item.q > 0 ? 'Pieejams' : 'Nav pieejams'}</span>
                         <span class="text-slate-500 text-xs font-bold">Cena bez PVN: ${parseFloat(item.p || 0).toFixed(2)}€</span>
                     </div>
                     <div class="text-3xl font-black text-slate-900">${pBruto}€</div>
@@ -1060,6 +1077,15 @@
 
         function editStock(id) {
             const i = stock[id]; if(!i) return;
+            renderEditModal(id, i, 'stock');
+        }
+
+        function editStoreItem(id) {
+            const i = storeItems[id]; if(!i) return;
+            renderEditModal(id, i, 'store');
+        }
+
+        function renderEditModal(id, i, type) {
             currentEditImgs = i.imgs ? [...i.imgs] : [];
             let imgsHtml = '';
             
@@ -1071,7 +1097,7 @@
                 </div>`;
             });
 
-            document.getElementById('edit-modal-title').innerText = "Labot Noliktavas Preci";
+            document.getElementById('edit-modal-title').innerText = type === 'stock' ? "Labot Noliktavas Preci" : "Labot Veikala Preci";
             document.getElementById('edit-modal-content').innerHTML = `
                 <label class="input-group-label">Nosaukums</label>
                 <input id="ed-n" value="${i.n || ''}" class="!bg-slate-100 !text-slate-900 border-slate-200 mb-3">
@@ -1090,6 +1116,8 @@
                         </select>
                     </div>
                 </div>
+                <label class="input-group-label">EAN / Svītrkods</label>
+                <input id="ed-ean" value="${i.e || ''}" class="!bg-slate-100 !text-slate-900 border-slate-200 mb-3">
                 
                 <label class="input-group-label mt-4">Pievienot papildus bildes</label>
                 <input id="ed-file" type="file" accept="image/*" multiple class="!bg-slate-100 !text-slate-900 border-slate-200 mb-4 text-sm">
@@ -1097,7 +1125,7 @@
                 <label class="input-group-label">Esošās bildes</label>
                 <div class="img-grid-edit">${imgsHtml}</div>
 
-                <button id="btn-save-edit" onclick="saveEditStock('${id}')" class="btn-jt w-full mt-2">Saglabāt izmaiņas</button>
+                <button id="btn-save-edit" onclick="saveItemEdit('${id}', '${type}')" class="btn-jt w-full mt-2">Saglabāt izmaiņas</button>
             `;
             document.getElementById('edit-modal').classList.remove('hidden');
         }
@@ -1107,7 +1135,7 @@
             btnEl.parentElement.remove();
         }
 
-        async function saveEditStock(id) {
+        async function saveItemEdit(id, type) {
             const btn = document.getElementById('btn-save-edit');
             btn.disabled = true; btn.innerText = "SAGLABĀ...";
 
@@ -1117,15 +1145,24 @@
             const q = parseInt(document.getElementById('ed-q').value);
             const l = document.getElementById('ed-l').value;
             const vat = document.getElementById('ed-vat').value;
+            const e = document.getElementById('ed-ean').value;
             
             const newImgs = await uploadImages(document.getElementById('ed-file'));
             const validExistingImgs = currentEditImgs.filter(url => url !== null);
             const finalImgs = [...validExistingImgs, ...newImgs];
 
-            db.ref('stock/'+id).update({n, p, oem, q, l, vat, imgs: finalImgs}).then(() => {
+            db.ref(type + '/' + id).update({n, p, oem, q, l, vat, e, imgs: finalImgs}).then(() => {
                 closeEditModal();
-                log("Noliktava: Labota prece " + n);
+                log((type === 'stock' ? "Noliktava" : "Veikals") + ": Labota prece " + n);
             });
+        }
+
+        function deleteStoreItem(id) {
+            if(confirm("Vai tiešām vēlaties dzēst šo preci no e-veikala?")) {
+                db.ref('store/'+id).remove();
+                log("Veikals: Dzēsta prece " + id);
+                closeDetailModal();
+            }
         }
 
         function editRepair(id) {
@@ -2024,7 +2061,7 @@
             const btn = document.getElementById('btn-add-store');
             btn.disabled = true; btn.innerText = "AUGŠUPIELĀDE...";
             const imgs = await uploadImages(document.getElementById('store-in-file'));
-            db.ref('store').push({ n, p: parseFloat(p), vat: document.getElementById('store-in-vat').value, q: parseInt(document.getElementById('store-in-q').value || 1), l: document.getElementById('store-in-l').value || 'Nav', e: document.getElementById('store-in-e').value || '', imgs }).then(() => {
+            db.ref('store').push({ n, p: parseFloat(p), vat: document.getElementById('store-in-vat').value, oem: document.getElementById('store-in-oem').value, q: parseInt(document.getElementById('store-in-q').value || 1), l: document.getElementById('store-in-l').value || 'Nav', e: document.getElementById('store-in-e').value || '', imgs }).then(() => {
                 btn.disabled = false; btn.innerText = "Publicēt Veikalā";
                 document.querySelectorAll('#sec-store input').forEach(i => i.value = '');
                 log("Veikals: Pievienota prece " + n);
@@ -2057,15 +2094,82 @@
             let h = '';
             Object.keys(storeItems).reverse().forEach(id => {
                 const i = storeItems[id];
-                if((i.n || '').toLowerCase().includes(q) || (i.e || '').toLowerCase().includes(q)) {
+                if((i.n || '').toLowerCase().includes(q) || (i.e || '').toLowerCase().includes(q) || (i.oem || '').toLowerCase().includes(q)) {
+                    const priceBruto = (parseFloat(i.p || 0) * (i.vat == 21 ? 1.21 : 1)).toFixed(2);
                     let img = i.imgs && i.imgs.length > 0 ? `<img src="${i.imgs[0]}" class="w-full h-32 object-cover rounded-xl mb-2">` : '<div class="w-full h-32 bg-slate-100 flex items-center justify-center rounded-xl mb-2"><i class="fas fa-image text-slate-300 text-3xl"></i></div>';
-                    h += `<div class="card !p-3 cursor-pointer" onclick="openDetailModal('${id}', 'store')">${img}<div class="font-bold text-sm truncate">${i.n}</div><div class="flex justify-between items-center mt-2"><div class="font-black text-amber-600">${parseFloat(i.p * (i.vat==21?1.21:1)).toFixed(2)}€</div><div class="text-[10px] text-slate-400">Atlikums: ${i.q}</div></div></div>`;
+                    h += `
+                    <div class="bg-white p-3 rounded-2xl shadow-sm border border-slate-200 hover:shadow-md transition-all">
+                        <div class="cursor-pointer" onclick="openDetailModal('${id}', 'store')">
+                            ${img}
+                            <div class="font-bold text-sm truncate uppercase">${i.n}</div>
+                            <div class="text-[9px] text-amber-600 font-bold">OEM: ${i.oem || '---'}</div>
+                            <div class="flex justify-between items-center mt-2">
+                                <div class="font-black text-slate-900">${priceBruto}€</div>
+                                <div class="text-[10px] text-slate-400">Q: ${i.q}</div>
+                            </div>
+                        </div>
+                        <div class="flex gap-1 mt-3 border-t border-slate-50 pt-2">
+                            <button onclick="printBarcode('${id}', 'store')" class="flex-1 bg-amber-100 text-amber-600 py-2 rounded-lg text-[10px] font-bold"><i class="fas fa-barcode"></i></button>
+                            <button onclick="editStoreItem('${id}')" class="flex-1 bg-slate-100 text-slate-400 py-2 rounded-lg text-[10px] font-bold"><i class="fas fa-edit"></i></button>
+                            <button onclick="deleteStoreItem('${id}')" class="flex-1 bg-red-50 text-red-500 py-2 rounded-lg text-[10px] font-bold"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>`;
                 }
             });
             document.getElementById('store-container').innerHTML = h ? `<div class="grid grid-cols-2 md:grid-cols-4 gap-4">${h}</div>` : '<p class="text-center p-10 opacity-20 w-full">Veikalā nav preču</p>';
         }
 
         // ====== ADMIN PANEL FUNKCIJAS ======
+
+        function exportFinancesToCSV() {
+            const from = document.getElementById('exp-from').value;
+            const to = document.getElementById('exp-to').value;
+            
+            if(!from || !to) return alert("Lūdzu izvēlieties datuma diapazonu!");
+
+            db.ref('finances').once('value', s => {
+                let csvRows = [];
+                csvRows.push(['Datums', 'Rēķina/Auto Nr.', 'Klients', 'Apraksts', 'Summa Bez PVN', 'Summa Ar PVN'].join(';'));
+                
+                const dateFrom = new Date(from);
+                const dateTo = new Date(to);
+                dateTo.setHours(23, 59, 59);
+
+                s.forEach(x => {
+                    const f = x.val();
+                    // Firebase datums ir formātā DD.MM.YYYY, pārvēršam salīdzināšanai
+                    const parts = f.d.split('.');
+                    const fDate = new Date(parts[2], parts[1]-1, parts[0]);
+
+                    if(fDate >= dateFrom && fDate <= dateTo) {
+                        const sumBruto = parseFloat(f.price || 0);
+                        const sumNeto = sumBruto / 1.21;
+                        const row = [
+                            f.d,
+                            f.nr,
+                            `"${f.cl || ''}"`,
+                            `"${(f.task || '').replace(/\n/g, ' ')}"`,
+                            sumNeto.toFixed(2),
+                            sumBruto.toFixed(2)
+                        ];
+                        csvRows.push(row.join(';'));
+                    }
+                });
+
+                if(csvRows.length <= 1) return alert("Norādītajā periodā nav atrasti finanšu dati!");
+
+                const csvContent = "\uFEFF" + csvRows.join("\n");
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement("a");
+                const url = URL.createObjectURL(blob);
+                link.setAttribute("href", url);
+                link.setAttribute("download", `JT_MOTORS_Eksports_${from}_lidz_${to}.csv`);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            });
+        }
 
         function saveAdminInvoice() {
             const nr = document.getElementById('adm-inv-nr').value || 'INV-MANUAL';
@@ -2308,4 +2412,5 @@
         function closeDetailModal() { document.getElementById('product-detail-modal').classList.add('hidden'); }
     </script>
 </body>
-                            </html>
+</html>
+
